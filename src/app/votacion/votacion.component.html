@@ -1,0 +1,31 @@
+<app-barra-superior></app-barra-superior>
+
+<div class="container my-5">
+  <!-- Botón para regresar al dashboard -->
+  <button class="back-button" (click)="goBack()">←</button>
+
+  <!-- Título de la página -->
+  <h2 class="text-center">Sesión {{sesion?.codigo}}</h2>
+
+  <!-- Agrega este código donde quieras que aparezca el combo de puntos -->
+  Punto: <select [(ngModel)]="puntoSeleccionado" (change)="onPuntoChange()">
+    <option *ngFor="let punto of puntos" [value]="punto.id_punto">
+      {{ punto.nombre }}
+    </option>
+  </select>
+
+  <!-- Contenedor con Scroll para los puntos -->
+  <div class="points-container">
+    <div class="grid-container">
+      <!-- Utiliza *ngFor para repetir los cuadrados -->
+      <div class="grid-item" *ngFor="let puntoUsuario of puntoUsuarios">
+        <div class="square" [ngClass]="{'sin-votar': puntoUsuario.opcion === null, 'votado': puntoUsuario.opcion !== null}">
+          <div class="point-name">{{ puntoUsuario.usuario.nombre }}</div>
+          <div class="btn-container">
+            <button class="btn btn-secondary">confirmar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,56 @@
+.reuniones-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+}
+
+.reunion-card {
+    padding: 25px;
+    border: 1px solid #ccc;
+    text-align: center;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.reunion-card:hover {
+    background-color: #f5f5f5;
+}
+
+.reuniones-container {
+    max-height: 260px;
+    /* Ajusta según la altura máxima que quieras */
+    overflow-y: auto;
+    /* Habilita el scroll solo en el eje vertical */
+    border: 1px solid #ccc;
+    /* Añade un borde al contenedor */
+    padding: 15px;
+    /* Ajusta el valor según el espacio que desees */
+    margin-bottom: 50px;
+    /* Ajusta el valor según el espacio que desees */
+}
+
+.buttons-container {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 30px;
+    /* Ajusta el valor según el espacio que desees */
+}
+
+.buttons-container button {
+    background-color: #333;
+    /* Color de fondo del botón */
+    color: white;
+    /* Color de texto del botón */
+    border: none;
+    /* Remover borde por defecto */
+    padding: 8px 15px;
+    /* Espaciado interno para el botón */
+    cursor: pointer;
+    /* Cambiar el cursor al pasar por encima */
+    border-radius: 4px;
+    /* Bordes redondeados del botón */
+}
+
+.buttons-container button:hover {
+    background-color: #555;
+}

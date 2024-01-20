@@ -1,0 +1,20 @@
+<app-barra-superior></app-barra-superior>
+
+<div class="container my-5">
+    <h2 class="text-center">Bienvenido {{payload.nombre}}</h2>
+    <h3 class="mt-4">Sesiones en curso</h3>
+    <div class="reuniones-container">
+        <div class="reuniones-grid">
+            <button *ngFor="let sesion of sesiones" class="reunion-card" (click)="irADetalleSesion(sesion.id_sesion!)">
+                {{sesion.nombre}}
+                <br>
+                {{sesion.codigo}}
+            </button>
+        </div>
+    </div>
+    <div class="buttons-container my-4">
+        <button class="btn btn-secondary">Sesiones finalizadas</button>
+        <button class="btn btn-secondary">Crear sesión</button>
+        <button class="btn btn-secondary">Crear usuario</button>
+    </div>
+</div>

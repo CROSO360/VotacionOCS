@@ -1,0 +1,29 @@
+<app-barra-superior></app-barra-superior>
+
+<div class="container my-5">
+    <!-- Botón para regresar al dashboard -->
+    <button class="back-button" (click)="goBack()">←</button>
+
+    <!-- Título de la página -->
+    <h2 class="text-center">Puntos la sesion {{ sesion?.codigo }}</h2>
+
+    <!-- Contenedor con Scroll para los puntos -->
+    <div class="points-container">
+        <table class="points-table">
+            <tr *ngFor="let punto of puntos">
+                <td class="point-name">{{ punto.nombre }}</td>
+                <td class="btn-container"><button class="btn btn-secondary">Listado de votantes</button></td>
+                <td class="btn-container">
+                    <button class="btn btn-secondary" >{{ punto.estado }}</button>
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <!-- Botones al final -->
+    <div class="buttons-container my-4">
+        <button class="btn btn-secondary">Ver resultados</button>
+        <button class="btn btn-secondary" (click)="irAVotacion(idSesion!)">Votación</button>
+        <button class="btn btn-secondary">Agregar puntos</button>
+    </div>
+</div>

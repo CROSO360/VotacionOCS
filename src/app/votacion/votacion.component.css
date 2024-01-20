@@ -1,0 +1,96 @@
+.grid-container {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr); /* 5 columnas iguales */
+  gap: 15px; /* Espacio entre cuadrados */
+}
+
+.grid-item {
+  width: 100%;
+}
+
+.square {
+  border: 1px solid #ccc;
+  padding: 10px;
+  text-align: center;
+  vertical-align: middle;
+}
+
+.points-container {
+  max-height: 350px;
+  overflow-y: auto;
+  border: 1px solid #ccc;
+  padding: 15px;
+  margin-bottom: 20px;
+}
+
+.back-button {
+  /*background-color: transparent;
+    border: 1px solid black;*/
+  font-size: 24px;
+  cursor: pointer;
+  margin-bottom: 20px;
+}
+
+button {
+  background-color: #333;
+  color: white;
+  border: none;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+button:hover {
+  background-color: #555;
+}
+
+.sin-votar {
+  background-color: red; /* O el color que desees para usuarios sin votar */
+}
+
+.votado {
+  background-color: green; /* O el color que desees para usuarios que ya votaron */
+}
+
+/*.points-container {
+    max-height: 280px;
+    overflow-y: auto;
+    border: 1px solid #ccc;
+    padding: 15px;
+    margin-bottom: 20px;
+}
+
+.points-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.points-table td {
+    padding: 10px;
+    border: 1px solid #ccc;
+    text-align: center; 
+    vertical-align: middle; 
+}
+
+.point-name {
+    width: 30%; 
+}
+
+.btn-container {
+    width: 35%; 
+}
+
+.btn, .buttons-container .btn-secondary {
+    width: 100%; 
+    padding: 12px;
+    text-align: center;
+    width: max-content; 
+    padding: 8px 15px; 
+    white-space: nowrap;
+    min-width: 150px; 
+}
+
+.buttons-container {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 30px; /* añade un espacio entre la tabla y los botones 
+}*/
