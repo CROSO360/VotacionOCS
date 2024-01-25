@@ -33,10 +33,10 @@ export class InicioSesionComponent implements OnInit {
 
   errorMessage: string = ''; 
 
-  ngOnInit() {
-    const cookie = this.cookieService.check('token');
+  async ngOnInit() {
+     const cookie = await this.cookieService.check('token');
     if (cookie) {
-      this.cookieService.deleteAll('cookie');
+      await this.cookieService.deleteAll('cookie');
     }
   }
 

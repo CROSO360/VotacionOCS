@@ -19,7 +19,7 @@
     <div class="grid-container">
       <!-- Utiliza *ngFor para repetir los cuadrados -->
       <div class="grid-item" *ngFor="let puntoUsuario of puntoUsuarios">
-        <div class="square" [ngClass]="{'sin-votar': puntoUsuario.opcion === null, 'votado': puntoUsuario.opcion !== null}">
+        <div id={{puntoUsuario.id_punto_usuario}}  class="square" [ngClass]="{'sin-votar': puntoUsuario.opcion === null, 'votado': puntoUsuario.opcion !== null}">
           <div class="point-name">{{ puntoUsuario.usuario.nombre }}</div>
           <div class="btn-container">
             <button class="btn btn-secondary">confirmar</button>

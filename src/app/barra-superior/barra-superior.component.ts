@@ -17,9 +17,9 @@ export class BarraSuperiorComponent {
     private router: Router,
   ){}
 
-  logout(){
-    this.cookieService.deleteAll('token');
-    this.router.navigate(['/', 'login']);
+  async logout(){
+    await this.cookieService.deleteAll('token');
+    await this.router.navigate(['/', 'login']);
   }
 
 }

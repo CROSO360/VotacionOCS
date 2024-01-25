@@ -62,6 +62,15 @@ export class SesionComponent implements OnInit{
     }
   }
 
+  irAVotantes(id: number){
+    if (id) {
+      this.router.navigate(['votantes', id])
+    }else{
+      console.error(`ID de sesión no definido: ${id} lol`);
+      // Manejar el error como consideres necesario
+    }
+  }
+
   goBack(){
     this.location.back();
   }

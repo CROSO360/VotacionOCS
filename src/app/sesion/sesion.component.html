@@ -12,7 +12,7 @@
         <table class="points-table">
             <tr *ngFor="let punto of puntos">
                 <td class="point-name">{{ punto.nombre }}</td>
-                <td class="btn-container"><button class="btn btn-secondary">Listado de votantes</button></td>
+                <td class="btn-container"><button class="btn btn-secondary" (click)="irAVotantes(punto.id_punto!)">Listado de votantes</button></td>
                 <td class="btn-container">
                     <button class="btn btn-secondary" >{{ punto.estado }}</button>
                 </td>

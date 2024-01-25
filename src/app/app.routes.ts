@@ -4,6 +4,7 @@ import { DashboardComponent } from './dashboard/dashboard.component';
 import { userGuardGuard } from './user-guard.guard';
 import { SesionComponent } from './sesion/sesion.component';
 import { VotacionComponent } from './votacion/votacion.component';
+import { VotantesComponent } from './votantes/votantes.component';
 
 export const routes: Routes = [
     {
@@ -37,5 +38,11 @@ export const routes: Routes = [
         title:'Votacion',
         component:VotacionComponent,
         canActivate:[userGuardGuard],
+    },
+    {
+        path:'votantes/:id',
+        title: 'Votantes',
+        component: VotantesComponent,
+        canActivate: [userGuardGuard],
     }
 ];
