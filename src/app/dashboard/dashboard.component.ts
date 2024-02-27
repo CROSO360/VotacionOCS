@@ -31,7 +31,8 @@ export class DashboardComponent implements OnInit {
   }
 
   getSesiones() {
-    this.sesionService.getAllData().subscribe(
+    const query = `estado=1`;
+    this.sesionService.getAllDataBy(query).subscribe(
       (data: any) => {
         this.sesiones = data;
       },
@@ -50,6 +51,14 @@ export class DashboardComponent implements OnInit {
     } else {
       console.error(`ID de sesión no definido: ${id} lol`);
     }
+  }
+
+  irAUsuarios(){
+    this.router.navigate(['/usuarios'])
+  }
+
+  irASesiones(){
+    this.router.navigate(['/sesiones'])
   }
 
 }

@@ -1,29 +1,161 @@
 <app-barra-superior></app-barra-superior>
 
 <div class="container my-5">
-    <!-- Botón para regresar al dashboard -->
-    <button class="back-button" (click)="goBack()">←</button>
+  <!-- Botón para regresar al dashboard -->
+  <button class="back-button" (click)="goBack()">←</button>
 
-    <!-- Título de la página -->
-    <h2 class="text-center">Puntos la sesion {{ sesion?.codigo }}</h2>
+  <!-- Título de la página -->
+  <h2 class="text-center">Puntos la sesion {{ sesion?.codigo }}</h2>
 
-    <!-- Contenedor con Scroll para los puntos -->
-    <div class="points-container">
-        <table class="points-table">
-            <tr *ngFor="let punto of puntos">
-                <td class="point-name">{{ punto.nombre }}</td>
-                <td class="btn-container"><button class="btn btn-secondary" (click)="irAVotantes(punto.id_punto!)">Listado de votantes</button></td>
-                <td class="btn-container">
-                    <button class="btn btn-secondary" >{{ punto.estado }}</button>
-                </td>
-            </tr>
-        </table>
-    </div>
+  <!-- Contenedor con Scroll para los puntos -->
+  <div class="points-container">
+    <table class="points-table">
+      <tr *ngFor="let punto of puntos">
+        <td class="point-name">{{ punto.nombre }}</td>
+        <td class="btn-container">
+          <button
+            class="btn btn-secondary"
+            (click)="irAVotantes(punto.id_punto!)"
+          >
+            Listado de votantes
+          </button>
+        </td>
+        <td class="btn-container">
+          <button 
+          class="btn btn-secondary"
+          type="button"
+          data-bs-toggle="modal"
+          data-bs-target="#exampleModal"
+          (click)="abrirEditar(punto)"
+          >Editar</button>
+        </td>
+      </tr>
+    </table>
+  </div>
 
-    <!-- Botones al final -->
-    <div class="buttons-container my-4">
-        <button class="btn btn-secondary">Ver resultados</button>
-        <button class="btn btn-secondary" (click)="irAVotacion(idSesion!)">Votación</button>
-        <button class="btn btn-secondary">Agregar puntos</button>
-    </div>
+  <!-- Botones al final -->
+  <div class="buttons-container my-4">
+    <button class="btn btn-secondary" type="button"
+    data-bs-toggle="modal"
+    data-bs-target="#crearPuntoModal">Agregar punto</button>
+    <button class="btn btn-secondary" (click)="irAVotacion(idSesion!)">
+      Votación
+    </button>
+    <button class="btn btn-secondary">Ver resultados</button>
+  </div>
 </div>
+
+<!-- Modal para editar punto -->
+
+<div
+  #exampleModal
+  class="modal fade"
+  id="exampleModal"
+  tabindex="-1"
+  aria-labelledby="exampleModalLabel"
+  aria-hidden="true"
+>
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h1 class="modal-title fs-5" id="exampleModalLabel">Editar punto</h1>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+          aria-label="Close"
+        ></button>
+      </div>
+      <div class="modal-body">
+        <form [formGroup]="modificarPuntoForm" (ngSubmit)="editarPunto()">
+          <div class="form-group">
+            <input
+              type="hidden"
+              formControlName="idPunto"
+            />
+            <label for="nombre" class="form-label">Nombre:</label>
+            <input
+              formControlName="nombre"
+              type="text"
+              id="nombre"
+              placeholder="Nombre"
+              class="form-control"
+            />
+            <label for="detalle" class="form-label">Detalle:</label>
+            <input
+              formControlName="detalle"
+              type="text"
+              id="detalle"
+              placeholder="Detalle"
+              class="form-control"
+            />
+            <label for="estado" class="form-label">Estado </label>
+            <input type="checkbox" formControlName="estado" />
+          </div>
+
+          <button type="submit" class="btn btn-primary">Save changes</button>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal para crear punto -->
+
+<div
+  #crearPuntoModal
+  class="modal fade"
+  id="crearPuntoModal"
+  tabindex="-1"
+  aria-labelledby="crearPuntoModalLabel"
+  aria-hidden="true"
+>
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h1 class="modal-title fs-5" id="crearPuntoModalLabel">Crear punto</h1>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+          aria-label="Close"
+        ></button>
+      </div>
+      <div class="modal-body">
+        <form [formGroup]="crearPuntoForm" (ngSubmit)="crearPunto()">
+          <div class="form-group">
+            <label for="nombre" class="form-label">Nombre:</label>
+            <input
+              formControlName="nombre"
+              type="text"
+              id="nombre"
+              placeholder="Nombre"
+              class="form-control"
+            />
+            <label for="detalle" class="form-label">Detalle:</label>
+            <input
+              formControlName="detalle"
+              type="text"
+              id="detalle"
+              placeholder="Detalle"
+              class="form-control"
+            />
+          </div>
+
+          <button type="submit" class="btn btn-primary">Save changes</button>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+

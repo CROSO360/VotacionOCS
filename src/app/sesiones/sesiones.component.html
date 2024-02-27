@@ -1,0 +1,230 @@
+<app-barra-superior></app-barra-superior>
+
+<div class="container my-4">
+  <!-- Título de la página -->
+  <h2 class="text-center">Sesiones</h2>
+
+  <!-- Barra de búsqueda -->
+  <input
+    type="text"
+    placeholder="Buscar por nombre o código"
+    [(ngModel)]="busqueda"
+    (input)="filtrarSesiones()"
+  />
+
+  <!-- Pestañas para grupos de usuarios -->
+  <ul class="nav nav-tabs">
+    <li class="nav-item">
+        <a class="nav-link" (click)="cambiarGrupo(true)">Activas</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" (click)="cambiarGrupo(false)">Finalizadas</a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link" (click)="cambiarGrupo(null)">Todas</a>
+    </li>
+  </ul>
+
+  <!-- Lista de usuarios con checkbox -->
+  <div class="list-group mt-3">
+    <div *ngFor="let sesion of sesionesFiltradas">
+      <div class="list-group-item" [ngClass]="{ 'sesion-finalizada': !sesion.estado }">
+        {{ sesion.codigo }} - {{ sesion.nombre }}
+        <button 
+        class="btn btn-secondary" 
+        [disabled]="!sesion.estado"
+        type="button"
+        data-bs-toggle="modal"
+        data-bs-target="#exampleModal"
+        (click)="abrirEditar(sesion)"
+        >Editar</button>
+        <button class="btn btn-secondary" (click)="irADetalleSesion(sesion.id_sesion)">Ver</button>
+      </div>
+    </div>
+    <div *ngIf="sesionesFiltradas.length === 0" class="list-group-item">
+      No se encontraron sesiones.
+    </div>
+  </div>
+  
+
+  <!-- Botón de confirmar -->
+
+  <button class="btn btn-secondary mt-3" (click)="goBack()">Cancelar</button>
+
+  <button class="btn btn-secondary mt-3" type="button"
+  class="btn btn-secondary mt-3"
+  data-bs-toggle="modal"
+  data-bs-target="#crearSesionModal">Crear sesión</button>
+</div>
+
+
+<!-- Modal para editar usuario -->
+<div
+  #exampleModal
+  class="modal fade"
+  id="exampleModal"
+  tabindex="-1"
+  aria-labelledby="exampleModalLabel"
+  aria-hidden="true"
+>
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h1 class="modal-title fs-5" id="exampleModalLabel">Editar sesión</h1>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+          aria-label="Close"
+        ></button>
+      </div>
+      <div class="modal-body">
+        <form [formGroup]="modificarSesionForm" (ngSubmit)="editarSesion()">
+          <div class="form-group">
+            <input
+              type="hidden"
+              formControlName="idSesion"
+            />
+            <label for="nombre" class="form-label">Nombre:</label>
+            <input
+              formControlName="nombre"
+              type="text"
+              id="nombre"
+              placeholder="Nombre"
+              class="form-control"
+            />
+            <label for="codigo" class="form-label">Código:</label>
+            <input
+              formControlName="codigo"
+              type="text"
+              id="codigo"
+              placeholder="Código"
+              class="form-control"
+            />
+            <label for="cedula" class="form-label">Fecha:</label>
+            <input
+              formControlName="fecha"
+              type="date"
+              id="fecha"
+              placeholder="Fecha"
+              class="form-control"
+            />
+            <label for="tipo" class="form-label">Tipo:</label>
+            <select
+              name="tipo"
+              id="tipo"
+              formControlName="tipo"
+              id="tipo"
+            >
+              <option
+                value="ordinaria"
+              >
+                Ordinaria
+              </option>
+              <option
+                value="extraordinaria"
+              >
+                Extraordinaria
+              </option>
+            </select>
+
+            <label for="oficio" class="form-label">Oficio: </label>
+            <input type="file" formControlName="oficio">
+
+            <label for="estado" class="form-label">Sesión activa </label>
+            <input type="checkbox" formControlName="estado" />
+          </div>
+
+          <button type="submit" class="btn btn-primary">Save changes</button>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal para crear usuario -->
+<div
+  #crearSesionModal
+  class="modal fade"
+  id="crearSesionModal"
+  tabindex="-1"
+  aria-labelledby="crearSesionModalLabel"
+  aria-hidden="true"
+>
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h1 class="modal-title fs-5" id="crearSesionModalLabel">Editar sesión</h1>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+          aria-label="Close"
+        ></button>
+      </div>
+      <div class="modal-body">
+        <form [formGroup]="crearSesionForm" (ngSubmit)="crearSesion()">
+          <div class="form-group">
+            <label for="nombre" class="form-label">Nombre:</label>
+            <input
+              formControlName="nombre"
+              type="text"
+              id="nombre"
+              placeholder="Nombre"
+              class="form-control"
+            />
+            <label for="codigo" class="form-label">Código:</label>
+            <input
+              formControlName="codigo"
+              type="text"
+              id="codigo"
+              placeholder="Código"
+              class="form-control"
+            />
+            <label for="cedula" class="form-label">Fecha:</label>
+            <input
+              formControlName="fecha"
+              type="date"
+              id="fecha"
+              placeholder="Fecha"
+              class="form-control"
+            />
+            <label for="tipo" class="form-label">Tipo:</label>
+            <select
+              name="tipo"
+              id="tipo"
+              formControlName="tipo"
+              id="tipo"
+            >
+              <option
+                value="ordinaria"
+              >
+                Ordinaria
+              </option>
+              <option
+                value="extraordinaria"
+              >
+                Extraordinaria
+              </option>
+            </select>
+
+            <label for="oficio" class="form-label">Oficio: </label>
+            <input type="file" formControlName="oficio">
+          </div>
+
+          <button type="submit" class="btn btn-primary">Save changes</button>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

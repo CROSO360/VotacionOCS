@@ -5,6 +5,8 @@ import { userGuardGuard } from './user-guard.guard';
 import { SesionComponent } from './sesion/sesion.component';
 import { VotacionComponent } from './votacion/votacion.component';
 import { VotantesComponent } from './votantes/votantes.component';
+import { UsuariosComponent } from './usuarios/usuarios.component';
+import { SesionesComponent } from './sesiones/sesiones.component';
 
 export const routes: Routes = [
     {
@@ -43,6 +45,18 @@ export const routes: Routes = [
         path:'votantes/:id',
         title: 'Votantes',
         component: VotantesComponent,
+        canActivate: [userGuardGuard],
+    },
+    {
+        path:'usuarios',
+        title: 'Usuarios',
+        component: UsuariosComponent,
+        canActivate: [userGuardGuard],
+    },
+    {
+        path:'sesiones',
+        title:'Sesiones',
+        component: SesionesComponent,
         canActivate: [userGuardGuard],
     }
 ];

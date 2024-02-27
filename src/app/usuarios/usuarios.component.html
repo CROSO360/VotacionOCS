@@ -1,0 +1,262 @@
+<app-barra-superior></app-barra-superior>
+
+<div class="container my-4">
+  <!-- Título de la página -->
+  <h2 class="text-center">Usuarios</h2>
+
+  <!-- Barra de búsqueda -->
+  <input
+    type="text"
+    placeholder="Buscar por nombre o cédula"
+    [(ngModel)]="busqueda"
+    (input)="filtrarUsuarios()"
+  />
+
+  <!-- Pestañas para grupos de usuarios -->
+  <ul class="nav nav-tabs">
+    <li class="nav-item" *ngFor="let grupo of gruposUsuarios">
+      <a class="nav-link" (click)="cambiarGrupo(grupo)">{{ grupo.nombre }}</a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link" (click)="cambiarGrupo(null)">Todos</a>
+    </li>
+  </ul>
+
+  <!-- Lista de usuarios con checkbox -->
+  <div class="list-group mt-3">
+    <div *ngFor="let usuario of usuariosFiltrados">
+      <div class="list-group-item" [ngClass]="{'usuario-inactivo': !usuario.estado}">
+        {{ usuario.cedula }} - {{ usuario.nombre }}
+        <button
+          type="button"
+          class="btn btn-secondary"
+          data-bs-toggle="modal"
+          data-bs-target="#exampleModal"
+          (click)="abrirEditar(usuario)"
+        >
+          Editar
+        </button>
+      </div>
+    </div>
+    <div *ngIf="usuariosFiltrados.length === 0" class="list-group-item">
+      No se encontraron usuarios.
+    </div>
+  </div>
+  
+  
+
+  <!-- Botón de confirmar -->
+
+  <button class="btn btn-secondary mt-3" (click)="goBack()">Cancelar</button>
+
+  <button
+    type="button"
+    class="btn btn-secondary mt-3"
+    data-bs-toggle="modal"
+    data-bs-target="#crearUsuarioModal"
+  >
+    Crear usuario
+  </button>
+</div>
+
+<!-- Button trigger modal -->
+<!--button
+  type="button"
+  class="btn btn-primary"
+  data-bs-toggle="modal"
+  data-bs-target="#exampleModal"
+>
+  Launch demo modal
+</button-->
+
+<!-- Modal para editar usuario -->
+<div
+  #exampleModal
+  class="modal fade"
+  id="exampleModal"
+  tabindex="-1"
+  aria-labelledby="exampleModalLabel"
+  aria-hidden="true"
+>
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h1 class="modal-title fs-5" id="exampleModalLabel">Editar usuario</h1>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+          aria-label="Close"
+        ></button>
+      </div>
+      <div class="modal-body">
+        <form [formGroup]="modificarUsuarioForm" (ngSubmit)="editarUsuario()">
+          <div class="form-group">
+            <input
+              type="hidden"
+              formControlName="idUsuario"
+            />
+            <label for="nombre" class="form-label">Nombre:</label>
+            <input
+              formControlName="nombre"
+              type="text"
+              id="nombre"
+              placeholder="Nombre"
+              class="form-control"
+            />
+            <label for="codigo" class="form-label">Código:</label>
+            <input
+              formControlName="codigo"
+              type="text"
+              id="codigo"
+              placeholder="Código"
+              class="form-control"
+            />
+            <label for="cedula" class="form-label">Cédula:</label>
+            <input
+              formControlName="cedula"
+              type="text"
+              id="cedula"
+              placeholder="Cédula"
+              class="form-control"
+            />
+            <label for="grupoUsuario" class="form-label">Grupo Usuario:</label>
+            <select
+              name="grupoUsuario"
+              id="grupoUsuario"
+              formControlName="grupoUsuario"
+              id="grupoUsuario"
+            >
+              <option
+                value="{{ grupo.id_grupo_usuario }}"
+                *ngFor="let grupo of gruposUsuarios"
+              >
+                {{ grupo.nombre }}
+              </option>
+            </select>
+            <label for="usuarioReemplazo" class="form-label"
+              >Usuario de reemplazo:</label
+            >
+            <select
+              name="usuarioReemplazo"
+              id="usuarioReemplazo"
+              formControlName="usuarioReemplazo"
+              id="usuarioReemplazo"
+            >
+              <option value="0">Ninguno</option>
+              <option
+                value="{{ usuario.id_usuario }}"
+                *ngFor="let usuario of usuarios"
+              >
+                {{ usuario.cedula }} - {{ usuario.nombre }}
+              </option>
+            </select>
+            <label for="estado" class="form-label">Usuario activo </label>
+            <input type="checkbox" formControlName="estado" />
+          </div>
+
+          <button type="submit" class="btn btn-primary">Save changes</button>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal para crear usuario -->
+<div
+  #crearUsuarioModal
+  class="modal fade"
+  id="crearUsuarioModal"
+  tabindex="-1"
+  aria-labelledby="crearUsuarioModalLabel"
+  aria-hidden="true"
+>
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h1 class="modal-title fs-5" id="crearUsuarioModalLabel">
+          Crear usuario
+        </h1>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+          aria-label="Close"
+        ></button>
+      </div>
+      <div class="modal-body">
+        <form [formGroup]="crearUsuarioForm" (ngSubmit)="crearUsuario()">
+          <div class="form-group">
+            <label for="nombre" class="form-label">Nombre:</label>
+            <input
+              formControlName="nombrex"
+              type="text"
+              id="nombre"
+              placeholder="Nombre"
+              class="form-control"
+            />
+            <label for="codigo" class="form-label">Código:</label>
+            <input
+              formControlName="codigox"
+              type="text"
+              id="codigo"
+              placeholder="Código"
+              class="form-control"
+            />
+            <label for="cedula" class="form-label">Cédula:</label>
+            <input
+              formControlName="cedulax"
+              type="text"
+              id="cedula"
+              placeholder="Cédula"
+              class="form-control"
+            />
+            <label for="grupoUsuario" class="form-label">Grupo Usuario:</label>
+            <select
+              name="grupoUsuario"
+              id="grupoUsuario"
+              formControlName="grupoUsuariox"
+              id="grupoUsuario"
+            >
+              <option
+                *ngFor="let grupo of gruposUsuarios"
+                value="{{ grupo.id_grupo_usuario }}"
+              >
+                {{ grupo.nombre }}
+              </option>
+            </select>
+            <label for="usuarioReemplazo" class="form-label"
+              >Usuario de reemplazo:</label
+            >
+            <select
+              name="usuarioReemplazo"
+              id="usuarioReemplazo"
+              formControlName="usuarioReemplazox"
+              id="usuarioReemplazo"
+            >
+              <option value="0">Ninguno</option>
+              <option
+                *ngFor="let usuario of usuarios"
+                value="{{ usuario.id_usuario }}"
+              >
+                {{ usuario.cedula }} - {{ usuario.nombre }}
+              </option>
+            </select>
+          </div>
+
+          <button type="submit" class="btn btn-primary">Save changes</button>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

@@ -4,7 +4,7 @@ import { PuntoService } from '../services/punto.service';
 import { ActivatedRoute, Router } from '@angular/router';
 import { SesionService } from '../services/sesion.service';
 import { Location } from '@angular/common';
-import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { BarraSuperiorComponent } from '../barra-superior/barra-superior.component';
 import { IPunto } from '../interfaces/IPunto';
 import { ISesion } from '../interfaces/ISesion';
@@ -31,6 +31,19 @@ export class SesionComponent implements OnInit{
   idSesion: number | null = 0;
 
   sesion: ISesion | undefined;
+
+  modificarPuntoForm = new FormGroup({
+    idPunto: new FormControl('',Validators.required),
+    nombre: new FormControl('',Validators.required),
+    detalle: new FormControl('',Validators.required),
+    estado: new FormControl(''),
+  });
+
+  crearPuntoForm = new FormGroup({
+    sesion: new FormControl('',Validators.required),
+    nombre: new FormControl('',Validators.required),
+    detalle: new FormControl('',Validators.required),
+  });
 
   ngOnInit(): void {
     this.idSesion = parseInt(this.route.snapshot.paramMap.get('id')!);
@@ -69,6 +82,50 @@ export class SesionComponent implements OnInit{
       console.error(`ID de sesión no definido: ${id} lol`);
       // Manejar el error como consideres necesario
     }
+  }
+
+  abrirEditar(punto: any) {
+      this.modificarPuntoForm.setValue({
+        idPunto: punto.id_punto,
+        nombre: punto.nombre,
+        detalle: punto.detalle,
+        estado: punto.estado,
+      });
+  }
+
+  editarPunto(){
+    
+    const puntoData: any ={
+      id_punto: parseInt(this.modificarPuntoForm.value.idPunto!),
+      nombre: this.modificarPuntoForm.value.nombre,
+      detalle: this.modificarPuntoForm.value.detalle,
+      estado: this.modificarPuntoForm.value.estado
+    }
+
+    this.puntoService.saveData(puntoData).subscribe((response)=>{
+      console.log(response);
+    });
+
+    window.location.reload(); 
+    
+  }
+
+  crearPunto(){
+    
+    const puntoData: any ={
+      sesion: {
+        id_sesion: this.idSesion
+      },
+      nombre: this.crearPuntoForm.value.nombre,
+      detalle: this.crearPuntoForm.value.detalle,
+    }
+
+    this.puntoService.saveData(puntoData).subscribe((response)=>{
+      console.log(response);
+    });
+
+    window.location.reload(); 
+    
   }
 
   goBack(){

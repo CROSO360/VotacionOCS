@@ -47,6 +47,10 @@ export class PuntoUsuarioService {
     return this.http.post<IPuntoUsuario>(`${this.baseURL}/punto-usuario/save`, data);
   }
 
+  saveManyData(data: IPuntoUsuario[]): Observable<IPuntoUsuario[]> {
+    return this.http.post<IPuntoUsuario[]>(`${this.baseURL}/punto-usuario/save/many`, data);
+  }
+
   deleteData(id: number): Observable<any> {
     return this.http.post(`${this.baseURL}/punto-usuario/delete/${id}`, {});
   }
