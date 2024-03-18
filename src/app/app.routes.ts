@@ -7,6 +7,7 @@ import { VotacionComponent } from './votacion/votacion.component';
 import { VotantesComponent } from './votantes/votantes.component';
 import { UsuariosComponent } from './usuarios/usuarios.component';
 import { SesionesComponent } from './sesiones/sesiones.component';
+import { ResultadosComponent } from './resultados/resultados.component';
 
 export const routes: Routes = [
     {
@@ -57,6 +58,12 @@ export const routes: Routes = [
         path:'sesiones',
         title:'Sesiones',
         component: SesionesComponent,
+        canActivate: [userGuardGuard],
+    },
+    {
+        path:'resultados/:id',
+        title:'Resultados',
+        component: ResultadosComponent,
         canActivate: [userGuardGuard],
     }
 ];

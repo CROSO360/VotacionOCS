@@ -5,31 +5,92 @@
   <button class="back-button" (click)="goBack()">←</button>
 
   <!-- Título de la página -->
-  <h2 class="text-center">Sesión {{sesion?.codigo}}</h2>
+  <h2 class="text-center">Sesión {{ sesion?.codigo }}</h2>
 
   <!-- Agrega este código donde quieras que aparezca el combo de puntos -->
-  Punto: <select [(ngModel)]="puntoSeleccionado" (change)="onPuntoChange()">
+  Punto:
+  <select [(ngModel)]="puntoSeleccionado" (change)="onPuntoChange()">
     <option *ngFor="let punto of puntos" [value]="punto.id_punto">
       {{ punto.nombre }}
     </option>
   </select>
 
   <div *ngFor="let punto of puntos">
-    <p *ngIf="punto.id_punto == puntoSeleccionado" >{{punto.detalle}}</p>
+    <p *ngIf="punto.id_punto == puntoSeleccionado">{{ punto.detalle }}</p>
+    <button
+      class="btn btn-secondary mb-3"
+      (click)="cambiarEstadoPunto(punto)"
+      *ngIf="punto.id_punto == puntoSeleccionado && sesion?.estado == true"
+    >
+      {{ punto.estado ? "Deshabilitar punto" : "Habilitar punto" }}
+    </button>
   </div>
-  
 
   <!-- Contenedor con Scroll para los puntos -->
   <div class="points-container">
     <div class="grid-container">
       <!-- Utiliza *ngFor para repetir los cuadrados -->
       <div class="grid-item" *ngFor="let puntoUsuario of puntoUsuarios">
-        <div id={{puntoUsuario.id_punto_usuario}}  class="square" [ngClass]="{'sin-votar': puntoUsuario.opcion === null, 'votado': puntoUsuario.opcion !== null}">
+        <div
+          id="{{ puntoUsuario.id_punto_usuario }}"
+          class="square"
+          [ngClass]="{
+            'sin-votar': puntoUsuario.opcion === null,
+            afavor: puntoUsuario.opcion === 'afavor',
+            encontra: puntoUsuario.opcion === 'encontra',
+            abstinencia: puntoUsuario.opcion === 'abstinencia'
+          }"
+        >
           <div class="point-name">{{ puntoUsuario.usuario.nombre }}</div>
+          <div class="point-name">
+            {{ puntoUsuario.usuario.grupoUsuario.nombre }}
+          </div>
           <div class="btn-container">
-            <button class="btn btn-secondary">confirmar</button>
+            <button class="btn btn-secondary">Voto regular</button>
           </div>
         </div>
+      </div>
+    </div>
+  </div>
+  <button
+    class="btn btn-secondary"
+    data-bs-toggle="modal"
+    data-bs-target="#exampleModal"
+    *ngIf="sesion?.estado == true"
+  >
+    Finalizar sesión
+  </button>
+</div>
+
+<div
+  #exampleModal
+  class="modal fade"
+  id="exampleModal"
+  tabindex="-1"
+  aria-labelledby="exampleModalLabel"
+  aria-hidden="true"
+>
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h1 class="modal-title fs-5" id="exampleModalLabel">Advertencia</h1>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+          aria-label="Close"
+        ></button>
+      </div>
+      <div class="modal-body">
+        <p>Está seguro de finalizar la sesión {{ sesion?.codigo }}?</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          Close
+        </button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" (click)="finalizarSesion(sesion!)">
+          Finalizar sesión
+        </button>
       </div>
     </div>
   </div>

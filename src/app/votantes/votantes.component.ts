@@ -25,7 +25,7 @@ import { PuntoService } from '../services/punto.service';
   styleUrl: './votantes.component.css',
 })
 export class VotantesComponent implements OnInit {
-  punto: IPunto | undefined;
+  punto: any | undefined;
   puntoId: number | undefined;
   puntosUsuarios: any[] = [];
 
@@ -64,7 +64,7 @@ export class VotantesComponent implements OnInit {
   }
 
   cargarPunto(id:number){
-    const query = `sesion.id_sesion=${id}`;
+    const query = `id_punto=${id}`;
     const relaions = [`sesion`];
     this.puntoService.getDataBy(query,relaions).subscribe((data) =>{
       this.punto = data;

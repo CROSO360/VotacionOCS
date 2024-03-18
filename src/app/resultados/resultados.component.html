@@ -1,0 +1,50 @@
+<app-barra-superior></app-barra-superior>
+
+<div class="container my-5">
+  <!-- Botón para regresar al dashboard -->
+  <button class="back-button" (click)="goBack()">←</button>
+
+  <!-- Título de la página -->
+  <h2 class="text-center">Resultados de la sesión {{ sesion?.codigo }}</h2>
+
+  <!-- Agrega este código donde quieras que aparezca el combo de puntos -->
+  Punto:
+  <select
+    [(ngModel)]="puntoSeleccionado"
+    (change)="onChangePuntoSeleccionado()"
+  >
+    <option *ngFor="let punto of puntos" [value]="punto.id_punto">
+      {{ punto.nombre }}
+    </option>
+  </select>
+
+  <div *ngFor="let punto of puntos">
+    <p *ngIf="punto.id_punto == puntoSeleccionado">{{ punto.detalle }}</p>
+    <div class="points-container" *ngIf="punto.id_punto == puntoSeleccionado">
+      <table class="results-table">
+        <thead>
+          <tr>
+            <th>Grupo Usuario</th>
+            <th>A Favor</th>
+            <th>A Favor Peso</th>
+            <th>En Contra</th>
+            <th>En Contra Peso</th>
+            <th>Abstinencia</th>
+            <th>Abstinencia Peso</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let resultado of resultados">
+            <td>{{ resultado.grupo_usuario }}</td>
+            <td>{{ resultado.afavor }}</td>
+            <td>{{ resultado.afavor_peso }}</td>
+            <td>{{ resultado.encontra }}</td>
+            <td>{{ resultado.encontra_peso }}</td>
+            <td>{{ resultado.abstinencia }}</td>
+            <td>{{ resultado.abstinencia_peso }}</td>
+          </tr>
+        </tbody>
+      </table><br><br>
+    </div>
+  </div>
+</div>

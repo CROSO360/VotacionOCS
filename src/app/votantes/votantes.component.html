@@ -30,6 +30,7 @@
         <input
           type="checkbox"
           [(ngModel)]="usuario.seleccionado"
+          [disabled]="punto.sesion.estado === false"
           (change)="actualizarSeleccion(usuario)"
         />
         {{ usuario.cedula }} - {{ usuario.nombre }}
@@ -48,9 +49,10 @@
         <input
           type="checkbox"
           [(ngModel)]="usuario.seleccionado"
+          [disabled]="punto.sesion.estado === false"
           (change)="actualizarSeleccion(usuario)"
         />
-        {{ usuario.cedula }} - {{ usuario.nombre }}
+        {{ usuario.cedula }} - {{ usuario.nombre }} ({{ usuario.grupoUsuario.nombre }})
       </li>
     </ul>
   </div>
@@ -61,7 +63,7 @@
     Cancelar
   </button>
 
-  <button class="btn btn-secondary mt-3" (click)="confirmarSeleccion()">
+  <button class="btn btn-secondary mt-3" [disabled]="punto.sesion.estado === false" (click)="confirmarSeleccion()">
     Confirmar
   </button>
 </div>

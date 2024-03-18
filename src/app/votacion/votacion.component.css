@@ -44,12 +44,21 @@ button:hover {
 }
 
 .sin-votar {
-  background-color: red; /* O el color que desees para usuarios sin votar */
+  background-color: transparent; /* O el color que desees para usuarios sin votar */
 }
 
-.votado {
-  background-color: green; /* O el color que desees para usuarios que ya votaron */
+.afavor {
+  background-color: green; /* O el color que desees para usuarios a favor */
 }
+
+.encontra {
+  background-color: red; /* O el color que desees para usuarios en contra */
+}
+
+.abstinencia {
+  background-color: orange; /* O el color que desees para usuarios que se abstienen */
+}
+
 
 select {
   padding: 8px;

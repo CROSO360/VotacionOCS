@@ -51,4 +51,12 @@ export class PuntoService {
     return this.http.post(`${this.baseURL}/punto/delete/${id}`, {});
   }
 
+  getResultados(id:number):Observable<any> {
+    return this.http.get<any>(`${this.baseURL}/punto/resultado/${id}`)
+  }
+
+  registerResultados(id: number): Observable<any> {
+    return this.http.post<any>(`${this.baseURL}/punto/registrar-resultado`, id)
+  }
+
 }

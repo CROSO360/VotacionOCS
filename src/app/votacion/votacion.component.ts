@@ -9,7 +9,7 @@ import { BarraSuperiorComponent } from '../barra-superior/barra-superior.compone
 import { Location } from '@angular/common';
 import { PuntoService } from '../services/punto.service';
 import { SesionService } from '../services/sesion.service';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { IPunto } from '../interfaces/IPunto';
 import { ISesion } from '../interfaces/ISesion';
 import { PuntoUsuarioService } from '../services/puntoUsuario.service';
@@ -34,6 +34,7 @@ export class VotacionComponent implements OnInit {
     private sesionService: SesionService,
     private puntoUsuarioService: PuntoUsuarioService,
     private route: ActivatedRoute,
+    private router: Router,
     private location: Location,
     private webSocketService: WebSocketService,
     private render2: Renderer2
@@ -71,23 +72,28 @@ export class VotacionComponent implements OnInit {
           .toPromise();
     
         // Limpiar las clases actuales
-        this.squareElement.classList.remove('sin-votar', 'votado');
+        this.squareElement.classList.remove('sin-votar', 'afavor', 'encontra', 'abstinencia');
     
         // Agregar las clases según la situación actual
         if (this.puntoUsuarioActual!.opcion === null) {
           // Establecer la clase 'sin-votar' en el elemento DOM
           this.squareElement.classList.add('sin-votar');
-        } else {
-          // Establecer la clase 'votado' en el elemento DOM
-          this.squareElement.classList.add('votado');
+        } else if (this.puntoUsuarioActual!.opcion === 'afavor') {
+          // Establecer la clase 'afavor' en el elemento DOM
+          this.squareElement.classList.add('afavor');
+        } else if (this.puntoUsuarioActual!.opcion === 'encontra') {
+          // Establecer la clase 'encontra' en el elemento DOM
+          this.squareElement.classList.add('encontra');
+        } else if (this.puntoUsuarioActual!.opcion === 'abstinencia') {
+          // Establecer la clase 'abstinencia' en el elemento DOM
+          this.squareElement.classList.add('abstinencia');
         }
       } catch (error) {
         console.error('Error al obtener los datos del puntoUsuario:', error);
       }
     });
-    
-    
   }
+  
 
   getPuntos() {
     const query = `sesion.id_sesion=${this.idSesion}`;
@@ -120,6 +126,34 @@ export class VotacionComponent implements OnInit {
 
   onPuntoChange() {
     this.getPuntoUsuarios(this.puntoSeleccionado!);
+  }
+
+  cambiarEstadoPunto(punto: IPunto) {
+    const nuevoEstado = !punto.estado; // Cambiar el estado opuesto
+  
+    const puntoData = {
+      id_punto: punto.id_punto,
+      estado: nuevoEstado
+    };
+  
+    this.puntoService.saveData(puntoData).subscribe((r) => {
+      // Actualizar el estado del punto en la lista puntos
+      const puntoIndex = this.puntos.findIndex(p => p.id_punto === punto.id_punto);
+      if (puntoIndex !== -1) {
+        this.puntos[puntoIndex].estado = nuevoEstado;
+      }
+    });
+  }
+  
+  finalizarSesion(sesion: ISesion){
+    const sesionData = {
+      id_sesion: sesion.id_sesion,
+      estado: false,
+    }
+    this.sesionService.saveData(sesionData).subscribe(()=>{
+      const idString = sesion.id_sesion!.toString();
+      this.router.navigate(['/resultados', idString]);
+    });
   }
 
   goBack() {

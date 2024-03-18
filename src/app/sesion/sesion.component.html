@@ -26,6 +26,7 @@
           type="button"
           data-bs-toggle="modal"
           data-bs-target="#exampleModal"
+          [disabled]="sesion?.estado === false"
           (click)="abrirEditar(punto)"
           >Editar</button>
         </td>
@@ -37,11 +38,12 @@
   <div class="buttons-container my-4">
     <button class="btn btn-secondary" type="button"
     data-bs-toggle="modal"
-    data-bs-target="#crearPuntoModal">Agregar punto</button>
+    data-bs-target="#crearPuntoModal"
+    [disabled]="sesion?.estado === false">Agregar punto</button>
     <button class="btn btn-secondary" (click)="irAVotacion(idSesion!)">
       Votación
     </button>
-    <button class="btn btn-secondary">Ver resultados</button>
+    <button class="btn btn-secondary" (click)="irAResultados(idSesion!)">Ver resultados</button>
   </div>
 </div>
 

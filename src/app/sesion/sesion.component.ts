@@ -84,6 +84,15 @@ export class SesionComponent implements OnInit{
     }
   }
 
+  irAResultados(id: number){
+    if (id) {
+      this.router.navigate(['resultados', id])
+    }else{
+      console.error(`ID de sesión no definido: ${id} lol`);
+      // Manejar el error como consideres necesario
+    }
+  }
+
   abrirEditar(punto: any) {
       this.modificarPuntoForm.setValue({
         idPunto: punto.id_punto,
