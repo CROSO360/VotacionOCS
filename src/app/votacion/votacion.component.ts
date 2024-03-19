@@ -15,6 +15,7 @@ import { ISesion } from '../interfaces/ISesion';
 import { PuntoUsuarioService } from '../services/puntoUsuario.service';
 import { IPuntoUsuario } from '../interfaces/IPuntoUsuario';
 import { WebSocketService } from '../services/websocket.service';
+import { forkJoin } from 'rxjs';
 
 @Component({
   selector: 'app-votacion',
@@ -145,14 +146,31 @@ export class VotacionComponent implements OnInit {
     });
   }
   
-  finalizarSesion(sesion: ISesion){
-    const sesionData = {
-      id_sesion: sesion.id_sesion,
-      estado: false,
-    }
-    this.sesionService.saveData(sesionData).subscribe(()=>{
-      const idString = sesion.id_sesion!.toString();
-      this.router.navigate(['/resultados', idString]);
+  finalizarSesion(sesion: ISesion) {
+    // Crear un array de observables para registrar los resultados de los puntos
+    const observables = this.puntos.map((punto: IPunto) => {
+      return this.puntoService.registerResultados({ idPunto: punto.id_punto });
+    });
+
+    // Utilizar forkJoin para esperar a que todos los registros se completen
+    forkJoin(observables).subscribe(() => {
+      console.log('Todos los resultados de los puntos han sido registrados');
+
+      // Una vez que todos los resultados se hayan registrado, finalizar la sesión
+      const sesionData = {
+        id_sesion: sesion.id_sesion,
+        estado: false,
+      };
+
+      this.sesionService.saveData(sesionData).subscribe(() => {
+        console.log('Sesión finalizada correctamente');
+        const idString = sesion.id_sesion!.toString();
+        this.router.navigate(['/resultados', idString]);
+      }, error => {
+        console.error('Error al finalizar la sesión:', error);
+      });
+    }, error => {
+      console.error('Error al registrar resultados de puntos:', error);
     });
   }
 

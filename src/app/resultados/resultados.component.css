@@ -29,25 +29,29 @@ button:hover {
 /* Agrega este estilo en tu archivo CSS (resultados.component.css) */
 
 .results-table {
-    width: 100%;
-    border-collapse: collapse;
-  }
-  
-  .results-table th, .results-table td {
-    border: 1px solid #dddddd;
-    padding: 8px;
-    text-align: left;
-  }
-  
-  .results-table th {
-    background-color: #f2f2f2;
-  }
-  
-  .results-table tr:nth-child(even) {
-    background-color: #f9f9f9;
-  }
-  
-  .results-table tr:hover {
-    background-color: #f2f2f2;
-  }
-  
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.results-table th, .results-table td {
+  border: 1px solid #dddddd;
+  padding: 8px;
+  text-align: left;
+}
+
+.results-table th {
+  background-color: #f2f2f2;
+}
+
+.results-table tr:nth-child(even) {
+  background-color: #f9f9f9;
+}
+
+.results-table tr:hover {
+  background-color: #f2f2f2;
+}
+
+.total-row {
+  font-weight: bold;
+  background-color: #f2f2f2; /* Mismo color que la cabecera */
+}
