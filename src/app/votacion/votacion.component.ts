@@ -1,9 +1,5 @@
 import { CommonModule } from '@angular/common';
-import {
-  Component,
-  OnInit,
-  Renderer2,
-} from '@angular/core';
+import { Component, OnInit, Renderer2 } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { BarraSuperiorComponent } from '../barra-superior/barra-superior.component';
 import { Location } from '@angular/common';
@@ -60,10 +56,11 @@ export class VotacionComponent implements OnInit {
     this.getPuntos();
     this.getSesion();
     this.webSocketService.onChange().subscribe(async (sape: any) => {
-    
       // Obtener el elemento DOM con la clase 'square' que tiene la id que coincida con el valor del parámetro 'puntoUsuarioId'
-      this.squareElement = document.querySelector(`.square[id="${sape.puntoUsuarioId}"]`)!;
-    
+      this.squareElement = document.querySelector(
+        `.square[id="${sape.puntoUsuarioId}"]`
+      )!;
+
       // Obtener el objeto puntoUsuario del evento
       const query = `id_punto_usuario=${sape.puntoUsuarioId}`;
       const timestamp = new Date().getTime(); // Obtener un tiempo único
@@ -71,10 +68,15 @@ export class VotacionComponent implements OnInit {
         this.puntoUsuarioActual = await this.puntoUsuarioService
           .getDataBy(`${query}?timestamp=${timestamp}`)
           .toPromise();
-    
+
         // Limpiar las clases actuales
-        this.squareElement.classList.remove('sin-votar', 'afavor', 'encontra', 'abstinencia');
-    
+        this.squareElement.classList.remove(
+          'sin-votar',
+          'afavor',
+          'encontra',
+          'abstinencia'
+        );
+
         // Agregar las clases según la situación actual
         if (this.puntoUsuarioActual!.opcion === null) {
           // Establecer la clase 'sin-votar' en el elemento DOM
@@ -89,12 +91,21 @@ export class VotacionComponent implements OnInit {
           // Establecer la clase 'abstinencia' en el elemento DOM
           this.squareElement.classList.add('abstinencia');
         }
+
+        const buttonElement = this.squareElement.querySelector('.btn')!;
+
+        buttonElement.classList.remove('noRazonado', 'razonado');
+
+        if (this.puntoUsuarioActual!.es_razonado === false) {
+          buttonElement.classList.add('noRazonado');
+        } else if (this.puntoUsuarioActual!.es_razonado === true) {
+          buttonElement.classList.add('razonado');
+        }
       } catch (error) {
         console.error('Error al obtener los datos del puntoUsuario:', error);
       }
     });
   }
-  
 
   getPuntos() {
     const query = `sesion.id_sesion=${this.idSesion}`;
@@ -129,23 +140,37 @@ export class VotacionComponent implements OnInit {
     this.getPuntoUsuarios(this.puntoSeleccionado!);
   }
 
+  cambiarTipoVoto(puntoUsuario: IPuntoUsuario) {
+    const nuevoEstado = !this.puntoUsuarioActual?.es_principal; // Cambiar el estado opuesto
+
+    // Actualizar el estado del punto en la lista puntos
+    const puntoIndex = this.puntoUsuarios.findIndex(
+      (p) => p.id_punto_usuario === puntoUsuario.id_punto_usuario
+    );
+    if (puntoIndex !== -1) {
+      this.puntoUsuarios[puntoIndex].es_principal = nuevoEstado;
+    }
+  }
+
   cambiarEstadoPunto(punto: IPunto) {
     const nuevoEstado = !punto.estado; // Cambiar el estado opuesto
-  
+
     const puntoData = {
       id_punto: punto.id_punto,
-      estado: nuevoEstado
+      estado: nuevoEstado,
     };
-  
+
     this.puntoService.saveData(puntoData).subscribe((r) => {
       // Actualizar el estado del punto en la lista puntos
-      const puntoIndex = this.puntos.findIndex(p => p.id_punto === punto.id_punto);
+      const puntoIndex = this.puntos.findIndex(
+        (p) => p.id_punto === punto.id_punto
+      );
       if (puntoIndex !== -1) {
         this.puntos[puntoIndex].estado = nuevoEstado;
       }
     });
   }
-  
+
   finalizarSesion(sesion: ISesion) {
     // Crear un array de observables para registrar los resultados de los puntos
     const observables = this.puntos.map((punto: IPunto) => {
@@ -153,25 +178,31 @@ export class VotacionComponent implements OnInit {
     });
 
     // Utilizar forkJoin para esperar a que todos los registros se completen
-    forkJoin(observables).subscribe(() => {
-      console.log('Todos los resultados de los puntos han sido registrados');
+    forkJoin(observables).subscribe(
+      () => {
+        console.log('Todos los resultados de los puntos han sido registrados');
 
-      // Una vez que todos los resultados se hayan registrado, finalizar la sesión
-      const sesionData = {
-        id_sesion: sesion.id_sesion,
-        estado: false,
-      };
+        // Una vez que todos los resultados se hayan registrado, finalizar la sesión
+        const sesionData = {
+          id_sesion: sesion.id_sesion,
+          estado: false,
+        };
 
-      this.sesionService.saveData(sesionData).subscribe(() => {
-        console.log('Sesión finalizada correctamente');
-        const idString = sesion.id_sesion!.toString();
-        this.router.navigate(['/resultados', idString]);
-      }, error => {
-        console.error('Error al finalizar la sesión:', error);
-      });
-    }, error => {
-      console.error('Error al registrar resultados de puntos:', error);
-    });
+        this.sesionService.saveData(sesionData).subscribe(
+          () => {
+            console.log('Sesión finalizada correctamente');
+            const idString = sesion.id_sesion!.toString();
+            this.router.navigate(['/resultados', idString]);
+          },
+          (error) => {
+            console.error('Error al finalizar la sesión:', error);
+          }
+        );
+      },
+      (error) => {
+        console.error('Error al registrar resultados de puntos:', error);
+      }
+    );
   }
 
   goBack() {

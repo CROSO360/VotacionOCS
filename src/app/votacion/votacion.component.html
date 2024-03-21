@@ -46,7 +46,15 @@
             {{ puntoUsuario.usuario.grupoUsuario.nombre }}
           </div>
           <div class="btn-container">
-            <button class="btn btn-secondary">Voto regular</button>
+            <button
+              class="btn btn-secondary"
+              [ngClass]="{
+              noRazonado: puntoUsuario.es_razonado === false,
+              razonado: puntoUsuario.es_razonado === true,
+            }"
+            >
+            Razonado
+            </button>
           </div>
         </div>
       </div>
@@ -88,7 +96,12 @@
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
           Close
         </button>
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" (click)="finalizarSesion(sesion!)">
+        <button
+          type="button"
+          class="btn btn-secondary"
+          data-bs-dismiss="modal"
+          (click)="finalizarSesion(sesion!)"
+        >
           Finalizar sesión
         </button>
       </div>

@@ -59,6 +59,20 @@ button:hover {
   background-color: orange; /* O el color que desees para usuarios que se abstienen */
 }
 
+.noRazonado {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.razonado {
+  animation: blink 1s infinite;
+}
+
+@keyframes blink {
+  0% { background-color: red; }
+  50% { background-color: transparent; }
+  100% { background-color: red; }
+}
 
 select {
   padding: 8px;
