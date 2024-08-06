@@ -13,6 +13,7 @@ import { UsuarioService } from '../services/usuario.service';
 import { GrupoUsuarioService } from '../services/grupoUsuario.service';
 import { ActivatedRoute, Router } from '@angular/router';
 import { IUsuario } from '../interfaces/IUsuario';
+import { ToastrService } from 'ngx-toastr';
 
 @Component({
   selector: 'app-usuarios',
@@ -38,21 +39,20 @@ export class UsuariosComponent implements OnInit {
   constructor(
     private usuarioService: UsuarioService,
     private grupoUsuarioService: GrupoUsuarioService,
-    private route: ActivatedRoute,
     private location: Location,
-    private router: Router,
-    private fb: FormBuilder
+    private toastrService: ToastrService
   ) {}
 
   modificarUsuarioForm = new FormGroup({
-    idUsuario: new FormControl('',Validators.required),
-    nombre: new FormControl('',Validators.required),
-    codigo: new FormControl('',Validators.required),
-    cedula: new FormControl('',Validators.required),
-    grupoUsuario: new FormControl('',Validators.required),
-    usuarioReemplazo: new FormControl('',Validators.required),
-    estado: new FormControl(''),
+    idUsuario: new FormControl('', Validators.required),
+    nombre: new FormControl('', Validators.required),
+    codigo: new FormControl('', Validators.required),
+    cedula: new FormControl('', Validators.required),
+    grupoUsuario: new FormControl('', Validators.required),
+    usuarioReemplazo: new FormControl(''), // No obligatorio
+    estado: new FormControl(''), // No obligatorio
   });
+  
 
   crearUsuarioForm = new FormGroup({
     nombrex: new FormControl('',Validators.required),
@@ -144,6 +144,31 @@ export class UsuariosComponent implements OnInit {
     }
   }
 
+  cerrarModal(modalId: string, form: FormGroup) {
+    const modalElement = document.getElementById(modalId);
+    if (modalElement) {
+      modalElement.classList.remove('show');
+      modalElement.style.display = 'none';
+      modalElement.setAttribute('aria-hidden', 'true');
+      modalElement.removeAttribute('aria-modal');
+      modalElement.removeAttribute('role');
+    }
+
+    // Limpieza de estilos y clases
+    document.body.classList.remove('modal-open');
+    document.body.style.overflow = '';
+    document.body.style.paddingRight = '';
+
+    // Elimina cualquier backdrop sobrante
+    const backdrops = document.getElementsByClassName('modal-backdrop');
+    while (backdrops[0]) {
+      backdrops[0].parentNode?.removeChild(backdrops[0]);
+    }
+
+    // Restablecer el formulario
+    form.reset();
+  }
+
   editarUsuario(){
     if (this.modificarUsuarioForm.value.usuarioReemplazo == '0' || this.modificarUsuarioForm.value.usuarioReemplazo == null) {
       const usuarioData: any ={
@@ -159,6 +184,13 @@ export class UsuariosComponent implements OnInit {
       }
       this.usuarioService.saveData(usuarioData).subscribe((response)=>{
         console.log(response);
+        this.toastrService.success('Usuario actualizado con éxito.');
+        this.cargarUsuarios();
+        this.cerrarModal('exampleModal', this.modificarUsuarioForm);
+      },
+      (error) => {
+        console.error(error);
+        this.toastrService.error('Error al actualizar el usuario.', error);
       });
     }else{
       const usuarioData: any ={
@@ -176,10 +208,15 @@ export class UsuariosComponent implements OnInit {
       }
       this.usuarioService.saveData(usuarioData).subscribe((response)=>{
         console.log(response);
+        this.toastrService.success('Usuario actualizado con éxito.');
+        this.cargarUsuarios();
+        this.cerrarModal('exampleModal', this.modificarUsuarioForm);
+      },
+      (error) => {
+        console.error(error);
+        this.toastrService.error('Error al actualizar el usuario.', error);
       });
     }
-
-    window.location.reload(); 
     
   }
 
@@ -199,6 +236,13 @@ export class UsuariosComponent implements OnInit {
 
       this.usuarioService.saveData(usuarioData).subscribe((response)=>{
         console.log(response);
+        this.toastrService.success('Usuario creado con éxito.');
+        this.cargarUsuarios();
+        this.cerrarModal('crearUsuarioModal', this.crearUsuarioForm);
+      },
+      (error) => {
+        console.error(error);
+        this.toastrService.error('Error al crear el usuario.', error);
       })
     }else{
       const usuarioData: any = {
@@ -216,10 +260,15 @@ export class UsuariosComponent implements OnInit {
 
       this.usuarioService.saveData(usuarioData).subscribe((response)=>{
         console.log(response);
+        this.toastrService.success('Usuario creado con éxito.');
+        this.cargarUsuarios();
+        this.cerrarModal('crearUsuarioModal', this.crearUsuarioForm);
+      },
+      (error) => {
+        console.error(error);
+        this.toastrService.error('Error al crear el usuario.', error);
       })
     }
-
-    window.location.reload(); 
 
   }
 

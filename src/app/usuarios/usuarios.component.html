@@ -6,6 +6,7 @@
 
   <!-- Barra de búsqueda -->
   <input
+    class="w-25"
     type="text"
     placeholder="Buscar por nombre o cédula"
     [(ngModel)]="busqueda"
@@ -51,7 +52,7 @@
 
   <button
     type="button"
-    class="btn btn-secondary my-3"
+    class="btn btn-secondary my-3 mx-3"
     data-bs-toggle="modal"
     data-bs-target="#crearUsuarioModal"
   >
@@ -92,10 +93,8 @@
       <div class="modal-body">
         <form [formGroup]="modificarUsuarioForm" (ngSubmit)="editarUsuario()">
           <div class="form-group">
-            <input
-              type="hidden"
-              formControlName="idUsuario"
-            />
+            <input type="hidden" formControlName="idUsuario" />
+            
             <label for="nombre" class="form-label">Nombre:</label>
             <input
               formControlName="nombre"
@@ -104,6 +103,10 @@
               placeholder="Nombre"
               class="form-control"
             />
+            <div *ngIf="modificarUsuarioForm.get('nombre')?.invalid && (modificarUsuarioForm.get('nombre')?.dirty || modificarUsuarioForm.get('nombre')?.touched)" class="text-danger">
+              El nombre es obligatorio.
+            </div>
+        
             <label for="codigo" class="form-label">Código:</label>
             <input
               formControlName="codigo"
@@ -112,6 +115,10 @@
               placeholder="Código"
               class="form-control"
             />
+            <div *ngIf="modificarUsuarioForm.get('codigo')?.invalid && (modificarUsuarioForm.get('codigo')?.dirty || modificarUsuarioForm.get('codigo')?.touched)" class="text-danger">
+              El código es obligatorio.
+            </div>
+        
             <label for="cedula" class="form-label">Cédula:</label>
             <input
               formControlName="cedula"
@@ -120,47 +127,60 @@
               placeholder="Cédula"
               class="form-control"
             />
+            <div *ngIf="modificarUsuarioForm.get('cedula')?.invalid && (modificarUsuarioForm.get('cedula')?.dirty || modificarUsuarioForm.get('cedula')?.touched)" class="text-danger">
+              La cédula es obligatoria.
+            </div>
+        
             <label for="grupoUsuario" class="form-label">Grupo Usuario:</label>
             <select
               name="grupoUsuario"
               id="grupoUsuario"
               formControlName="grupoUsuario"
-              id="grupoUsuario"
+              class="form-control capitalize-options"
             >
+              <option value="" disabled>Selecciona un grupo</option>
               <option
-                value="{{ grupo.id_grupo_usuario }}"
                 *ngFor="let grupo of gruposUsuarios"
+                [value]="grupo.id_grupo_usuario"
               >
                 {{ grupo.nombre }}
               </option>
             </select>
-            <label for="usuarioReemplazo" class="form-label"
-              >Usuario de reemplazo:</label
-            >
+            <div *ngIf="modificarUsuarioForm.get('grupoUsuario')?.invalid && (modificarUsuarioForm.get('grupoUsuario')?.dirty || modificarUsuarioForm.get('grupoUsuario')?.touched)" class="text-danger">
+              El grupo de usuario es obligatorio.
+            </div>
+        
+            <label for="usuarioReemplazo" class="form-label">Usuario de reemplazo:</label>
             <select
               name="usuarioReemplazo"
               id="usuarioReemplazo"
               formControlName="usuarioReemplazo"
-              id="usuarioReemplazo"
+              class="form-control"
             >
               <option value="0">Ninguno</option>
               <option
-                value="{{ usuario.id_usuario }}"
                 *ngFor="let usuario of usuarios"
+                [value]="usuario.id_usuario"
               >
                 {{ usuario.cedula }} - {{ usuario.nombre }}
               </option>
             </select>
-            <label for="estado" class="form-label">Usuario activo </label>
-            <input type="checkbox" formControlName="estado" />
+        
+            <label for="estado" class="form-label">Usuario activo:</label>
+            <input
+              type="checkbox"
+              formControlName="estado"
+              id="estado"
+            />
           </div>
-
-          <button type="submit" class="btn btn-primary">Save changes</button>
+        
+          <button type="submit" class="btn btn-primary" [disabled]="modificarUsuarioForm.invalid">Guardar cambios</button>
         </form>
+        
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-          Close
+          Cancelar
         </button>
       </div>
     </div>
@@ -200,6 +220,10 @@
               placeholder="Nombre"
               class="form-control"
             />
+            <div *ngIf="crearUsuarioForm.get('nombrex')?.invalid && (crearUsuarioForm.get('nombrex')?.dirty || crearUsuarioForm.get('nombrex')?.touched)" class="text-danger">
+              El nombre es obligatorio.
+            </div>
+        
             <label for="codigo" class="form-label">Código:</label>
             <input
               formControlName="codigox"
@@ -208,6 +232,10 @@
               placeholder="Código"
               class="form-control"
             />
+            <div *ngIf="crearUsuarioForm.get('codigox')?.invalid && (crearUsuarioForm.get('codigox')?.dirty || crearUsuarioForm.get('codigox')?.touched)" class="text-danger">
+              El código es obligatorio.
+            </div>
+        
             <label for="cedula" class="form-label">Cédula:</label>
             <input
               formControlName="cedulax"
@@ -216,46 +244,53 @@
               placeholder="Cédula"
               class="form-control"
             />
+            <div *ngIf="crearUsuarioForm.get('cedulax')?.invalid && (crearUsuarioForm.get('cedulax')?.dirty || crearUsuarioForm.get('cedulax')?.touched)" class="text-danger">
+              La cédula es obligatoria.
+            </div>
+        
             <label for="grupoUsuario" class="form-label">Grupo Usuario:</label>
             <select
               name="grupoUsuario"
               id="grupoUsuario"
               formControlName="grupoUsuariox"
-              id="grupoUsuario"
+              class="form-control capitalize-options"
             >
+              <option value="" disabled>Selecciona un grupo</option>
               <option
                 *ngFor="let grupo of gruposUsuarios"
-                value="{{ grupo.id_grupo_usuario }}"
+                [value]="grupo.id_grupo_usuario"
               >
-                {{ grupo.nombre
-                 }}
+                {{ grupo.nombre }}
               </option>
             </select>
-            <label for="usuarioReemplazo" class="form-label"
-              >Usuario de reemplazo:</label
-            >
+            <div *ngIf="crearUsuarioForm.get('grupoUsuariox')?.invalid && (crearUsuarioForm.get('grupoUsuariox')?.dirty || crearUsuarioForm.get('grupoUsuariox')?.touched)" class="text-danger">
+              El grupo de usuario es obligatorio.
+            </div>
+        
+            <label for="usuarioReemplazo" class="form-label">Usuario de reemplazo:</label>
             <select
               name="usuarioReemplazo"
               id="usuarioReemplazo"
               formControlName="usuarioReemplazox"
-              id="usuarioReemplazo"
+              class="form-control"
             >
               <option value="0">Ninguno</option>
               <option
                 *ngFor="let usuario of usuarios"
-                value="{{ usuario.id_usuario }}"
+                [value]="usuario.id_usuario"
               >
                 {{ usuario.cedula }} - {{ usuario.nombre }}
               </option>
             </select>
           </div>
-
-          <button type="submit" class="btn btn-primary">Save changes</button>
+        
+          <button type="submit" class="btn btn-primary" [disabled]="crearUsuarioForm.invalid">Guardar cambios</button>
         </form>
+        
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-          Close
+          Cancelar
         </button>
       </div>
     </div>

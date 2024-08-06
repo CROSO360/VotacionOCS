@@ -22,4 +22,8 @@ export class BarraSuperiorComponent {
     await this.router.navigate(['/', 'login']);
   }
 
+  inicio(){
+    this.router.navigate(['/', 'home']);
+  }
+
 }

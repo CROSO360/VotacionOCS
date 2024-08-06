@@ -1,3 +1,83 @@
 .usuario-inactivo {
   background-color: #dddddd; /* Cambia el color de fondo a gris */
 }
+
+.modal-content {
+  padding: 20px;
+}
+
+.modal-header,
+.modal-footer {
+  border-bottom: 1px solid #dee2e6;
+  border-top: 1px solid #dee2e6;
+  padding: 15px;
+}
+
+.modal-title {
+  font-size: 1.5rem;
+}
+
+.form-group {
+  margin-bottom: 15px;
+}
+
+.form-label {
+  font-weight: 500;
+  margin-bottom: 5px;
+}
+
+.form-control {
+  border-radius: 0.25rem;
+  padding: 10px;
+  width: 100%;
+}
+
+input[type="file"] {
+  border: 1px solid #ced4da;
+  border-radius: 0.25rem;
+  padding: 5px;
+  width: 100%;
+}
+
+input[type="checkbox"] {
+  margin-left: 5px;
+}
+
+select {
+  border-radius: 0.25rem;
+  padding: 10px;
+  width: 100%;
+}
+
+
+@media (min-width: 576px) {
+  .modal-dialog {
+    max-width: 500px;
+  }
+}
+
+@media (min-width: 768px) {
+  .modal-dialog {
+    max-width: 600px;
+  }
+}
+
+@media (min-width: 992px) {
+  .modal-dialog {
+    max-width: 700px;
+  }
+}
+
+@media (min-width: 1200px) {
+  .modal-dialog {
+    max-width: 800px;
+  }
+}
+
+.capitalize-options option {
+  text-transform: capitalize;
+}
+
+.capitalize-options {
+  text-transform: capitalize;
+}
