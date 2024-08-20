@@ -8,6 +8,7 @@ import { FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators } 
 import { BarraSuperiorComponent } from '../barra-superior/barra-superior.component';
 import { IPunto } from '../interfaces/IPunto';
 import { ISesion } from '../interfaces/ISesion';
+import { ToastrService } from 'ngx-toastr';
 
 @Component({
   selector: 'app-sesion',
@@ -16,129 +17,138 @@ import { ISesion } from '../interfaces/ISesion';
   templateUrl: './sesion.component.html',
   styleUrl: './sesion.component.css'
 })
-export class SesionComponent implements OnInit{
+export class SesionComponent implements OnInit {
+
+  puntos: IPunto[] = [];
+  idSesion: number | null = 0;
+  sesion: ISesion | undefined;
 
   constructor(
     private puntoService: PuntoService,
     private router: Router,
     private sesionService: SesionService,
     private route: ActivatedRoute,
-    private location: Location
-  ){}
-
-  puntos: IPunto[] = [];
-
-  idSesion: number | null = 0;
-
-  sesion: ISesion | undefined;
+    private location: Location,
+    private toastrService: ToastrService // Se añade ToastrService
+  ) {}
 
   modificarPuntoForm = new FormGroup({
-    idPunto: new FormControl('',Validators.required),
-    nombre: new FormControl('',Validators.required),
-    detalle: new FormControl('',Validators.required),
+    idPunto: new FormControl('', Validators.required),
+    nombre: new FormControl('', Validators.required),
+    detalle: new FormControl('', Validators.required),
     estado: new FormControl(''),
   });
 
   crearPuntoForm = new FormGroup({
-    sesion: new FormControl('',Validators.required),
-    nombre: new FormControl('',Validators.required),
-    detalle: new FormControl('',Validators.required),
+    nombre: new FormControl('', Validators.required),
+    detalle: new FormControl('', Validators.required),
   });
+  
 
   ngOnInit(): void {
     this.idSesion = parseInt(this.route.snapshot.paramMap.get('id')!);
     this.getPuntos();
     this.getSesion();
+
+    // Verificar el estado del formulario
+  console.log('Estado inicial del formulario de creación:', this.crearPuntoForm.value);
   }
 
-  getPuntos(){
+  getPuntos() {
     const query = `sesion.id_sesion=${this.idSesion}`;
-    const relations = [`sesion`]
-    this.puntoService.getAllDataBy(query, relations).subscribe((data) =>{
-      this.puntos = data
-    })
+    const relations = ['sesion'];
+    this.puntoService.getAllDataBy(query, relations).subscribe((data) => {
+      this.puntos = data;
+    });
   }
 
-  getSesion(){
+  getSesion() {
     const query = `id_sesion=${this.idSesion}`;
     this.sesionService.getDataBy(query).subscribe((data) => {
-      this.sesion = data
-    })
+      this.sesion = data;
+    });
   }
 
-  irAVotacion(id: number){
+  irAVotacion(id: number) {
+    this.navegarA('votacion', id);
+  }
+
+  irAVotantes(id: number) {
+    this.navegarA('votantes', id);
+  }
+
+  irAResultados(id: number) {
+    this.navegarA('resultados', id);
+  }
+
+  navegarA(ruta: string, id: number) {
     if (id) {
-      const idString = id.toString();
-      this.router.navigate(['/votacion', idString]);
+      this.router.navigate([`/${ruta}`, id]);
     } else {
-      console.error(`ID de sesión no definido: ${id} lol`);
-    }
-  }
-
-  irAVotantes(id: number){
-    if (id) {
-      this.router.navigate(['votantes', id])
-    }else{
-      console.error(`ID de sesión no definido: ${id} lol`);
-      // Manejar el error como consideres necesario
-    }
-  }
-
-  irAResultados(id: number){
-    if (id) {
-      this.router.navigate(['resultados', id])
-    }else{
-      console.error(`ID de sesión no definido: ${id} lol`);
-      // Manejar el error como consideres necesario
+      console.error(`ID no definido: ${id}`);
     }
   }
 
   abrirEditar(punto: any) {
-      this.modificarPuntoForm.setValue({
-        idPunto: punto.id_punto,
-        nombre: punto.nombre,
-        detalle: punto.detalle,
-        estado: punto.estado,
-      });
+    this.modificarPuntoForm.setValue({
+      idPunto: punto.id_punto,
+      nombre: punto.nombre,
+      detalle: punto.detalle,
+      estado: punto.status,
+    });
   }
 
-  editarPunto(){
-    
-    const puntoData: any ={
+  editarPunto() {
+    const puntoData: any = {
       id_punto: parseInt(this.modificarPuntoForm.value.idPunto!),
       nombre: this.modificarPuntoForm.value.nombre,
       detalle: this.modificarPuntoForm.value.detalle,
       estado: this.modificarPuntoForm.value.estado
-    }
+    };
 
-    this.puntoService.saveData(puntoData).subscribe((response)=>{
-      console.log(response);
-    });
-
-    window.location.reload(); 
-    
+    this.puntoService.saveData(puntoData).subscribe(
+      (response) => {
+        console.log(response);
+        this.toastrService.success('Punto actualizado con éxito.');
+        this.getPuntos(); // Actualizar la lista de puntos
+        this.resetForm(this.modificarPuntoForm); // Resetear el formulario después de la edición
+      },
+      (error) => {
+        console.error(error);
+        this.toastrService.error('Error al actualizar el punto.', error);
+      }
+    );
   }
 
-  crearPunto(){
-    
-    const puntoData: any ={
+  crearPunto() {
+    console.log('Datos del formulario de creación:', this.crearPuntoForm.value);
+    const puntoData: any = {
       sesion: {
         id_sesion: this.idSesion
       },
       nombre: this.crearPuntoForm.value.nombre,
       detalle: this.crearPuntoForm.value.detalle,
-    }
+    };
 
-    this.puntoService.saveData(puntoData).subscribe((response)=>{
-      console.log(response);
-    });
-
-    window.location.reload(); 
-    
+    this.puntoService.saveData(puntoData).subscribe(
+      (response) => {
+        console.log(response);
+        this.toastrService.success('Punto creado con éxito.');
+        this.getPuntos(); // Actualizar la lista de puntos
+        this.resetForm(this.crearPuntoForm); // Resetear el formulario después de la creación
+      },
+      (error) => {
+        console.error(error);
+        this.toastrService.error('Error al crear el punto.', error);
+      }
+    );
   }
 
-  goBack(){
+  resetForm(form: FormGroup) {
+    form.reset();
+  }
+
+  goBack() {
     this.location.back();
   }
-
 }

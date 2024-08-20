@@ -1,11 +1,12 @@
 <app-barra-superior></app-barra-superior>
 
-<div class="container my-5">
+<!-- Contenedor principal encapsulado -->
+<div class="main-container my-5">
   <!-- Botón para regresar al dashboard -->
   <button class="back-button" (click)="goBack()">←</button>
 
   <!-- Título de la página -->
-  <h2 class="text-center">Puntos la sesion {{ sesion?.codigo }}</h2>
+  <h2 class="text-center">Puntos la sesión {{ sesion?.codigo }}</h2>
 
   <!-- Contenedor con Scroll para los puntos -->
   <div class="points-container">
@@ -22,13 +23,16 @@
         </td>
         <td class="btn-container">
           <button 
-          class="btn btn-secondary"
-          type="button"
-          data-bs-toggle="modal"
-          data-bs-target="#exampleModal"
-          [disabled]="sesion?.estado === false"
-          (click)="abrirEditar(punto)"
-          >Editar</button>
+            class="btn btn-secondary"
+            type="button"
+            data-bs-toggle="modal"
+            data-bs-target="#exampleModal"
+            [disabled]="sesion?.estado === false"
+            (click)="abrirEditar(punto)"
+            aria-label="Editar punto"
+          >
+            Editar
+          </button>
         </td>
       </tr>
     </table>
@@ -36,22 +40,37 @@
 
   <!-- Botones al final -->
   <div class="buttons-container my-4">
-    <button class="btn btn-secondary" type="button"
-    data-bs-toggle="modal"
-    data-bs-target="#crearPuntoModal"
-    [disabled]="sesion?.estado === false">Agregar punto</button>
-    <button class="btn btn-secondary" (click)="irAVotacion(idSesion!)">
+    <button
+      class="btn btn-secondary"
+      type="button"
+      data-bs-toggle="modal"
+      data-bs-target="#crearPuntoModal"
+      [disabled]="sesion?.estado === false"
+      aria-label="Agregar punto"
+    >
+      Agregar punto
+    </button>
+    <button
+      class="btn btn-secondary"
+      (click)="irAVotacion(idSesion!)"
+      aria-label="Iniciar votación"
+    >
       Votación
     </button>
-    <button class="btn btn-secondary" (click)="irAResultados(idSesion!)">Ver resultados</button>
+    <button
+      class="btn btn-secondary"
+      (click)="irAResultados(idSesion!)"
+      aria-label="Ver resultados"
+    >
+      Ver resultados
+    </button>
   </div>
 </div>
 
 <!-- Modal para editar punto -->
-
 <div
   #exampleModal
-  class="modal fade"
+  class="modal fade custom-modal"
   id="exampleModal"
   tabindex="-1"
   aria-labelledby="exampleModalLabel"
@@ -71,10 +90,8 @@
       <div class="modal-body">
         <form [formGroup]="modificarPuntoForm" (ngSubmit)="editarPunto()">
           <div class="form-group">
-            <input
-              type="hidden"
-              formControlName="idPunto"
-            />
+            <input type="hidden" formControlName="idPunto" />
+            
             <label for="nombre" class="form-label">Nombre:</label>
             <input
               formControlName="nombre"
@@ -82,7 +99,13 @@
               id="nombre"
               placeholder="Nombre"
               class="form-control"
+              [class.is-invalid]="modificarPuntoForm.get('nombre')?.invalid && modificarPuntoForm.get('nombre')?.touched"
+              aria-label="Nombre del punto"
             />
+            <div *ngIf="modificarPuntoForm.get('nombre')?.invalid && modificarPuntoForm.get('nombre')?.touched" class="invalid-feedback">
+              El nombre es obligatorio.
+            </div>
+        
             <label for="detalle" class="form-label">Detalle:</label>
             <input
               formControlName="detalle"
@@ -90,16 +113,25 @@
               id="detalle"
               placeholder="Detalle"
               class="form-control"
+              [class.is-invalid]="modificarPuntoForm.get('detalle')?.invalid && modificarPuntoForm.get('detalle')?.touched"
+              aria-label="Detalle del punto"
             />
+            <div *ngIf="modificarPuntoForm.get('detalle')?.invalid && modificarPuntoForm.get('detalle')?.touched" class="invalid-feedback">
+              El detalle es obligatorio.
+            </div>
+            
             <label for="estado" class="form-label">Estado </label>
-            <input type="checkbox" formControlName="estado" />
+            <input type="checkbox" formControlName="estado" aria-label="Estado del punto" />
           </div>
-
-          <button type="submit" class="btn btn-primary">Save changes</button>
+        
+          <button type="submit" class="btn btn-primary" aria-label="Guardar cambios" [disabled]="modificarPuntoForm.invalid">
+            Save changes
+          </button>
         </form>
+        
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" aria-label="Cerrar">
           Close
         </button>
       </div>
@@ -108,10 +140,9 @@
 </div>
 
 <!-- Modal para crear punto -->
-
 <div
   #crearPuntoModal
-  class="modal fade"
+  class="modal fade custom-modal"
   id="crearPuntoModal"
   tabindex="-1"
   aria-labelledby="crearPuntoModalLabel"
@@ -138,7 +169,13 @@
               id="nombre"
               placeholder="Nombre"
               class="form-control"
+              [class.is-invalid]="crearPuntoForm.get('nombre')?.invalid && crearPuntoForm.get('nombre')?.touched"
+              aria-label="Nombre del nuevo punto"
             />
+            <div *ngIf="crearPuntoForm.get('nombre')?.invalid && crearPuntoForm.get('nombre')?.touched" class="invalid-feedback">
+              El nombre es obligatorio.
+            </div>
+        
             <label for="detalle" class="form-label">Detalle:</label>
             <input
               formControlName="detalle"
@@ -146,14 +183,22 @@
               id="detalle"
               placeholder="Detalle"
               class="form-control"
+              [class.is-invalid]="crearPuntoForm.get('detalle')?.invalid && crearPuntoForm.get('detalle')?.touched"
+              aria-label="Detalle del nuevo punto"
             />
+            <div *ngIf="crearPuntoForm.get('detalle')?.invalid && crearPuntoForm.get('detalle')?.touched" class="invalid-feedback">
+              El detalle es obligatorio.
+            </div>
           </div>
-
-          <button type="submit" class="btn btn-primary">Save changes</button>
+        
+          <button type="submit" class="btn btn-primary" aria-label="Guardar punto" [disabled]="crearPuntoForm.invalid">
+            Save changes
+          </button>
         </form>
+        
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" aria-label="Cerrar">
           Close
         </button>
       </div>

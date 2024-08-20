@@ -1,64 +1,135 @@
-
-.back-button {
-    /*background-color: transparent;
-    border: 1px solid black;*/
-    font-size: 24px;
-    cursor: pointer;
-    margin-bottom: 20px;
+/* Estilos para el contenedor principal encapsulado */
+.main-container {
+  max-width: 80%; /* Tamaño máximo para pantallas grandes */
+  margin: 0 auto; /* Centra el contenedor */
+  padding: 15px; /* Espaciado interno */
 }
 
-.points-container {
-    max-height: 280px;
-    overflow-y: auto;
-    border: 1px solid #ccc;
-    padding: 15px;
-    margin-bottom: 20px;
+/* Mantén los estilos actuales dentro del contenedor principal */
+.main-container .back-button {
+  font-size: 24px;
+  cursor: pointer;
+  margin-bottom: 20px;
 }
 
-.points-table {
-    width: 100%;
-    border-collapse: collapse;
+.main-container .points-container {
+  max-height: 280px;
+  overflow-y: auto;
+  border: 1px solid #ccc;
+  padding: 15px;
+  margin-bottom: 20px;
 }
 
-.points-table td {
-    padding: 10px;
-    border: 1px solid #ccc;
-    text-align: center; 
-    vertical-align: middle; 
+.main-container .points-table {
+  width: 100%;
+  border-collapse: collapse;
 }
 
-.point-name {
-    width: 30%; 
+.main-container .points-table td {
+  padding: 10px;
+  border: 1px solid #ccc;
+  text-align: center;
+  vertical-align: middle;
 }
 
-.btn-container {
-    width: 35%; 
+.main-container .point-name {
+  width: 30%;
 }
 
-.btn, .buttons-container .btn-secondary {
-    width: 100%; 
-    padding: 12px;
-    text-align: center;
-    width: max-content; 
-    padding: 8px 15px; 
-    white-space: nowrap;
-    min-width: 150px; 
+.main-container .btn-container {
+  width: 35%;
 }
 
-.buttons-container {
-    display: flex;
-    justify-content: space-between;
-    margin-top: 30px; /* añade un espacio entre la tabla y los botones */
+.main-container .btn,
+.main-container .buttons-container .btn-secondary {
+  width: 100%;
+  padding: 12px;
+  text-align: center;
+  width: max-content;
+  padding: 8px 15px;
+  white-space: nowrap;
+  min-width: 150px;
 }
 
-button {
-    background-color: #333;
-    color: white;
-    border: none;
-    cursor: pointer;
-    border-radius: 4px;
+.main-container .buttons-container {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 30px; /* añade un espacio entre la tabla y los botones */
 }
 
-button:hover {
-    background-color: #555;
+.main-container button {
+  background-color: #333;
+  color: white;
+  border: none;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.main-container button:hover {
+  background-color: #555;
+}
+
+/* Estilos de los modales permanecen sin cambios */
+.custom-modal .modal-content {
+  padding: 20px;
+}
+
+.custom-modal .modal-header,
+.custom-modal .modal-footer {
+  border-bottom: 1px solid #dee2e6;
+  border-top: 1px solid #dee2e6;
+  padding: 15px;
+}
+
+.custom-modal .modal-title {
+  font-size: 1.5rem;
+}
+
+.custom-modal .form-group {
+  margin-bottom: 15px;
+}
+
+.custom-modal .form-label {
+  font-weight: 500;
+  margin-bottom: 5px;
+}
+
+.custom-modal .form-control {
+  border-radius: 0.25rem;
+  padding: 10px;
+}
+
+.custom-modal input[type="file"] {
+  border: 1px solid #ced4da;
+  border-radius: 0.25rem;
+  padding: 5px;
+  width: 100%;
+}
+
+.custom-modal input[type="checkbox"] {
+  margin-left: 5px;
+}
+
+@media (min-width: 576px) {
+  .custom-modal .modal-dialog {
+    max-width: 500px;
+  }
+}
+
+@media (min-width: 768px) {
+  .custom-modal .modal-dialog {
+    max-width: 600px;
+  }
+}
+
+@media (min-width: 992px) {
+  .custom-modal .modal-dialog {
+    max-width: 700px;
+  }
+}
+
+@media (min-width: 1200px) {
+  .custom-modal .modal-dialog {
+    max-width: 800px;
+  }
 }
