@@ -6,7 +6,7 @@
   <button class="back-button" (click)="goBack()">←</button>
 
   <!-- Título de la página -->
-  <h2 class="text-center">Puntos la sesión {{ sesion?.codigo }}</h2>
+  <h2 class="text-center">Puntos la sesión {{ sesion?.nombre }}</h2>
 
   <!-- Contenedor con Scroll para los puntos -->
   <div class="points-container">
@@ -16,7 +16,7 @@
         <td class="btn-container">
           <button
             class="btn btn-secondary"
-            (click)="irAVotantes(punto.id_punto!)"
+            (click)="irAVotantes(idSesion!, punto.id_punto!)"
           >
             Listado de votantes
           </button>
@@ -125,14 +125,14 @@
           </div>
         
           <button type="submit" class="btn btn-primary" aria-label="Guardar cambios" [disabled]="modificarPuntoForm.invalid">
-            Save changes
+            Guardar cambios
           </button>
         </form>
         
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" aria-label="Cerrar">
-          Close
+          Cerrar
         </button>
       </div>
     </div>
@@ -192,14 +192,14 @@
           </div>
         
           <button type="submit" class="btn btn-primary" aria-label="Guardar punto" [disabled]="crearPuntoForm.invalid">
-            Save changes
+            Guardar cambios
           </button>
         </form>
         
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" aria-label="Cerrar">
-          Close
+          Cerrar
         </button>
       </div>
     </div>

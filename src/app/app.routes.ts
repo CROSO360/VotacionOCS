@@ -43,7 +43,7 @@ export const routes: Routes = [
         canActivate:[userGuardGuard],
     },
     {
-        path:'votantes/:id',
+        path:'votantes/:idSesion/:idPunto',
         title: 'Votantes',
         component: VotantesComponent,
         canActivate: [userGuardGuard],

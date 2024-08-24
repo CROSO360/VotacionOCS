@@ -73,8 +73,12 @@ export class SesionComponent implements OnInit {
     this.navegarA('votacion', id);
   }
 
-  irAVotantes(id: number) {
-    this.navegarA('votantes', id);
+  irAVotantes(idSesion: number, idPunto: number) {
+    if (idSesion && idPunto) {
+      this.router.navigate([`/votantes`, idSesion, idPunto]);
+    } else {
+      console.error(`ID no definido: ${idSesion} y ${idPunto}`);
+    }
   }
 
   irAResultados(id: number) {
@@ -111,7 +115,8 @@ export class SesionComponent implements OnInit {
         console.log(response);
         this.toastrService.success('Punto actualizado con éxito.');
         this.getPuntos(); // Actualizar la lista de puntos
-        this.resetForm(this.modificarPuntoForm); // Resetear el formulario después de la edición
+        //this.resetForm(this.modificarPuntoForm); // Resetear el formulario después de la edición
+        this.cerrarModal('exampleModal',this.modificarPuntoForm)
       },
       (error) => {
         console.error(error);
@@ -135,7 +140,8 @@ export class SesionComponent implements OnInit {
         console.log(response);
         this.toastrService.success('Punto creado con éxito.');
         this.getPuntos(); // Actualizar la lista de puntos
-        this.resetForm(this.crearPuntoForm); // Resetear el formulario después de la creación
+        //this.resetForm(this.crearPuntoForm); // Resetear el formulario después de la creación
+        this.cerrarModal('crearPuntoModal',this.crearPuntoForm);
       },
       (error) => {
         console.error(error);
@@ -145,6 +151,31 @@ export class SesionComponent implements OnInit {
   }
 
   resetForm(form: FormGroup) {
+    form.reset();
+  }
+//dayana balcazar y hector lino sistema de votacion con biometrico 
+  cerrarModal(modalId: string, form: FormGroup) {
+    const modalElement = document.getElementById(modalId);
+    if (modalElement) {
+      modalElement.classList.remove('show');
+      modalElement.style.display = 'none';
+      modalElement.setAttribute('aria-hidden', 'true');
+      modalElement.removeAttribute('aria-modal');
+      modalElement.removeAttribute('role');
+    }
+
+    // Limpieza de estilos y clases
+    document.body.classList.remove('modal-open');
+    document.body.style.overflow = '';
+    document.body.style.paddingRight = '';
+
+    // Elimina cualquier backdrop sobrante
+    const backdrops = document.getElementsByClassName('modal-backdrop');
+    while (backdrops[0]) {
+      backdrops[0].parentNode?.removeChild(backdrops[0]);
+    }
+
+    // Restablecer el formulario
     form.reset();
   }
 
