@@ -183,70 +183,88 @@ export class VotantesComponent implements OnInit {
   }
   
 
+  
+
   async confirmarSeleccion() {
-    const puntoUsuariosData: IPuntoUsuario[] = [];
+    try {
+      // Obtener todos los puntos seleccionados, incluyendo el punto actual
+      const puntosAActualizar = [this.puntoId!, ...this.puntosSeleccionados.map(p => p.id_punto)];
   
-    // Obtener todos los puntos seleccionados, incluyendo el punto actual
-    const puntosAActualizar = [this.puntoId!, ...this.puntosSeleccionados.map(p => p.id_punto)];
+      // Recorrer cada punto a actualizar
+      for (const puntoId of puntosAActualizar) {
+        // 1. Eliminar todos los puntoUsuario de ese punto antes de aplicar la nueva selección
+        const puntoUsuarios = await this.getPuntoUsuarios(puntoId);
   
-    for (const puntoId of puntosAActualizar) {
-      // Filtrar usuarios seleccionados que no existen en puntosUsuarios (nuevos usuarios a agregar)
-      const nuevosUsuarios = this.usuariosSeleccionados.filter(
-        (usuario) => !this.puntosUsuarios.some(puntoUsu => puntoUsu.usuario.id_usuario === usuario.id_usuario)
-      );
-  
-      // Agregar nuevos usuarios a puntoUsuariosData
-      nuevosUsuarios.forEach((usuario: IUsuario) => {
-        puntoUsuariosData.push({
-          punto: { id_punto: puntoId }, 
-          usuario: { id_usuario: usuario.id_usuario }
-        } as IPuntoUsuario);
-      });
-  
-      // Eliminar todos los `puntoUsuario` de ese punto antes de aplicar la nueva selección
-      this.puntoUsuarioService.getAllDataBy(`punto.id_punto=${puntoId}`, ['punto', 'usuario']).subscribe({
-        next: (puntoUsuarios) => {
-          puntoUsuarios.forEach((puntoUsu: any) => {
-            this.puntoUsuarioService.deleteData(puntoUsu.id_punto_usuario).subscribe({
-              next: () => {
-                console.log(`PuntoUsuario del punto ${puntoId} eliminado correctamente`);
-              },
-              error: (error) => {
-                console.error(`Error al eliminar PuntoUsuario del punto ${puntoId}:`, error);
-                this.toastr.error(`Error al eliminar usuarios en el punto ${puntoId}`, 'Error');
-              }
-            });
-          });
-  
-          // Después de eliminar los antiguos registros, agregamos los nuevos
-          this.puntoUsuarioService.saveManyData(puntoUsuariosData).subscribe({
-            next: (response) => {
-              console.log(`Usuarios del punto ${puntoId} actualizados correctamente`, response);
-              this.toastr.success(`Usuarios del punto ${puntoId} actualizados correctamente`, 'Éxito');
-            },
-            error: (error) => {
-              console.error(`Error al actualizar usuarios del punto ${puntoId}:`, error);
-              this.toastr.error(`Error al actualizar usuarios del punto ${puntoId}`, 'Error');
-            }
-          });
-        },
-        error: (error) => {
-          console.error(`Error al obtener PuntoUsuarios del punto ${puntoId}:`, error);
-          this.toastr.error(`Error al obtener datos del punto ${puntoId}`, 'Error');
+        // Si hay usuarios para eliminar, procesarlos
+        if (puntoUsuarios.length > 0) {
+          await this.eliminarPuntoUsuarios(puntoUsuarios);
         }
-      });
-    }
   
-    this.location.back();
+        // 2. Agregar los nuevos puntoUsuario si la selección no está vacía
+        if (this.usuariosSeleccionados.length > 0) {
+          const puntoUsuariosData:any = this.usuariosSeleccionados.map((usuario: IUsuario) => ({
+            punto: { id_punto: puntoId },
+            usuario: { id_usuario: usuario.id_usuario }
+          }));
+          await this.guardarNuevosPuntoUsuarios(puntoUsuariosData);
+        }
+      }
+  
+      // Mostrar éxito
+      this.toastr.success('Selección guardada correctamente en todos los puntos', 'Éxito');
+      
+      // 3. Regresar de página solo si todos los procesos se completan con éxito
+      this.location.back();
+  
+    } catch (error) {
+      // Mostrar error si ocurre algún problema
+      this.toastr.error('Hubo un error al guardar la selección', 'Error');
+      console.error(error);
+    }
   }
   
+  // Método para obtener todos los puntoUsuario de un punto dado
+  getPuntoUsuarios(puntoId: number): Promise<any[]> {
+    return new Promise((resolve, reject) => {
+      this.puntoUsuarioService.getAllDataBy(`punto.id_punto=${puntoId}`, ['punto', 'usuario']).subscribe({
+        next: (puntoUsuarios) => resolve(puntoUsuarios),
+        error: (error) => reject(error)
+      });
+    });
+  }
+  
+  // Método para eliminar todos los puntoUsuario de un punto dado
+  eliminarPuntoUsuarios(puntoUsuarios: any[]): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const deleteRequests = puntoUsuarios.map((puntoUsu: any) =>
+        this.puntoUsuarioService.deleteData(puntoUsu.id_punto_usuario)
+      );
+  
+      forkJoin(deleteRequests).subscribe({
+        next: () => resolve(),
+        error: (error) => reject(error)
+      });
+    });
+  }
+  
+  // Método para guardar nuevos puntoUsuario para un punto dado
+  guardarNuevosPuntoUsuarios(puntoUsuariosData: IPuntoUsuario[]): Promise<void> {
+    return new Promise((resolve, reject) => {
+      this.puntoUsuarioService.saveManyData(puntoUsuariosData).subscribe({
+        next: () => resolve(),
+        error: (error) => reject(error)
+      });
+    });
+  }
+  
+  
+  
+  
   @HostListener('document:click', ['$event'])
-  clickOutside(event: Event) {
-    const target = event.target as HTMLElement;
-    const clickedInside = target.closest('.custom-select');
-
+  handleClickOutside(event: Event) {
+    const clickedInside = (event.target as HTMLElement).closest('.custom-select');
     if (!clickedInside) {
-      this.showOptions = false;
+      this.showOptions = false; // Cierra el select si se hace clic fuera
     }
   }
 
@@ -282,11 +300,23 @@ export class VotantesComponent implements OnInit {
     });
   }
   
-  removeSelectedOption(option: IPunto) {
+  removeSelectedOption(option: IPunto, event: MouseEvent) {
+    event.stopPropagation(); // Prevenir el cierre del select
     const index = this.puntosSeleccionados.indexOf(option);
     if (index !== -1) {
       this.puntosSeleccionados.splice(index, 1);
     }
+    this.updateSelectAllStatus();
+  }
+
+  updateSelectAllStatus() {
+    this.allPuntosSelected =
+      this.puntosSeleccionados.length === this.puntos.length;
+  }
+
+  toggleDropdown(event: MouseEvent) {
+    event.stopPropagation(); // Prevenir que el dropdown se cierre en clicks internos
+    this.showOptions = !this.showOptions;
   }
 
   goBack() {

@@ -56,54 +56,7 @@ export class VotacionComponent implements OnInit {
     this.getPuntos();
     this.getSesion();
     this.webSocketService.onChange().subscribe(async (sape: any) => {
-      // Obtener el elemento DOM con la clase 'square' que tiene la id que coincida con el valor del parámetro 'puntoUsuarioId'
-      this.squareElement = document.querySelector(
-        `.square[id="${sape.puntoUsuarioId}"]`
-      )!;
-
-      // Obtener el objeto puntoUsuario del evento
-      const query = `id_punto_usuario=${sape.puntoUsuarioId}`;
-      const timestamp = new Date().getTime(); // Obtener un tiempo único
-      try {
-        this.puntoUsuarioActual = await this.puntoUsuarioService
-          .getDataBy(`${query}?timestamp=${timestamp}`)
-          .toPromise();
-
-        // Limpiar las clases actuales
-        this.squareElement.classList.remove(
-          'sin-votar',
-          'afavor',
-          'encontra',
-          'abstinencia'
-        );
-
-        // Agregar las clases según la situación actual
-        if (this.puntoUsuarioActual!.opcion === null) {
-          // Establecer la clase 'sin-votar' en el elemento DOM
-          this.squareElement.classList.add('sin-votar');
-        } else if (this.puntoUsuarioActual!.opcion === 'afavor') {
-          // Establecer la clase 'afavor' en el elemento DOM
-          this.squareElement.classList.add('afavor');
-        } else if (this.puntoUsuarioActual!.opcion === 'encontra') {
-          // Establecer la clase 'encontra' en el elemento DOM
-          this.squareElement.classList.add('encontra');
-        } else if (this.puntoUsuarioActual!.opcion === 'abstinencia') {
-          // Establecer la clase 'abstinencia' en el elemento DOM
-          this.squareElement.classList.add('abstinencia');
-        }
-
-        const buttonElement = this.squareElement.querySelector('.btn')!;
-
-        buttonElement.classList.remove('noRazonado', 'razonado');
-
-        if (this.puntoUsuarioActual!.es_razonado === false) {
-          buttonElement.classList.add('noRazonado');
-        } else if (this.puntoUsuarioActual!.es_razonado === true) {
-          buttonElement.classList.add('razonado');
-        }
-      } catch (error) {
-        console.error('Error al obtener los datos del puntoUsuario:', error);
-      }
+      this.actualizarPuntoUsuario(sape.puntoUsuarioId);
     });
   }
 
@@ -112,6 +65,10 @@ export class VotacionComponent implements OnInit {
     const relations = [`sesion`];
     this.puntoService.getAllDataBy(query, relations).subscribe((data) => {
       this.puntos = data;
+      if (this.puntos.length > 0) {
+        this.puntoSeleccionado = this.puntos[0].id_punto;
+        this.getPuntoUsuarios(this.puntoSeleccionado!);
+      }
     });
   }
 
@@ -140,28 +97,14 @@ export class VotacionComponent implements OnInit {
     this.getPuntoUsuarios(this.puntoSeleccionado!);
   }
 
-  cambiarTipoVoto(puntoUsuario: IPuntoUsuario) {
-    const nuevoEstado = !this.puntoUsuarioActual?.es_principal; // Cambiar el estado opuesto
-
-    // Actualizar el estado del punto en la lista puntos
-    const puntoIndex = this.puntoUsuarios.findIndex(
-      (p) => p.id_punto_usuario === puntoUsuario.id_punto_usuario
-    );
-    if (puntoIndex !== -1) {
-      this.puntoUsuarios[puntoIndex].es_principal = nuevoEstado;
-    }
-  }
-
   cambiarEstadoPunto(punto: IPunto) {
-    const nuevoEstado = !punto.estado; // Cambiar el estado opuesto
-
+    const nuevoEstado = !punto.estado;
     const puntoData = {
       id_punto: punto.id_punto,
       estado: nuevoEstado,
     };
 
     this.puntoService.saveData(puntoData).subscribe((r) => {
-      // Actualizar el estado del punto en la lista puntos
       const puntoIndex = this.puntos.findIndex(
         (p) => p.id_punto === punto.id_punto
       );
@@ -172,17 +115,12 @@ export class VotacionComponent implements OnInit {
   }
 
   finalizarSesion(sesion: ISesion) {
-    // Crear un array de observables para registrar los resultados de los puntos
     const observables = this.puntos.map((punto: IPunto) => {
       return this.puntoService.registerResultados({ idPunto: punto.id_punto });
     });
 
-    // Utilizar forkJoin para esperar a que todos los registros se completen
     forkJoin(observables).subscribe(
       () => {
-        console.log('Todos los resultados de los puntos han sido registrados');
-
-        // Una vez que todos los resultados se hayan registrado, finalizar la sesión
         const sesionData = {
           id_sesion: sesion.id_sesion,
           estado: false,
@@ -203,6 +141,53 @@ export class VotacionComponent implements OnInit {
         console.error('Error al registrar resultados de puntos:', error);
       }
     );
+  }
+
+  actualizarPuntoUsuario(puntoUsuarioId: number) {
+    const query = `id_punto_usuario=${puntoUsuarioId}`;
+    const timestamp = new Date().getTime();
+    this.puntoUsuarioService
+      .getDataBy(`${query}?timestamp=${timestamp}`)
+      .subscribe((puntoUsuarioActual) => {
+        this.puntoUsuarioActual = puntoUsuarioActual;
+        this.actualizarVisualizacionPuntoUsuario(puntoUsuarioActual);
+        this.getPuntoUsuarios(this.puntoSeleccionado!);
+      });
+  }
+
+  actualizarVisualizacionPuntoUsuario(puntoUsuario: IPuntoUsuario) {
+    const squareElement = document.querySelector(
+      `.square[id="${puntoUsuario.id_punto_usuario}"]`
+    );
+
+    if (squareElement) {
+      squareElement.classList.remove(
+        'sin-votar',
+        'afavor',
+        'encontra',
+        'abstinencia'
+      );
+
+      if (puntoUsuario.opcion === null) {
+        squareElement.classList.add('sin-votar');
+      } else if (puntoUsuario.opcion === 'afavor') {
+        squareElement.classList.add('afavor');
+      } else if (puntoUsuario.opcion === 'encontra') {
+        squareElement.classList.add('encontra');
+      } else if (puntoUsuario.opcion === 'abstinencia') {
+        squareElement.classList.add('abstinencia');
+      }
+
+      const buttonElement = squareElement.querySelector('.btn');
+      if (buttonElement) {
+        buttonElement.classList.remove('noRazonado', 'razonado');
+        if (puntoUsuario.es_razonado) {
+          buttonElement.classList.add('razonado');
+        } else {
+          buttonElement.classList.add('noRazonado');
+        }
+      }
+    }
   }
 
   goBack() {

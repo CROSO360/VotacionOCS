@@ -143,7 +143,7 @@
                 *ngFor="let grupo of gruposUsuarios"
                 [value]="grupo.id_grupo_usuario"
               >
-                {{ grupo.nombre }}
+                Representante {{ grupo.nombre }}
               </option>
             </select>
             <div *ngIf="modificarUsuarioForm.get('grupoUsuario')?.invalid && (modificarUsuarioForm.get('grupoUsuario')?.dirty || modificarUsuarioForm.get('grupoUsuario')?.touched)" class="text-danger">
@@ -260,7 +260,7 @@
                 *ngFor="let grupo of gruposUsuarios"
                 [value]="grupo.id_grupo_usuario"
               >
-                {{ grupo.nombre }}
+                Representante {{ grupo.nombre }}
               </option>
             </select>
             <div *ngIf="crearUsuarioForm.get('grupoUsuariox')?.invalid && (crearUsuarioForm.get('grupoUsuariox')?.dirty || crearUsuarioForm.get('grupoUsuariox')?.touched)" class="text-danger">
