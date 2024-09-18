@@ -41,19 +41,83 @@
             abstinencia: puntoUsuario.opcion === 'abstinencia'
           }"
         >
-          <div class="point-name">{{ puntoUsuario.usuario.nombre }}</div>
-          <div class="point-name">
-            {{ puntoUsuario.usuario.grupoUsuario.nombre }}
+          <!--button
+            class="three-dots-btn"
+            (click)="usuarioVotoManual(puntoUsuario.usuario.id_usuario)"
+            data-bs-toggle="modal"
+            data-bs-target="#votoManualModal"
+          >
+            &#x22EE;
+          </button-->
+
+          <!-- Dropdown personalizado -->
+          <div class="custom-dropdown">
+            <button
+              class="custom-dropdown-toggle"
+              (click)="toggleDropdownxd(puntoUsuario.id_punto_usuario, $event)"
+            >
+              &#x22EE;
+            </button>
+            <ul
+              *ngIf="activeDropdown === puntoUsuario.id_punto_usuario"
+              class="custom-dropdown-menu"
+            >
+              <li>
+                <a
+                  class="custom-dropdown-item"
+                  data-bs-toggle="modal"
+                  data-bs-target="#votoManualModal"
+                  (click)="usuarioVotoManual(puntoUsuario.usuario.id_usuario)"
+                  (click)="
+                    onItemClick('Action 1', puntoUsuario.id_punto_usuario)
+                  "
+                  >Voto manual</a
+                >
+              </li>
+              <li>
+                <a
+                  *ngIf="puntoUsuario.es_principal == true"
+                  class="custom-dropdown-item"
+                  (click)="reemplazo(puntoUsuario)"
+                  (click)="
+                    onItemClick('Action 2', puntoUsuario.id_punto_usuario)
+                  "
+                  >Reemplazo</a
+                >
+                <a
+                  *ngIf="puntoUsuario.es_principal == false"
+                  class="custom-dropdown-item"
+                  (click)="reemplazo(puntoUsuario)"
+                  (click)="
+                    onItemClick('Action 2', puntoUsuario.id_punto_usuario)
+                  "
+                  >Principal</a
+                >
+              </li>
+            </ul>
+          </div>
+
+          <div *ngIf="puntoUsuario.es_principal == true" class="point-name">
+            {{ puntoUsuario.usuario.nombre }}
+          </div>
+          <div *ngIf="puntoUsuario.es_principal == false" class="point-name">
+            {{ puntoUsuario.usuario.usuarioReemplazo.nombre }}
+          </div>
+          <div *ngIf="puntoUsuario.es_principal == false" class="point-name">
+            (Reemplazo de {{ puntoUsuario.usuario.nombre }})
+          </div>
+          <div *ngIf="puntoUsuario.es_principal == true" class="point-name">
+            Representante {{ puntoUsuario.usuario.grupoUsuario.nombre }}
           </div>
           <div class="btn-container">
             <button
               class="btn btn-secondary"
               [ngClass]="{
-              noRazonado: puntoUsuario.es_razonado === false,
-              razonado: puntoUsuario.es_razonado === true,
-            }"
+                noRazonado: puntoUsuario.es_razonado === false,
+                razonado: puntoUsuario.es_razonado === true,
+              }"
             >
-            Razonado
+              Razonado
             </button>
           </div>
         </div>
@@ -103,6 +167,146 @@
           (click)="finalizarSesion(sesion!)"
         >
           Finalizar sesión
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal para Voto manual -->
+<div
+  #votoManualModal
+  class="modal fade"
+  id="votoManualModal"
+  tabindex="-1"
+  aria-labelledby="votoManualModalLabel"
+  aria-hidden="true"
+>
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h1 class="modal-title fs-5" id="votoManualModalLabel">
+          Voto manual para {{ usuarioActual?.nombre }}
+        </h1>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+          aria-label="Close"
+        ></button>
+      </div>
+      <div class="modal-body">
+        <form [formGroup]="votoManualForm" (ngSubmit)="votoManual()">
+          <div class="form-group">
+            <div class="my-3">
+              <label class="form-label">Opción:</label>
+              <div class="form-check">
+                <input
+                  class="form-check-input"
+                  formControlName="opcion"
+                  type="radio"
+                  value="afavor"
+                  id="afavor"
+                />
+                <label class="form-check-label" for="afavor">A Favor</label>
+              </div>
+              <div class="form-check">
+                <input
+                  class="form-check-input"
+                  formControlName="opcion"
+                  type="radio"
+                  value="encontra"
+                  id="encontra"
+                />
+                <label class="form-check-label" for="encontra">En Contra</label>
+              </div>
+              <div class="form-check">
+                <input
+                  class="form-check-input"
+                  formControlName="opcion"
+                  type="radio"
+                  value="abstinencia"
+                  id="abstinencia"
+                />
+                <label class="form-check-label" for="abstinencia"
+                  >Abstención</label
+                >
+              </div>
+            </div>
+
+            <div class="mb-3 form-check">
+              <input
+                type="checkbox"
+                formControlName="razonado"
+                class="form-check-input"
+                id="votoRazonado"
+              />
+              <label class="form-check-label" for="votoRazonado"
+                >Voto Razonado</label
+              >
+            </div>
+
+            <div class="my-3">
+              <label for="selectPunto" class="form-label">Punto:</label>
+              <div class="custom-select">
+                <div class="selected-items">
+                  <span
+                    *ngFor="let puntoSeleccionado of puntosSeleccionados"
+                    class="selected-item"
+                  >
+                    {{ puntoSeleccionado.nombre }}
+                    <span
+                      class="close"
+                      (click)="removeSelectedOption(puntoSeleccionado, $event)"
+                      >x</span
+                    >
+                  </span>
+                </div>
+                <div class="select-arrow" (click)="showOptions = !showOptions">
+                  <span class="arrow-icon">{{ showOptions ? "▲" : "▼" }}</span>
+                </div>
+                <div class="options" *ngIf="showOptions">
+                  <!-- Seleccionar todo -->
+                  <div class="option" (click)="toggleSelectAllPuntos()">
+                    Seleccionar todos
+                    <span class="checkmark" *ngIf="allPuntosSelected">✔</span>
+                  </div>
+
+                  <!-- Lista de puntos -->
+                  <div
+                    *ngFor="let option of puntos"
+                    (click)="toggleOption(option)"
+                    class="option"
+                  >
+                    {{ option.nombre }}
+
+                    <span
+                      class="checkmark"
+                      *ngIf="puntosSeleccionados.includes(option)"
+                      >✔</span
+                    >
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <button
+            type="submit"
+            class="btn btn-primary"
+            [disabled]="votoManualForm.invalid"
+          >
+            Guardar voto
+          </button>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button
+          type="button"
+          class="btn btn-secondary"
+          (click)="resetForm()"
+          data-bs-dismiss="modal"
+        >
+          Cancelar
         </button>
       </div>
     </div>

@@ -55,4 +55,8 @@ export class PuntoUsuarioService {
     return this.http.post(`${this.baseURL}/punto-usuario/delete/${id}`, {});
   }
 
+  saveVote(data: any): Observable<any> {
+    return this.http.post<any>(`${this.baseURL}/punto-usuario/voto`, data)
+  }
+
 }
