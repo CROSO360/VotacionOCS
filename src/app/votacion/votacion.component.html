@@ -51,7 +51,7 @@
           </button-->
 
           <!-- Dropdown personalizado -->
-          <div class="custom-dropdown">
+          <div class="custom-dropdown" *ngIf="sesion?.estado==true">
             <button
               class="custom-dropdown-toggle"
               (click)="toggleDropdownxd(puntoUsuario.id_punto_usuario, $event)"

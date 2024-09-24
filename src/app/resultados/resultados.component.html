@@ -19,6 +19,12 @@
     </option>
   </select>
 
+  <!-- Botón Generar Reporte -->
+  <button *ngIf="sesion.estado==false" class="btn btn-primary" (click)="generarReporte()">
+    Generar Reporte
+  </button>
+
+
   <div *ngFor="let punto of puntos">
     <p *ngIf="punto.id_punto == puntoSeleccionado">{{ punto.detalle }}</p>
     <div class="points-container" *ngIf="punto.id_punto == puntoSeleccionado">
