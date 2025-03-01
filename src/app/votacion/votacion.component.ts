@@ -384,17 +384,21 @@ export class VotacionComponent implements OnInit {
       };
 
       // Actualiza el objeto localmente
-      puntoUsuario.es_principal = !puntoUsuario.es_principal;
+      //puntoUsuario.es_principal = !puntoUsuario.es_principal;
 
       this.puntoUsuarioService.saveData(puntoUsuarioData).subscribe(
         () => {
           console.log('solicitud realizada');
           if (puntoUsuario.es_principal) {
+            // Actualiza el objeto localmente
+            puntoUsuario.es_principal = !puntoUsuario.es_principal;
             this.toastr.success(
               `Cambio a principal\n${puntoUsuario.usuario.nombre}`,
               'Éxito'
             );
           } else {
+            // Actualiza el objeto localmente
+            puntoUsuario.es_principal = !puntoUsuario.es_principal;
             this.toastr.success(
               `Cambio a reemplazo\n${puntoUsuario.usuario.usuarioReemplazo.nombre}`,
               `Éxito`

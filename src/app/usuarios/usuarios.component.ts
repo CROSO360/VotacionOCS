@@ -1,5 +1,5 @@
 import { CommonModule, Location } from '@angular/common';
-import { Component, OnInit, ViewChild } from '@angular/core';
+import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 import {
   FormBuilder,
   FormControl,
@@ -14,6 +14,8 @@ import { GrupoUsuarioService } from '../services/grupoUsuario.service';
 import { ActivatedRoute, Router } from '@angular/router';
 import { IUsuario } from '../interfaces/IUsuario';
 import { ToastrService } from 'ngx-toastr';
+import { log } from 'console';
+import { data } from 'jquery';
 
 @Component({
   selector: 'app-usuarios',
@@ -35,6 +37,10 @@ export class UsuariosComponent implements OnInit {
 
   grupoActual: any = null;
   gruposUsuarios: any[] = []; // Reemplaza con tu tipo de dato
+
+  reemplazosDisponibles: any = [];
+  mensajeReemplazo: string = '';
+  ultimoUsuarioEditadoId: number | null = null;
 
   constructor(
     private usuarioService: UsuarioService,
@@ -88,6 +94,7 @@ export class UsuariosComponent implements OnInit {
         this.usuarios = data;
         this.usuariosFiltrados = [...this.usuarios];
         //this.filtrarUsuarios();
+        console.log(this.usuarios);
       });
   }
 
@@ -117,32 +124,69 @@ export class UsuariosComponent implements OnInit {
       });
   }
   
+  abrirEditar(usuario: any) { 
 
-  abrirEditar(usuario: any) {
-    if (usuario.usuarioReemplazo) {
-      console.log(usuario.usuarioReemplazo.id_usuario);
-      this.modificarUsuarioForm.setValue({
-        idUsuario: usuario.id_usuario,
-        nombre: usuario.nombre,
-        codigo: usuario.codigo,
-        cedula: usuario.cedula,
-        grupoUsuario: usuario.grupoUsuario.id_grupo_usuario,
-        usuarioReemplazo: usuario.usuarioReemplazo.id_usuario,
-        estado: usuario.estado,
-      });
-    }else{
-      console.log('no hay usuario reemplazo');
-      this.modificarUsuarioForm.setValue({
-        idUsuario: usuario.id_usuario,
-        nombre: usuario.nombre,
-        codigo: usuario.codigo,
-        cedula: usuario.cedula,
-        grupoUsuario: usuario.grupoUsuario.id_grupo_usuario,
-        usuarioReemplazo: null,
-        estado: usuario.estado,
-      });
+    console.log(usuario.nombre);
+
+    // Si el usuario es el mismo que el último editado, no recargamos la lista
+    if (this.ultimoUsuarioEditadoId === usuario.id_usuario) {
+      return;  // Se omite la actualización manual con detectChanges()
     }
+
+    // Guardamos el nuevo usuario editado
+    this.ultimoUsuarioEditadoId = usuario.id_usuario;
+
+    this.usuarioService.reemplazosDispobibles(usuario.id_usuario).subscribe((data: any) => {
+      this.reemplazosDisponibles = data.disponibles || [];
+      this.mensajeReemplazo = ''; // Resetear mensaje
+
+      // Caso 1: El usuario no tiene reemplazo ni es reemplazo de alguien más
+      if (!data.reemplazo && !data.esReemplazoDe) {
+        //console.log(usuario.usuarioReemplazo.id_usuario);
+        this.modificarUsuarioForm.setValue({
+          idUsuario: usuario.id_usuario,
+          nombre: usuario.nombre,
+          codigo: usuario.codigo,
+          cedula: usuario.cedula,
+          grupoUsuario: usuario.grupoUsuario.id_grupo_usuario,
+          usuarioReemplazo: null,
+          estado: usuario.estado,
+        });
+
+      // Caso 2: El usuario tiene un reemplazo asignado
+      }else if (data.reemplazo){
+        
+        this.modificarUsuarioForm.setValue({
+          idUsuario: usuario.id_usuario,
+          nombre: usuario.nombre,
+          codigo: usuario.codigo,
+          cedula: usuario.cedula,
+          grupoUsuario: usuario.grupoUsuario.id_grupo_usuario,
+          usuarioReemplazo: usuario.usuarioReemplazo.id_usuario,
+          estado: usuario.estado,
+        });
+      }
+
+      // Caso 3: El usuario es reemplazo de alguien más
+      else if (data.esReemplazoDe) {
+        this.mensajeReemplazo = `Reemplazo de ${data.esReemplazoDe.cedula} - ${data.esReemplazoDe.nombre}`;
+        this.modificarUsuarioForm.setValue({
+          idUsuario: usuario.id_usuario,
+          nombre: usuario.nombre,
+          codigo: usuario.codigo,
+          cedula: usuario.cedula,
+          grupoUsuario: usuario.grupoUsuario.id_grupo_usuario,
+          usuarioReemplazo: null, // Se muestra el usuario al que reemplaza
+          estado: usuario.estado,
+        });
+
+      }
+
+    });
+    
   }
+
+  
 
   cerrarModal(modalId: string, form: FormGroup) {
     const modalElement = document.getElementById(modalId);
@@ -167,62 +211,84 @@ export class UsuariosComponent implements OnInit {
 
     // Restablecer el formulario
     form.reset();
+
+    this.reemplazosDisponibles = [];
+    this.mensajeReemplazo = '';
   }
 
-  editarUsuario(){
-    if (this.modificarUsuarioForm.value.usuarioReemplazo == '0' || this.modificarUsuarioForm.value.usuarioReemplazo == null) {
-      const usuarioData: any ={
-        id_usuario: parseInt(this.modificarUsuarioForm.value.idUsuario!),
-        nombre: this.modificarUsuarioForm.value.nombre,
-        codigo: this.modificarUsuarioForm.value.codigo,
-        cedula: this.modificarUsuarioForm.value.cedula,
-        grupoUsuario: {
-          id_grupo_usuario: parseInt(this.modificarUsuarioForm.value.grupoUsuario!)
-        },
-        usuarioReemplazo: null,
-        estado: this.modificarUsuarioForm.value.estado
-      }
-      this.usuarioService.saveData(usuarioData).subscribe((response)=>{
-        console.log(response);
-        this.toastrService.success('Usuario actualizado con éxito.');
-        this.cargarUsuarios();
-        this.cerrarModal('exampleModal', this.modificarUsuarioForm);
+  editarUsuario() {
+    const idUsuario = parseInt(this.modificarUsuarioForm.value.idUsuario!);
+    const usuarioReemplazoId = this.modificarUsuarioForm.value.usuarioReemplazo == '0' || this.modificarUsuarioForm.value.usuarioReemplazo == null
+      ? null
+      : { id_usuario: parseInt(this.modificarUsuarioForm.value.usuarioReemplazo!) };
+  
+    const usuarioData: any = {
+      id_usuario: idUsuario,
+      nombre: this.modificarUsuarioForm.value.nombre,
+      codigo: this.modificarUsuarioForm.value.codigo,
+      cedula: this.modificarUsuarioForm.value.cedula,
+      grupoUsuario: {
+        id_grupo_usuario: parseInt(this.modificarUsuarioForm.value.grupoUsuario!)
       },
-      (error) => {
-        console.error(error);
-        this.toastrService.error('Error al actualizar el usuario.', error);
-      });
-    }else{
-      const usuarioData: any ={
-        id_usuario: parseInt(this.modificarUsuarioForm.value.idUsuario!),
-        nombre: this.modificarUsuarioForm.value.nombre,
-        codigo: this.modificarUsuarioForm.value.codigo,
-        cedula: this.modificarUsuarioForm.value.cedula,
-        grupoUsuario: {
-          id_grupo_usuario: parseInt(this.modificarUsuarioForm.value.grupoUsuario!)
-        },
-        usuarioReemplazo: {
-          id_usuario: parseInt(this.modificarUsuarioForm.value.usuarioReemplazo!)
-        },
-        estado: this.modificarUsuarioForm.value.estado
+      usuarioReemplazo: usuarioReemplazoId,
+      estado: this.modificarUsuarioForm.value.estado ?? true
+    };
+  
+    this.usuarioService.updateData(usuarioData).subscribe((response) => {
+      console.log(response);
+      this.toastrService.success('Usuario actualizado con éxito.');
+      this.cargarUsuarios();
+  
+      if (this.ultimoUsuarioEditadoId === idUsuario) {
+        const query = `id_usuario=${idUsuario}`;
+        const relations = ['grupoUsuario', 'usuarioReemplazo'];
+  
+        this.usuarioService.getDataBy(query, relations).subscribe((usuarioActualizado: any) => {
+          if (!usuarioActualizado || !usuarioActualizado.id_usuario) {
+            console.error('Error: usuarioActualizado es inválido.');
+            return;
+          }
+  
+          this.reemplazosDisponibles = [];
+  
+          // **Solo hacer la petición si id_usuario es válido**
+          if (!isNaN(usuarioActualizado.id_usuario)) {
+            this.usuarioService.reemplazosDispobibles(usuarioActualizado.id_usuario).subscribe((data: any) => {
+              this.reemplazosDisponibles = data.disponibles || [];
+  
+              // **Actualizar el mensaje de reemplazo si el usuario es reemplazo de alguien más**
+              this.mensajeReemplazo = data.esReemplazoDe
+                ? `Reemplazo de ${data.esReemplazoDe.cedula} - ${data.esReemplazoDe.nombre}`
+                : '';
+            });
+          }
+  
+          // **Actualizar el formulario**
+          this.modificarUsuarioForm.patchValue({
+            idUsuario: usuarioActualizado.id_usuario,
+            nombre: usuarioActualizado.nombre,
+            codigo: usuarioActualizado.codigo,
+            cedula: usuarioActualizado.cedula,
+            grupoUsuario: usuarioActualizado.grupoUsuario.id_grupo_usuario,
+            usuarioReemplazo: usuarioActualizado.usuarioReemplazo ? usuarioActualizado.usuarioReemplazo.id_usuario : null,
+            estado: usuarioActualizado.estado ?? true
+          });
+        });
       }
-      this.usuarioService.saveData(usuarioData).subscribe((response)=>{
-        console.log(response);
-        this.toastrService.success('Usuario actualizado con éxito.');
-        this.cargarUsuarios();
-        this.cerrarModal('exampleModal', this.modificarUsuarioForm);
-      },
-      (error) => {
-        console.error(error);
-        this.toastrService.error('Error al actualizar el usuario.', error);
-      });
-    }
-    
+  
+      this.cerrarModal('exampleModal', this.modificarUsuarioForm);
+    }, (error) => {
+      console.error(error);
+      this.toastrService.error('Error al actualizar el usuario.', error);
+    });
   }
+  
+  
+  
 
   crearUsuario() {
 
-    if (this.crearUsuarioForm.value.usuarioReemplazox! == '0' || this.crearUsuarioForm.value.usuarioReemplazox! == null) {
+    
       const usuarioData: any = {
         nombre: this.crearUsuarioForm.value.nombrex,
         codigo: this.crearUsuarioForm.value.codigox,
@@ -244,31 +310,7 @@ export class UsuariosComponent implements OnInit {
         console.error(error);
         this.toastrService.error('Error al crear el usuario.', error);
       })
-    }else{
-      const usuarioData: any = {
-        nombre: this.crearUsuarioForm.value.nombrex,
-        codigo: this.crearUsuarioForm.value.codigox,
-        cedula: this.crearUsuarioForm.value.cedulax,
-        grupoUsuario: {
-          id_grupo_usuario: parseInt(this.crearUsuarioForm.value.grupoUsuariox!),
-        },
-        usuarioReemplazo: {
-          id_usuario: parseInt(this.crearUsuarioForm.value.usuarioReemplazox!),
-        },
-        tipo: 'votante'
-      }
-
-      this.usuarioService.saveData(usuarioData).subscribe((response)=>{
-        console.log(response);
-        this.toastrService.success('Usuario creado con éxito.');
-        this.cargarUsuarios();
-        this.cerrarModal('crearUsuarioModal', this.crearUsuarioForm);
-      },
-      (error) => {
-        console.error(error);
-        this.toastrService.error('Error al crear el usuario.', error);
-      })
-    }
+    
 
   }
 

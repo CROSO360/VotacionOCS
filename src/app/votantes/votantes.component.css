@@ -69,3 +69,7 @@
   float: right;
   color: #007bff;
 }
+
+.capitalize-options {
+  text-transform: capitalize;
+}

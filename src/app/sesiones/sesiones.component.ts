@@ -63,7 +63,7 @@ export class SesionesComponent implements OnInit {
   }
 
   getSesiones() {
-    const query = '';
+    const query = 'status=1';
     const relations = [''];
     this.sesionService.getAllDataBy(query, relations).subscribe((data: any) => {
       this.sesiones = data;
@@ -146,7 +146,7 @@ export class SesionesComponent implements OnInit {
       fecha: this.modificarSesionForm.value.fecha,
       tipo: this.modificarSesionForm.value.tipo,
       oficio: this.modificarSesionForm.value.oficio,
-      estado: this.modificarSesionForm.value.estado,
+      //estado: this.modificarSesionForm.value.estado,
     };
 
     this.sesionService.saveData(sesionData).subscribe(
@@ -185,6 +185,7 @@ export class SesionesComponent implements OnInit {
       }
     );
   }
+
 
   goBack() {
     this.location.back();

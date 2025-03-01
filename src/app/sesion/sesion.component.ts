@@ -133,6 +133,8 @@ export class SesionComponent implements OnInit {
       },
       nombre: this.crearPuntoForm.value.nombre,
       detalle: this.crearPuntoForm.value.detalle,
+      categoria: 'administrativa',
+      orden: 1,
     };
 
     this.puntoService.saveData(puntoData).subscribe(

@@ -26,7 +26,10 @@
   <!-- Lista de usuarios con checkbox -->
   <div class="list-group mt-3">
     <div *ngFor="let usuario of usuariosFiltrados">
-      <div class="list-group-item" [ngClass]="{'usuario-inactivo': !usuario.estado}">
+      <div
+        class="list-group-item"
+        [ngClass]="{ 'usuario-inactivo': !usuario.estado }"
+      >
         {{ usuario.cedula }} - {{ usuario.nombre }}
         <button
           type="button"
@@ -43,8 +46,6 @@
       No se encontraron usuarios.
     </div>
   </div>
-  
-  
 
   <!-- Botón de confirmar -->
 
@@ -94,7 +95,7 @@
         <form [formGroup]="modificarUsuarioForm" (ngSubmit)="editarUsuario()">
           <div class="form-group">
             <input type="hidden" formControlName="idUsuario" />
-            
+
             <label for="nombre" class="form-label">Nombre:</label>
             <input
               formControlName="nombre"
@@ -103,10 +104,17 @@
               placeholder="Nombre"
               class="form-control"
             />
-            <div *ngIf="modificarUsuarioForm.get('nombre')?.invalid && (modificarUsuarioForm.get('nombre')?.dirty || modificarUsuarioForm.get('nombre')?.touched)" class="text-danger">
+            <div
+              *ngIf="
+                modificarUsuarioForm.get('nombre')?.invalid &&
+                (modificarUsuarioForm.get('nombre')?.dirty ||
+                  modificarUsuarioForm.get('nombre')?.touched)
+              "
+              class="text-danger"
+            >
               El nombre es obligatorio.
             </div>
-        
+
             <label for="codigo" class="form-label">Código:</label>
             <input
               formControlName="codigo"
@@ -115,10 +123,17 @@
               placeholder="Código"
               class="form-control"
             />
-            <div *ngIf="modificarUsuarioForm.get('codigo')?.invalid && (modificarUsuarioForm.get('codigo')?.dirty || modificarUsuarioForm.get('codigo')?.touched)" class="text-danger">
+            <div
+              *ngIf="
+                modificarUsuarioForm.get('codigo')?.invalid &&
+                (modificarUsuarioForm.get('codigo')?.dirty ||
+                  modificarUsuarioForm.get('codigo')?.touched)
+              "
+              class="text-danger"
+            >
               El código es obligatorio.
             </div>
-        
+
             <label for="cedula" class="form-label">Cédula:</label>
             <input
               formControlName="cedula"
@@ -127,10 +142,17 @@
               placeholder="Cédula"
               class="form-control"
             />
-            <div *ngIf="modificarUsuarioForm.get('cedula')?.invalid && (modificarUsuarioForm.get('cedula')?.dirty || modificarUsuarioForm.get('cedula')?.touched)" class="text-danger">
+            <div
+              *ngIf="
+                modificarUsuarioForm.get('cedula')?.invalid &&
+                (modificarUsuarioForm.get('cedula')?.dirty ||
+                  modificarUsuarioForm.get('cedula')?.touched)
+              "
+              class="text-danger"
+            >
               La cédula es obligatoria.
             </div>
-        
+
             <label for="grupoUsuario" class="form-label">Grupo Usuario:</label>
             <select
               name="grupoUsuario"
@@ -146,37 +168,47 @@
                 Representante {{ grupo.nombre }}
               </option>
             </select>
-            <div *ngIf="modificarUsuarioForm.get('grupoUsuario')?.invalid && (modificarUsuarioForm.get('grupoUsuario')?.dirty || modificarUsuarioForm.get('grupoUsuario')?.touched)" class="text-danger">
+            <div
+              *ngIf="
+                modificarUsuarioForm.get('grupoUsuario')?.invalid &&
+                (modificarUsuarioForm.get('grupoUsuario')?.dirty ||
+                  modificarUsuarioForm.get('grupoUsuario')?.touched)
+              "
+              class="text-danger"
+            >
               El grupo de usuario es obligatorio.
             </div>
-        
-            <label for="usuarioReemplazo" class="form-label">Usuario de reemplazo:</label>
+
+            <label for="usuarioReemplazo" class="form-label">Usuario de reemplazo:</label> 
+            
             <select
               name="usuarioReemplazo"
               id="usuarioReemplazo"
               formControlName="usuarioReemplazo"
               class="form-control"
             >
-              <option value="0">Ninguno</option>
+              <option *ngIf="mensajeReemplazo" value="0" selected>{{ mensajeReemplazo }}</option>
+              <option *ngIf="!mensajeReemplazo" value="0">Ninguno</option>
               <option
-                *ngFor="let usuario of usuarios"
+                *ngFor="let usuario of reemplazosDisponibles"
                 [value]="usuario.id_usuario"
               >
                 {{ usuario.cedula }} - {{ usuario.nombre }}
               </option>
             </select>
-        
+
             <label for="estado" class="form-label">Usuario activo:</label>
-            <input
-              type="checkbox"
-              formControlName="estado"
-              id="estado"
-            />
+            <input type="checkbox" formControlName="estado" id="estado" />
           </div>
-        
-          <button type="submit" class="btn btn-primary" [disabled]="modificarUsuarioForm.invalid">Guardar cambios</button>
+
+          <button
+            type="submit"
+            class="btn btn-primary"
+            [disabled]="modificarUsuarioForm.invalid"
+          >
+            Guardar cambios
+          </button>
         </form>
-        
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
@@ -220,10 +252,17 @@
               placeholder="Nombre"
               class="form-control"
             />
-            <div *ngIf="crearUsuarioForm.get('nombrex')?.invalid && (crearUsuarioForm.get('nombrex')?.dirty || crearUsuarioForm.get('nombrex')?.touched)" class="text-danger">
+            <div
+              *ngIf="
+                crearUsuarioForm.get('nombrex')?.invalid &&
+                (crearUsuarioForm.get('nombrex')?.dirty ||
+                  crearUsuarioForm.get('nombrex')?.touched)
+              "
+              class="text-danger"
+            >
               El nombre es obligatorio.
             </div>
-        
+
             <label for="codigo" class="form-label">Código:</label>
             <input
               formControlName="codigox"
@@ -232,10 +271,17 @@
               placeholder="Código"
               class="form-control"
             />
-            <div *ngIf="crearUsuarioForm.get('codigox')?.invalid && (crearUsuarioForm.get('codigox')?.dirty || crearUsuarioForm.get('codigox')?.touched)" class="text-danger">
+            <div
+              *ngIf="
+                crearUsuarioForm.get('codigox')?.invalid &&
+                (crearUsuarioForm.get('codigox')?.dirty ||
+                  crearUsuarioForm.get('codigox')?.touched)
+              "
+              class="text-danger"
+            >
               El código es obligatorio.
             </div>
-        
+
             <label for="cedula" class="form-label">Cédula:</label>
             <input
               formControlName="cedulax"
@@ -244,10 +290,17 @@
               placeholder="Cédula"
               class="form-control"
             />
-            <div *ngIf="crearUsuarioForm.get('cedulax')?.invalid && (crearUsuarioForm.get('cedulax')?.dirty || crearUsuarioForm.get('cedulax')?.touched)" class="text-danger">
+            <div
+              *ngIf="
+                crearUsuarioForm.get('cedulax')?.invalid &&
+                (crearUsuarioForm.get('cedulax')?.dirty ||
+                  crearUsuarioForm.get('cedulax')?.touched)
+              "
+              class="text-danger"
+            >
               La cédula es obligatoria.
             </div>
-        
+
             <label for="grupoUsuario" class="form-label">Grupo Usuario:</label>
             <select
               name="grupoUsuario"
@@ -263,11 +316,18 @@
                 Representante {{ grupo.nombre }}
               </option>
             </select>
-            <div *ngIf="crearUsuarioForm.get('grupoUsuariox')?.invalid && (crearUsuarioForm.get('grupoUsuariox')?.dirty || crearUsuarioForm.get('grupoUsuariox')?.touched)" class="text-danger">
+            <div
+              *ngIf="
+                crearUsuarioForm.get('grupoUsuariox')?.invalid &&
+                (crearUsuarioForm.get('grupoUsuariox')?.dirty ||
+                  crearUsuarioForm.get('grupoUsuariox')?.touched)
+              "
+              class="text-danger"
+            >
               El grupo de usuario es obligatorio.
             </div>
-        
-            <label for="usuarioReemplazo" class="form-label">Usuario de reemplazo:</label>
+
+            <!-- label for="usuarioReemplazo" class="form-label">Usuario de reemplazo:</label>
             <select
               name="usuarioReemplazo"
               id="usuarioReemplazo"
@@ -281,15 +341,25 @@
               >
                 {{ usuario.cedula }} - {{ usuario.nombre }}
               </option>
-            </select>
+            </select -->
           </div>
-        
-          <button type="submit" class="btn btn-primary" [disabled]="crearUsuarioForm.invalid">Guardar cambios</button>
+
+          <button
+            type="submit"
+            class="btn btn-primary"
+            [disabled]="crearUsuarioForm.invalid"
+          >
+            Guardar cambios
+          </button>
         </form>
-        
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+        <button
+          type="button"
+          (click)="cerrarModal('crearUsuarioModal', this.crearUsuarioForm)"
+          class="btn btn-secondary"
+          data-bs-dismiss="modal"
+        >
           Cancelar
         </button>
       </div>

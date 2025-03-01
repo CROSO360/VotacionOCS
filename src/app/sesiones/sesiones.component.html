@@ -79,7 +79,7 @@
         ></button>
       </div>
       <div class="modal-body">
-        <form [formGroup]="modificarSesionForm" (ngSubmit)="editarSesion()">
+        <form [formGroup]="modificarSesionForm" (ngSubmit)="editarSesion()" enctype="multipart/form-data">
           <div class="form-group">
             <input type="hidden" formControlName="idSesion" />
             <label for="nombre" class="form-label">Nombre:</label>
@@ -134,10 +134,10 @@
             </div>
         
             <label for="oficio" class="form-label">Oficio:</label>
-            <input type="file" formControlName="oficio" />
+            <input type="file" formControlName="oficio"/>
         
-            <label for="estado" class="form-label">Estado:</label>
-            <input type="checkbox" formControlName="estado" />
+            <!--label for="estado" class="form-label">Estado:</label>
+            <input type="checkbox" formControlName="estado" /-->
           </div>
         
           <button type="submit" class="btn btn-primary" [disabled]="modificarSesionForm.invalid">Guardar cambios</button>

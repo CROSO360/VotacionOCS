@@ -1,14 +1,21 @@
+import { ISesion } from "./ISesion";
+
 export interface IPunto{
     id_punto?: number;
-    id_sesion?: number;
+    sesion?: ISesion;
     nombre?: string;
     detalle?: string;
+    //orden?: number;
+    //categoria?: string;
+
     n_afavor?: number;
-    afavor?: number;
     n_encontra?: number;
-    encontra?: number;
-    n_abstinencia?: number;
-    abstinencia?: number;
+    n_abstinencia?: number; //abstencion
+    afavor?: number; //p_afavor
+    encontra?: number; //p_encontra
+    abstinencia?: number; //p_abstencion
+
+    //resultado?: string;    
     estado?: boolean;
     status?: boolean;
 }

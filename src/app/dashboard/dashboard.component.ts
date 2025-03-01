@@ -31,7 +31,7 @@ export class DashboardComponent implements OnInit {
   }
 
   getSesiones() {
-    const query = `estado=1`;
+    const query = `estado=1&status=1`;
     this.sesionService.getAllDataBy(query).subscribe(
       (data: any) => {
         this.sesiones = data;

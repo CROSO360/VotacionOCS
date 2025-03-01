@@ -16,7 +16,7 @@
   <!-- Pestañas para grupos de usuarios -->
   <ul class="nav nav-tabs">
     <li class="nav-item" *ngFor="let grupo of gruposUsuarios">
-      <a class="nav-link" (click)="cambiarGrupo(grupo)">{{ grupo.nombre }}</a>
+      <a class="nav-link capitalize-options" (click)="cambiarGrupo(grupo)">{{ grupo.nombre }}</a>
     </li>
     <li class="nav-item">
       <a class="nav-link" (click)="cambiarGrupo(null)">Todos</a>

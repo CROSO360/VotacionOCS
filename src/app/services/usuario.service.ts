@@ -48,7 +48,15 @@ export class UsuarioService {
   }
 
   deleteData(id: number): Observable<any> {
-    return this.http.post(`${this.baseURL}/usuario/delete/${id}`, {});
+    return this.http.delete(`${this.baseURL}/usuario/delete/${id}`, {});
+  }
+
+  updateData(data: IUsuario): Observable<IUsuario> {
+    return this.http.post<IUsuario>(`${this.baseURL}/usuario/update`, data);
+  }
+
+  reemplazosDispobibles(id: number): Observable<any[]> {
+    return this.http.get<IUsuario[]>(`${this.baseURL}/usuario/reemplazos-disponibles/${id}`);
   }
 
 }
