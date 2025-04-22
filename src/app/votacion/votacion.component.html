@@ -5,7 +5,14 @@
   <button class="back-button" (click)="goBack()">←</button>
 
   <!-- Título de la página -->
-  <h2 class="text-center">Sesión {{ sesion?.nombre }}</h2>
+  <h2 class="text-center">{{ sesion?.nombre }}</h2>
+
+  <!-- Mostrar solo si fase = pendiente -->
+  <div *ngIf="sesion?.fase === 'pendiente'" class="text-center my-4">
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalConfirmarIniciar">
+      Iniciar sesión
+    </button>
+  </div>
 
   <!-- Agrega este código donde quieras que aparezca el combo de puntos -->
   Punto:
@@ -20,13 +27,20 @@
     <button
       class="btn btn-secondary mb-3"
       (click)="cambiarEstadoPunto(punto)"
-      *ngIf="punto.id_punto == puntoSeleccionado && sesion?.estado == true"
+      *ngIf="punto.id_punto == puntoSeleccionado && sesion?.estado == true && sesion?.fase === 'activa'"
     >
       {{ punto.estado ? "Deshabilitar punto" : "Habilitar punto" }}
     </button>
   </div>
+  
+  <!-- Mostrar solo si fase = pendiente -->
+  <div *ngIf="sesion?.fase === 'pendiente'" class=" my-4">
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalConfirmarGenerar">
+      Generar votos
+    </button>
+  </div>
 
-  <!-- Contenedor con Scroll para los puntos -->
+  <!-- Contenedor con Scroll para los puntos usuarios -->
   <div class="points-container">
     <div class="grid-container">
       <!-- Utiliza *ngFor para repetir los cuadrados -->
@@ -124,6 +138,7 @@
       </div>
     </div>
   </div>
+  
   <button
     class="btn btn-secondary"
     data-bs-toggle="modal"
@@ -308,6 +323,44 @@
         >
           Cancelar
         </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal de confirmación para generar votos -->
+<div class="modal fade" id="modalConfirmarGenerar" tabindex="-1" aria-labelledby="modalConfirmarGenerarLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h1 class="modal-title fs-5" id="modalConfirmarGenerarLabel">Confirmación</h1>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        ¿Desea generar los votos para esta sesión? Si ya se han generado previamente, serán eliminados y reemplazados.
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-primary" (click)="generarVotos()" data-bs-dismiss="modal">Confirmar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal de confirmación para iniciar la sesion -->
+<div class="modal fade" id="modalConfirmarIniciar" tabindex="-1" aria-labelledby="modalConfirmarIniciarLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h1 class="modal-title fs-5" id="modalConfirmarIniciarLabel">Confirmación</h1>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        ¿Desea iniciar {{sesion.nombre}}?
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Confirmar</button>
       </div>
     </div>
   </div>

@@ -1,0 +1,83 @@
+<app-barra-superior></app-barra-superior>
+
+<div class="container my-4">
+  <button class="back-button mb-3" (click)="goBack()">&#8592;</button>
+  <h2 class="text-center">Gestión del Punto</h2>
+
+  <!-- Sección de punto y resolución lado a lado -->
+  <div class="row">
+    <!-- Formulario del Punto -->
+    <div class="col-md-6">
+      <h5>Editar Punto</h5>
+      <form [formGroup]="modificarPuntoForm" (ngSubmit)="editarPunto()">
+        <div class="form-group">
+          <label>Nombre:</label>
+          <input type="text" formControlName="nombre" class="form-control" />
+        </div>
+        <div class="form-group">
+          <label>Detalle:</label>
+          <textarea formControlName="detalle" rows="3" class="form-control"></textarea>
+        </div>
+        <div class="form-group">
+          <label for="es_administrativa" class="form-label">Tema administrativo</label>
+          <input type="checkbox" formControlName="es_administrativa" id="es_administrativa" />
+        </div>
+        <button class="btn btn-primary mt-2" type="submit" [disabled]="!formularioPuntoModificado() || modificarPuntoForm.invalid">
+          Confirmar cambios
+        </button>
+      </form>
+    </div>
+
+    <!-- Gestión de Resolución -->
+    <div class="col-md-6">
+      <h5>Resolución</h5>
+
+      <!-- Si no hay resolución -->
+      <div *ngIf="!resolucion">
+        <button class="btn btn-secondary" (click)="resolucion = {};">Nueva resolución</button>
+      </div>
+
+      <!-- Si hay resolución o se está creando -->
+      <form *ngIf="resolucion" [formGroup]="resolucionForm" (ngSubmit)="resolucion?.nombre ? editarResolucion() : crearResolucion()">
+        <div class="form-group mt-3">
+          <label>Nombre:</label>
+          <input type="text" formControlName="nombre" class="form-control" />
+        </div>
+        <div class="form-group">
+          <label>Descripción:</label>
+          <textarea formControlName="descripcion" rows="3" class="form-control"></textarea>
+        </div>
+        <button class="btn btn-primary mt-2" type="submit" [disabled]="!formularioResolucionModificado() || resolucionForm.invalid">
+          Confirmar cambios
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Gestión de documentos -->
+  <div class="documents-container mt-5">
+    <h5>Documentos del Punto</h5>
+    <table class="documents-table">
+      <!-- Primer elemento: Subir archivo -->
+      <tr>
+        <td colspan="3" class="upload-container">
+          <label class="upload-label">
+            <input type="file" (change)="onFileSelected($event)" class="file-input" />
+            <span>Seleccionar archivo</span>
+          </label>
+        </td>
+      </tr>
+
+      <!-- Documentos listados -->
+      <tr *ngFor="let documento of puntoDocumentos">
+        <td class="document-name">{{ documento.documento.nombre }}</td>
+        <td class="btn-container">
+          <button class="btn btn-secondary" (click)="abrirDocumento(documento.documento)">Ver</button>
+        </td>
+        <td class="btn-container">
+          <button class="btn btn-danger" (click)="eliminarDocumento(documento.documento.id_documento)">Eliminar</button>
+        </td>
+      </tr>
+    </table><br><br>
+  </div>
+</div>

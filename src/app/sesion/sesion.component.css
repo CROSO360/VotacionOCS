@@ -13,11 +13,12 @@
 }
 
 .main-container .points-container {
-  max-height: 280px;
+  max-height: 280px; /*altura máxima para la tabla de puntos*/
   overflow-y: auto;
   border: 1px solid #ccc;
   padding: 15px;
   margin-bottom: 20px;
+  
 }
 
 .main-container .points-table {
@@ -110,6 +111,55 @@
   margin-left: 5px;
 }
 
+/* Indicador de movimiento */
+.drag-handle {
+  cursor: move;
+  text-align: center;
+  width: 40px;
+  font-size: 20px;
+  color: #333;
+}
+
+/* Celda vacía para filas sin drag */
+.disabled-cell {
+  width: 40px;
+}
+
+/* Estilo mientras se arrastra */
+.cdk-drag-preview {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  background-color: white;
+  border: 1px solid #ccc;
+  z-index: 1000;
+}
+
+/* Destino de drop resaltado */
+.cdk-drop-list-dragging tr {
+  transition: background-color 0.2s;
+}
+
+.cdk-drop-list-dragging tr.cdk-drag-placeholder {
+  background-color: #f0f8ff !important; /* azul claro */
+  border: 2px dashed #007bff;
+  visibility: visible !important;
+}
+
+/* Para que no desaparezca el placeholder */
+.cdk-drag-placeholder {
+  visibility: visible !important;
+  opacity: 0.6;
+  height: 60px;
+}
+
+/* Preview de fila mientras arrastras */
+.drag-preview-row td {
+  background-color: white;
+  padding: 10px;
+  border: 1px solid #ccc;
+  font-weight: 500;
+}
+
+
 @media (min-width: 576px) {
   .custom-modal .modal-dialog {
     max-width: 500px;
@@ -133,3 +183,4 @@
     max-width: 800px;
   }
 }
+

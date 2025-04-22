@@ -3,3 +3,10 @@
 
 html, body { height: 100%; }
 body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
+
+.toast-container {
+    position: fixed !important; /* Se fija en la pantalla, no en la página */
+    top: 20px !important; /* Se mantiene en la parte superior */
+    right: 20px !important; /* Alineado a la derecha */
+    z-index: 9999 !important; /* Asegura que quede por encima de todo */
+  }

@@ -7,8 +7,9 @@ export interface IPuntoUsuario{
     usuario?: IUsuario;
     opcion?: string;
     es_razonado?: boolean;
+    votante?: IUsuario
     es_principal?: boolean;
-    //fecha?: Date;
+    fecha?: Date;
     estado?: boolean;
     status?: boolean;
 }

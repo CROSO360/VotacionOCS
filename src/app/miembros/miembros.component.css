@@ -1,0 +1,57 @@
+.list-group {
+  width: 100%;
+  max-width: 100%; /* Ajusta para que ocupe todo el ancho del contenedor */
+  margin: 0 auto;
+}
+
+.list-group-item {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 12px;
+  border-bottom: 1px solid #ddd;
+  width: 100%;
+}
+
+.list-group-item input[type="checkbox"] {
+  margin-right: 10px;
+  width: 18px;
+  height: 18px;
+}
+
+.list-group-item label {
+  flex-grow: 1;
+  text-align: left;
+  font-size: 16px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.nav-tabs {
+  display: flex;
+  justify-content: flex-start;
+  width: 100%;
+}
+
+.nav-tabs .nav-item {
+  margin-right: 10px;
+}
+
+.nav-tabs .nav-link {
+  color: blue;
+  cursor: pointer;
+}
+
+/* Asegurar que la lista se alinee con la barra de grupos de usuarios */
+@media (min-width: 768px) {
+  .list-group {
+    max-width: 90%;
+  }
+}
+
+@media (min-width: 992px) {
+  .list-group {
+    max-width: 100%;
+  }
+}

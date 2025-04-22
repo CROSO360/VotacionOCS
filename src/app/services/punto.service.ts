@@ -47,8 +47,16 @@ export class PuntoService {
     return this.http.post<IPunto>(`${this.baseURL}/punto/save`, data);
   }
 
+  crearPunto(data: IPunto): Observable<any> {
+    return this.http.post<any>(`${this.baseURL}/punto/crear`, data);
+  }
+
   deleteData(id: number): Observable<any> {
-    return this.http.post(`${this.baseURL}/punto/delete/${id}`, {});
+    return this.http.post(`${this.baseURL}/punto/eliminar/${id}`, {});
+  }
+
+  reordenarPuntos(data: any): Observable<any> {
+    return this.http.post<any>(`${this.baseURL}/punto/reordenar`, data);
   }
 
   getResultados(id:number):Observable<any> {

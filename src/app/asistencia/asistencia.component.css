@@ -1,0 +1,23 @@
+.capitalize-options {
+    text-transform: capitalize;
+  }
+  
+  .modal-body .form-control {
+    width: 100%;
+    max-width: 400px;
+    margin: auto;
+  }
+  
+  .list-group-item {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 10px;
+    border-bottom: 1px solid #ddd;
+  }
+  
+  .list-group-item .badge {
+    font-size: 0.8rem;
+    padding: 4px 8px;
+  }
+  

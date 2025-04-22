@@ -8,6 +8,10 @@ import { VotantesComponent } from './votantes/votantes.component';
 import { UsuariosComponent } from './usuarios/usuarios.component';
 import { SesionesComponent } from './sesiones/sesiones.component';
 import { ResultadosComponent } from './resultados/resultados.component';
+import { DocumentosSesionComponent } from './documentos-sesion/documentos-sesion.component';
+import { MiembrosComponent } from './miembros/miembros.component';
+import { PuntoComponent } from './punto/punto.component';
+import { AsistenciaComponent } from './asistencia/asistencia.component';
 
 export const routes: Routes = [
     {
@@ -34,6 +38,12 @@ export const routes: Routes = [
         path:'sesion/:id',
         title: 'OCS - Sesiones',
         component: SesionComponent,
+        canActivate: [userGuardGuard]
+    },
+    {
+        path:'documentos-sesion/:id',
+        title: 'Documentos de la sesión',
+        component: DocumentosSesionComponent,
         canActivate: [userGuardGuard]
     },
     {
@@ -64,6 +74,24 @@ export const routes: Routes = [
         path:'resultados/:id',
         title:'Resultados',
         component: ResultadosComponent,
+        canActivate: [userGuardGuard],
+    },
+    {
+        path: 'miembros',
+        title: 'Miembros OCS',
+        component: MiembrosComponent,
+        canActivate: [userGuardGuard],
+    },
+    {
+        path: 'punto/:idSesion/:idPunto',
+        title: 'Punto',
+        component: PuntoComponent,
+        canActivate: [userGuardGuard],
+    },
+    {
+        path: 'asistencia/:idSesion',
+        title: 'Asistencia',
+        component: AsistenciaComponent,
         canActivate: [userGuardGuard],
     }
 ];

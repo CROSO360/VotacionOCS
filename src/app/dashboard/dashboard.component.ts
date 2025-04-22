@@ -61,4 +61,8 @@ export class DashboardComponent implements OnInit {
     this.router.navigate(['/sesiones'])
   }
 
+  irAMiembros(){
+    this.router.navigate(['/miembros'])
+  }
+
 }

@@ -5,17 +5,17 @@ export interface IPunto{
     sesion?: ISesion;
     nombre?: string;
     detalle?: string;
-    //orden?: number;
-    //categoria?: string;
+    orden?: number;
+    es_administrativa?: boolean;
 
     n_afavor?: number;
     n_encontra?: number;
-    n_abstinencia?: number; //abstencion
-    afavor?: number; //p_afavor
-    encontra?: number; //p_encontra
-    abstinencia?: number; //p_abstencion
+    n_abstencion?: number; 
+    p_afavor?: number; 
+    p_encontra?: number; 
+    p_abstencion?: number; 
 
-    //resultado?: string;    
+    resultado?: string;    
     estado?: boolean;
     status?: boolean;
 }

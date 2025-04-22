@@ -59,4 +59,12 @@ export class PuntoUsuarioService {
     return this.http.post<any>(`${this.baseURL}/punto-usuario/voto`, data)
   }
 
+  generarPuntosUsuario(idSesion: number): Observable<any> {
+    return this.http.post<any>(`${this.baseURL}/punto-usuario/generar-puntovoto/${idSesion}`, {})
+  } 
+
+  eliminarPuntosUsuario(idSesion: number): Observable<any> {
+    return this.http.post<any>(`${this.baseURL}/punto-usuario/eliminar-puntovoto/${idSesion}`, {})
+  }
+
 }

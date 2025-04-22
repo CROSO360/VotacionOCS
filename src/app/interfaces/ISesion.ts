@@ -2,11 +2,10 @@ export interface ISesion{
     id_sesion?: number;
     nombre?: string;
     codigo?: string;
-    fecha?: Date;//_inicio
-    //fecha_fin?: Date;
+    fecha_inicio?: Date;
+    fecha_fin?: Date;
     tipo?: string;
-    oficio?: string;//eliminar
-    periodo?: string; // eliminar
+    fase?: string;
     estado?: boolean;
     status?: boolean;
 }

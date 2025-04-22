@@ -106,15 +106,15 @@
               El código es obligatorio.
             </div>
         
-            <label for="fecha" class="form-label">Fecha:</label>
+            <label for="fecha_inicio" class="form-label">Fecha de inicio:</label>
             <input
-              formControlName="fecha"
+              formControlName="fecha_inicio"
               type="date"
-              id="fecha"
-              placeholder="Fecha"
+              id="fecha_inicio"
+              placeholder="Fecha de inicio"
               class="form-control"
             />
-            <div *ngIf="modificarSesionForm.get('fecha')?.invalid && (modificarSesionForm.get('fecha')?.dirty || modificarSesionForm.get('fecha')?.touched)" class="text-danger">
+            <div *ngIf="modificarSesionForm.get('fecha_inicio')?.invalid && (modificarSesionForm.get('fecha_inicio')?.dirty || modificarSesionForm.get('fecha_inicio')?.touched)" class="text-danger">
               La fecha es obligatoria.
             </div>
         
@@ -132,12 +132,6 @@
             <div *ngIf="modificarSesionForm.get('tipo')?.invalid && (modificarSesionForm.get('tipo')?.dirty || modificarSesionForm.get('tipo')?.touched)" class="text-danger">
               El tipo es obligatorio.
             </div>
-        
-            <label for="oficio" class="form-label">Oficio:</label>
-            <input type="file" formControlName="oficio"/>
-        
-            <!--label for="estado" class="form-label">Estado:</label>
-            <input type="checkbox" formControlName="estado" /-->
           </div>
         
           <button type="submit" class="btn btn-primary" [disabled]="modificarSesionForm.invalid">Guardar cambios</button>
@@ -200,15 +194,15 @@
               El código es obligatorio.
             </div>
         
-            <label for="fecha" class="form-label">Fecha:</label>
+            <label for="fecha_inicio" class="form-label">Fecha de inicio:</label>
             <input
-              formControlName="fecha"
+              formControlName="fecha_inicio"
               type="date"
-              id="fecha"
-              placeholder="Fecha"
+              id="fecha_inicio"
+              placeholder="Fecha de inicio"
               class="form-control"
             />
-            <div *ngIf="crearSesionForm.get('fecha')?.invalid && (crearSesionForm.get('fecha')?.dirty || crearSesionForm.get('fecha')?.touched)" class="text-danger">
+            <div *ngIf="crearSesionForm.get('fecha_inicio')?.invalid && (crearSesionForm.get('fecha_inicio')?.dirty || crearSesionForm.get('fecha_inicio')?.touched)" class="text-danger">
               La fecha es obligatoria.
             </div>
         
@@ -226,9 +220,6 @@
             <div *ngIf="crearSesionForm.get('tipo')?.invalid && (crearSesionForm.get('tipo')?.dirty || crearSesionForm.get('tipo')?.touched)" class="text-danger">
               El tipo es obligatorio.
             </div>
-        
-            <label for="oficio" class="form-label">Oficio:</label>
-            <input type="file" formControlName="oficio" />
         
           </div>
         

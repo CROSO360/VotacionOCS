@@ -150,6 +150,29 @@ export class VotacionComponent implements OnInit {
     });
   }
 
+  generarVotos() {
+    const eliminar = this.puntoUsuarioService.eliminarPuntosUsuario(this.idSesion);
+    const generar = this.puntoUsuarioService.generarPuntosUsuario(this.idSesion);
+
+    eliminar.subscribe({
+      next: () => {
+        generar.subscribe({
+          next: () => {
+            this.toastr.success('Votos generados correctamente', 'Éxito');
+            this.getPuntos();
+            this.getSesion();
+          },
+          error: () => {
+            this.toastr.error('Error al generar los votos', 'Error');
+          }
+        });
+      },
+      error: () => {
+        this.toastr.error('Error al eliminar votos anteriores', 'Error');
+      }
+    });
+  }
+
   finalizarSesion(sesion: ISesion) {
     const observables = this.puntos.map((punto: IPunto) => {
       return this.puntoService.registerResultados({ idPunto: punto.id_punto });

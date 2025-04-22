@@ -1,0 +1,50 @@
+<app-barra-superior></app-barra-superior>
+
+<!-- Contenedor principal -->
+<div class="main-container my-5">
+  <!-- Botón para regresar -->
+  <button class="back-button" (click)="goBack()">&#8592;</button>
+
+  <!-- Título de la página -->
+  <h2 class="text-center">Documentos {{ sesion?.nombre }}</h2>
+
+  <!-- Contenedor con Scroll para los documentos -->
+  <div class="documents-container">
+    <table class="documents-table">
+      <!-- Primer elemento: Subir archivo -->
+      <tr>
+        <td colspan="3" class="upload-container">
+          <label class="upload-label">
+            <input
+              type="file"
+              (change)="onFileSelected($event)"
+              class="file-input"
+            />
+            <span>Seleccionar archivo</span>
+          </label>
+        </td>
+      </tr>
+
+      <!-- Documentos listados -->
+      <tr *ngFor="let documento of sesionDocumentos">
+        <td class="document-name">{{ documento.documento.nombre }}</td>
+        <td class="btn-container">
+          <button
+            class="btn btn-secondary"
+            (click)="abrirDocumento(documento.documento)"
+          >
+            Ver
+          </button>
+        </td>
+        <td class="btn-container">
+          <button
+            class="btn btn-danger"
+            (click)="eliminarDocumento(documento.documento.id_documento)"
+          >
+            Eliminar
+          </button>
+        </td>
+      </tr>
+    </table>
+  </div>
+</div>

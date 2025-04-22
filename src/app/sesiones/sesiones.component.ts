@@ -42,18 +42,16 @@ export class SesionesComponent implements OnInit {
     idSesion: new FormControl('', Validators.required),
     nombre: new FormControl('', Validators.required),
     codigo: new FormControl('', Validators.required),
-    fecha: new FormControl('', Validators.required),
+    fecha_inicio: new FormControl('', Validators.required),
     tipo: new FormControl('', Validators.required),
-    oficio: new FormControl(''),
     estado: new FormControl(''),
   });
 
   crearSesionForm = new FormGroup({
     nombre: new FormControl('', Validators.required),
     codigo: new FormControl('', Validators.required),
-    fecha: new FormControl('', Validators.required),
+    fecha_inicio: new FormControl('', Validators.required),
     tipo: new FormControl('', Validators.required),
-    oficio: new FormControl(''),
   });
 
   ngOnInit(): void {
@@ -106,9 +104,8 @@ export class SesionesComponent implements OnInit {
       idSesion: sesion.id_sesion,
       nombre: sesion.nombre,
       codigo: sesion.codigo,
-      fecha: sesion.fecha.substring(0, 10),
+      fecha_inicio: sesion.fecha_inicio.substring(0, 10),
       tipo: sesion.tipo,
-      oficio: sesion.oficio,
       estado: sesion.estado,
     });
   }
@@ -143,10 +140,8 @@ export class SesionesComponent implements OnInit {
       id_sesion: parseInt(this.modificarSesionForm.value.idSesion!),
       nombre: this.modificarSesionForm.value.nombre,
       codigo: this.modificarSesionForm.value.codigo,
-      fecha: this.modificarSesionForm.value.fecha,
+      fecha_inicio: this.modificarSesionForm.value.fecha_inicio,
       tipo: this.modificarSesionForm.value.tipo,
-      oficio: this.modificarSesionForm.value.oficio,
-      //estado: this.modificarSesionForm.value.estado,
     };
 
     this.sesionService.saveData(sesionData).subscribe(
@@ -167,10 +162,11 @@ export class SesionesComponent implements OnInit {
     const sesionData: any = {
       nombre: this.crearSesionForm.value.nombre,
       codigo: this.crearSesionForm.value.codigo,
-      fecha: this.crearSesionForm.value.fecha,
+      fecha_inicio: this.crearSesionForm.value.fecha_inicio,
       tipo: this.crearSesionForm.value.tipo,
-      oficio: this.crearSesionForm.value.oficio,
     };
+
+    console.log(sesionData);
 
     this.sesionService.saveData(sesionData).subscribe(
       (response) => {

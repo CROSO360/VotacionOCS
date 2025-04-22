@@ -6,40 +6,16 @@
   <button class="back-button" (click)="goBack()">←</button>
 
   <!-- Título de la página -->
-  <h2 class="text-center">Puntos la sesión {{ sesion?.nombre }}</h2>
+  <h2 class="text-center">Puntos {{ sesion?.nombre }}</h2>
 
-  <!-- Contenedor con Scroll para los puntos -->
-  <div class="points-container">
-    <table class="points-table">
-      <tr *ngFor="let punto of puntos">
-        <td class="point-name">{{ punto.nombre }}</td>
-        <td class="btn-container">
-          <button
-            class="btn btn-secondary"
-            (click)="irAVotantes(idSesion!, punto.id_punto!)"
-          >
-            Listado de votantes
-          </button>
-        </td>
-        <td class="btn-container">
-          <button 
-            class="btn btn-secondary"
-            type="button"
-            data-bs-toggle="modal"
-            data-bs-target="#exampleModal"
-            [disabled]="sesion?.estado === false"
-            (click)="abrirEditar(punto)"
-            aria-label="Editar punto"
-          >
-            Editar
-          </button>
-        </td>
-      </tr>
-    </table>
-  </div>
-
-  <!-- Botones al final -->
-  <div class="buttons-container my-4">
+  <div class="buttons-container m-4">
+    <button
+      class="btn btn-secondary"
+      (click)="irADocumentosSesion(idSesion!)"
+      aria-label="Documentos sesión"
+    >
+      Documentos
+    </button>
     <button
       class="btn btn-secondary"
       type="button"
@@ -50,6 +26,96 @@
     >
       Agregar punto
     </button>
+
+  </div>
+
+<!-- Contenedor con Scroll para los puntos -->
+<div
+  class="points-container"
+  cdkDropList
+  [cdkDropListData]="puntos"
+  (cdkDropListDropped)="reordenar($event)"
+  (cdkDragStarted)="onDragStarted()"
+  (cdkDragEnded)="onDragEnded()"
+>
+  <table class="points-table">
+    <tr
+      *ngFor="let punto of puntos; let i = index"
+      cdkDrag
+      [cdkDragData]="punto"
+      class="draggable-row"
+    >
+      <!-- Drag Handle (solo si status es true) -->
+      <td *ngIf="punto.status" class="drag-handle" cdkDragHandle title="Mover">
+        &#x2630;
+      </td>
+      <td *ngIf="!punto.status" class="drag-handle disabled-cell"></td>
+
+      <!-- Nombre del punto -->
+      <td class="point-name">{{ punto.nombre }}</td>
+
+      <!-- Botón fantasma -->
+      <td class="btn-container">LOOOL</td>
+
+      <!-- Botón ver punto -->
+      <td class="btn-container">
+        <button
+          class="btn btn-secondary"
+          type="button"
+          (click)="irAPunto(idSesion!, punto.id_punto!)"
+          aria-label="Punto"
+        >
+          Ver punto
+        </button>
+      </td>
+
+      <!-- Vista previa durante el arrastre -->
+      <ng-template cdkDragPreview>
+        <table class="points-table drag-preview-row">
+          <tr>
+            <td class="drag-handle">&#x2630;</td>
+            <td class="point-name">{{ punto.nombre }}</td>
+            <td class="btn-container">LOOOL</td>
+            <td class="btn-container">
+              <button class="btn btn-secondary">Ver punto</button>
+            </td>
+          </tr>
+        </table>
+      </ng-template>
+    </tr>
+  </table>
+</div>
+
+
+  
+  
+
+  <!-- Botones al final -->
+  <div class="buttons-container my-4">
+    <!--button
+      class="btn btn-secondary"
+      type="button"
+      data-bs-toggle="modal"
+      data-bs-target="#crearPuntoModal"
+      [disabled]="sesion?.estado === false"
+      aria-label="Agregar punto"
+    >
+      Agregar punto
+    </button-->
+    <button
+      class="btn btn-secondary"
+      (click)="irAAsistencia(idSesion!)"
+      aria-label="Asistencia"
+    >
+      Asistencia
+    </button>
+    <!--button
+      class="btn btn-secondary"
+      (click)="irADocumentosSesion(idSesion!)"
+      aria-label="Documentos sesión"
+    >
+      Documentos
+    </button-->
     <button
       class="btn btn-secondary"
       (click)="irAVotacion(idSesion!)"
@@ -64,7 +130,7 @@
     >
       Ver resultados
     </button>
-  </div>
+  </div><br><br>
 </div>
 
 <!-- Modal para editar punto -->
@@ -189,6 +255,9 @@
             <div *ngIf="crearPuntoForm.get('detalle')?.invalid && crearPuntoForm.get('detalle')?.touched" class="invalid-feedback">
               El detalle es obligatorio.
             </div>
+
+            <label for="es_administrativa" class="form-label">Tema administrativo</label>
+            <input type="checkbox" formControlName="es_administrativa" id="es_administrativa" />
           </div>
         
           <button type="submit" class="btn btn-primary" aria-label="Guardar punto" [disabled]="crearPuntoForm.invalid">
