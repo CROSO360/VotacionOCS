@@ -47,6 +47,18 @@
           <label>Descripción:</label>
           <textarea formControlName="descripcion" rows="3" class="form-control"></textarea>
         </div>
+        <!-- Fuente del resultado (solo si aplica) -->
+          <p
+            class="text-muted fst-italic mt-3"
+            *ngIf="resolucion?.voto_manual != null"
+          >
+            Resuelto mediante:
+            {{
+              resolucion?.voto_manual
+                ? "Cálculo manual por Secretaría"
+                : "Cálculo automático del sistema"
+            }}
+          </p>
         <button class="btn btn-primary mt-2" type="submit" [disabled]="!formularioResolucionModificado() || resolucionForm.invalid">
           Confirmar cambios
         </button>

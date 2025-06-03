@@ -51,4 +51,8 @@ export class SesionService {
     return this.http.post(`${this.baseURL}/sesion/delete/${id}`, {});
   }
 
+  getReporte(id: number): Observable<any> {
+    return this.http.get(`${this.baseURL}/sesion/reporte/${id}`, { responseType: 'blob' });
+  }
+
 }

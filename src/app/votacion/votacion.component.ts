@@ -24,10 +24,17 @@ import { ISesion } from '../interfaces/ISesion';
 import { PuntoUsuarioService } from '../services/puntoUsuario.service';
 import { IPuntoUsuario } from '../interfaces/IPuntoUsuario';
 import { WebSocketService } from '../services/websocket.service';
-import { forkJoin } from 'rxjs';
+import { forkJoin, Observable } from 'rxjs';
 import { ToastrService } from 'ngx-toastr';
 import { UsuarioService } from '../services/usuario.service';
 import { IUsuario } from '../interfaces/IUsuario';
+import { AsistenciaService } from '../services/asistencia.service';
+import { IAsistencia } from '../interfaces/IAsistencia';
+import { MiembroService } from '../services/miembro.service';
+import { ResolucionService } from '../services/resolucion.service';
+import { IResolucion } from '../interfaces/IResolucion';
+import { jwtDecode } from 'jwt-decode';
+import { CookieService } from 'ngx-cookie-service';
 
 @Component({
   selector: 'app-votacion',
@@ -54,8 +61,16 @@ export class VotacionComponent implements OnInit {
     private toastr: ToastrService,
     private usuarioService: UsuarioService,
     private cdr: ChangeDetectorRef,
-    private eRef: ElementRef
+    private eRef: ElementRef,
+    private asistenciaService: AsistenciaService,
+    private miembroService: MiembroService,
+    private resolucionService: ResolucionService,
+    private cookieService: CookieService
   ) {}
+
+  payload: any = jwtDecode(this.cookieService.get('token'));
+
+  usuario: IUsuario | undefined;
 
   squareElement!: HTMLElement;
 
@@ -73,7 +88,9 @@ export class VotacionComponent implements OnInit {
 
   showOptions = false;
 
-  puntoSeleccionado: number | undefined;
+  puntoSeleccionado: IPunto | undefined;
+
+  resolucionActual: IResolucion | undefined;
 
   puntoUsuarioActual: IPuntoUsuario | undefined;
 
@@ -81,28 +98,88 @@ export class VotacionComponent implements OnInit {
 
   activeDropdown: number | null = null;
 
+  nomina: IAsistencia[] = [];
+
+  miembrosOCS: IUsuario[] = [];
+
+  pasoModalResultados: number = 1;
+
+  resultadoManualSeleccionado: 'aprobada' | 'rechazada' | 'pendiente' =
+    'aprobada';
+
+  modoCreacionResolucion = false;
+
   votoManualForm = new FormGroup({
     opcion: new FormControl('', Validators.required),
     razonado: new FormControl(''),
   });
 
+  resolucionForm = new FormGroup({
+    nombre: new FormControl('', [Validators.required]),
+    descripcion: new FormControl('', [Validators.required]),
+  });
+
   ngOnInit(): void {
     this.idSesion = parseInt(this.route.snapshot.paramMap.get('id')!);
-    this.getPuntos();
-    this.getSesion();
-    this.webSocketService.onChange().subscribe(async (sape: any) => {
+
+    const querySesion = `id_sesion=${this.idSesion}`;
+    const queryPuntos = `sesion.id_sesion=${this.idSesion}`;
+    const queryUsuario = `codigo=${this.payload.codigo}`;
+    const queryAsistencia = `sesion.id_sesion=${this.idSesion}`;
+    const relationsAsistencia = ['usuario'];
+    const relationsPuntos = ['sesion'];
+    const relationsMiembros = ['usuario'];
+
+    forkJoin({
+      sesion: this.sesionService.getDataBy(querySesion),
+      puntos: this.puntoService.getAllDataBy(queryPuntos, relationsPuntos),
+      usuario: this.usuarioService.getDataBy(queryUsuario),
+      asistencia: this.asistenciaService.getAllDataBy(
+        queryAsistencia,
+        relationsAsistencia
+      ),
+      miembrosOCS: this.miembroService.getAllDataBy('', relationsMiembros),
+    }).subscribe({
+      next: ({ sesion, puntos, usuario, asistencia, miembrosOCS }) => {
+        this.sesion = sesion;
+        this.puntos = puntos;
+        this.usuario = usuario;
+        this.nomina = asistencia;
+        this.miembrosOCS = miembrosOCS.map((m: any) => m.usuario);
+
+        if (this.puntos.length > 0) {
+          this.puntoSeleccionado = this.puntos[0];
+          this.onPuntoChange(); // ✅ Cargar datos iniciales del primer punto
+        }
+      },
+      error: () => {
+        this.toastr.error('Error al cargar los datos iniciales', 'Error');
+      },
+    });
+
+    this.webSocketService.onChange().subscribe((sape: any) => {
       this.actualizarPuntoUsuario(sape.puntoUsuarioId);
+    });
+  }
+
+  getUsuario() {
+    const query = `codigo=${this.payload.codigo}`;
+    this.usuarioService.getDataBy(query).subscribe((data) => {
+      this.usuario = data;
+      console.log(this.usuario);
     });
   }
 
   getPuntos() {
     const query = `sesion.id_sesion=${this.idSesion}`;
-    const relations = [`sesion`];
+    const relations = ['sesion'];
+
     this.puntoService.getAllDataBy(query, relations).subscribe((data) => {
       this.puntos = data;
+
       if (this.puntos.length > 0) {
-        this.puntoSeleccionado = this.puntos[0].id_punto;
-        this.getPuntoUsuarios(this.puntoSeleccionado!);
+        this.puntoSeleccionado = this.puntos[0];
+        this.onPuntoChange(); // ⚡ Cargamos los nuevos puntoUsuarios del primer punto
       }
     });
   }
@@ -124,13 +201,41 @@ export class VotacionComponent implements OnInit {
     await this.puntoUsuarioService
       .getAllDataBy(query, relations)
       .subscribe((data) => {
-        this.puntoUsuarios = data;
+        this.puntoUsuarios = data.sort((a, b) => {
+          return a.estado === b.estado ? 0 : a.estado ? -1 : 1;
+        });
       });
     console.log('puntosUsuarios cargados');
   }
 
-  async onPuntoChange() {
-    await this.getPuntoUsuarios(this.puntoSeleccionado!);
+  getAsistencia() {
+    const query = `sesion.id_sesion=${this.idSesion}`;
+    const relations = ['usuario'];
+    this.asistenciaService.getAllDataBy(query, relations).subscribe((data) => {
+      this.nomina = data;
+    });
+  }
+
+  getResolucion(id: number) {
+    const query = `id_punto=${id}`;
+    this.resolucionService.getDataBy(query).subscribe((data) => {
+      this.resolucionActual = data;
+      if (data) {
+        this.resolucionForm.patchValue({
+          nombre: data.nombre,
+          descripcion: data.descripcion,
+        });
+      } else {
+        this.resolucionForm.reset();
+      }
+    });
+  }
+
+  onPuntoChange() {
+    if (this.puntoSeleccionado) {
+      this.getPuntoUsuarios(this.puntoSeleccionado.id_punto);
+      this.getResolucion(this.puntoSeleccionado.id_punto);
+    }
   }
 
   cambiarEstadoPunto(punto: IPunto) {
@@ -150,38 +255,107 @@ export class VotacionComponent implements OnInit {
     });
   }
 
+  cargarMiembrosOCS() {
+    const relations = ['usuario'];
+    this.miembroService.getAllDataBy('', relations).subscribe((data) => {
+      this.miembrosOCS = data.map((m) => m.usuario);
+    });
+  }
+
+  // Determina si el usuario pertenece al OCS (según tu lógica de miembros)
+  esMiembroOCS(idUsuario: number): boolean {
+    return this.miembrosOCS.some((u) => u.id_usuario === idUsuario);
+  }
+
+  // Guarda los cambios realizados en el tipo de asistencia
+  confirmarAsistencia() {
+    const actualizaciones = this.nomina.map((asistencia) => {
+      return {
+        id_asistencia: asistencia.id_asistencia,
+        tipo_asistencia: asistencia.tipo_asistencia,
+      };
+    });
+
+    this.asistenciaService.saveManyData(actualizaciones).subscribe({
+      next: () => {
+        this.toastr.success('Asistencia actualizada correctamente', 'Éxito');
+      },
+      error: () => {
+        this.toastr.error('Error al actualizar la asistencia', 'Error');
+      },
+    });
+  }
+
   generarVotos() {
-    const eliminar = this.puntoUsuarioService.eliminarPuntosUsuario(this.idSesion);
-    const generar = this.puntoUsuarioService.generarPuntosUsuario(this.idSesion);
+    const eliminar = this.puntoUsuarioService.eliminarPuntosUsuario(
+      this.idSesion
+    );
+    const generar = this.puntoUsuarioService.generarPuntosUsuario(
+      this.idSesion
+    );
 
     eliminar.subscribe({
       next: () => {
         generar.subscribe({
           next: () => {
             this.toastr.success('Votos generados correctamente', 'Éxito');
-            this.getPuntos();
-            this.getSesion();
+
+            location.reload();
+
+            /*this.getPuntos(); // ⚡ Recarga todos los puntos
+            this.getSesion();*/ // ⚡ Actualiza sesión
           },
           error: () => {
             this.toastr.error('Error al generar los votos', 'Error');
-          }
+          },
         });
       },
       error: () => {
         this.toastr.error('Error al eliminar votos anteriores', 'Error');
-      }
+      },
     });
   }
 
-  finalizarSesion(sesion: ISesion) {
-    const observables = this.puntos.map((punto: IPunto) => {
-      return this.puntoService.registerResultados({ idPunto: punto.id_punto });
-    });
+  getClassForPuntoUsuario(puntoUsuario: IPuntoUsuario) {
+    return {
+      'sin-votar': puntoUsuario.opcion === null,
+      afavor: puntoUsuario.opcion === 'afavor',
+      encontra: puntoUsuario.opcion === 'encontra',
+      abstencion: puntoUsuario.opcion === 'abstencion',
+      'disabled-box': puntoUsuario.estado === false,
+    };
+  }
 
-    forkJoin(observables).subscribe(
+  getNombreUsuario(puntoUsuario: IPuntoUsuario): string {
+    return puntoUsuario.es_principal
+      ? puntoUsuario.usuario.nombre
+      : puntoUsuario.usuario.usuarioReemplazo?.nombre || 'Reemplazo';
+  }
+
+  iniciarSesion(sesion: ISesion) {
+    const sesionData = {
+      id_sesion: sesion.id_sesion,
+      fase: 'activa',
+    };
+
+    this.sesionService.saveData(sesionData).subscribe(
       () => {
+        window.location.reload();
+      },
+      (error) => {
+        console.error('Error al iniciar la sesión:', error);
+      }
+    );
+  }
+
+  finalizarSesion(sesion: ISesion) {
+    /*const observables = this.puntos.map((punto: IPunto) => {
+      return this.puntoService.registerResultados({ idPunto: punto.id_punto });
+    });*/
         const sesionData = {
           id_sesion: sesion.id_sesion,
+          fase: 'finalizada',
+          fecha_fin: new Date(),
           estado: false,
         };
 
@@ -195,11 +369,6 @@ export class VotacionComponent implements OnInit {
             console.error('Error al finalizar la sesión:', error);
           }
         );
-      },
-      (error) => {
-        console.error('Error al registrar resultados de puntos:', error);
-      }
-    );
   }
 
   async actualizarPuntoUsuario(puntoUsuarioId: number) {
@@ -229,63 +398,79 @@ export class VotacionComponent implements OnInit {
     );
 
     if (squareElement) {
+      // Limpia clases anteriores
       squareElement.classList.remove(
         'sin-votar',
         'afavor',
         'encontra',
-        'abstinencia'
+        'abstencion',
+        'disabled-box'
       );
 
+      // Aplica clase de voto
       if (puntoUsuario.opcion === null) {
         squareElement.classList.add('sin-votar');
       } else if (puntoUsuario.opcion === 'afavor') {
         squareElement.classList.add('afavor');
       } else if (puntoUsuario.opcion === 'encontra') {
         squareElement.classList.add('encontra');
-      } else if (puntoUsuario.opcion === 'abstinencia') {
-        squareElement.classList.add('abstinencia');
+      } else if (puntoUsuario.opcion === 'abstencion') {
+        squareElement.classList.add('abstencion');
       }
 
+      // Aplica desactivación si estado === false
+      if (puntoUsuario.estado === false) {
+        squareElement.classList.add('disabled-box');
+      }
+
+      // Actualiza clase del botón razonado
       const buttonElement = squareElement.querySelector('.btn');
       if (buttonElement) {
         buttonElement.classList.remove('noRazonado', 'razonado');
-        if (puntoUsuario.es_razonado) {
-          buttonElement.classList.add('razonado');
-        } else {
-          buttonElement.classList.add('noRazonado');
-        }
+        buttonElement.classList.add(
+          puntoUsuario.es_razonado ? 'razonado' : 'noRazonado'
+        );
       }
     }
   }
 
   usuarioVotoManual(idUsuario: number) {
+    console.log('usuarioVotoManual', this.puntoSeleccionado.id_punto);
+    if (!idUsuario) return;
+
     const query = `id_usuario=${idUsuario}`;
     this.usuarioActual = undefined;
-    this.usuarioService.getDataBy(query).subscribe((data) => {
-      this.usuarioActual = data;
+
+    this.usuarioService.getDataBy(query).subscribe({
+      next: (data) => {
+        this.usuarioActual = data;
+      },
+      error: (error) => {
+        console.error('Error al cargar usuario para voto manual', error);
+        this.toastr.error('Error al cargar usuario', 'Error');
+      },
     });
   }
 
   votoManual() {
-    if (this.puntosSeleccionados.length === 0) {
-      console.log('No hay ningun punto seleccionado');
+    if (this.puntoSeleccionado === undefined) {
+      console.log('No hay punto seleccionado');
       return;
     } else {
-      this.puntosSeleccionados.forEach((e) => {
-        let votoData = {
-          id_usuario: this.usuarioActual?.id_usuario,
-          codigo: this.sesion?.codigo,
-          punto: e.id_punto,
-          opcion: this.votoManualForm.value.opcion,
-          es_razonado: this.votoManualForm.value.razonado,
-        };
+      let votoData = {
+        id_usuario: this.usuarioActual?.id_usuario,
+        codigo: this.sesion?.codigo,
+        punto: this.puntoSeleccionado.id_punto,
+        opcion: this.votoManualForm.value.opcion,
+        es_razonado: this.votoManualForm.value.razonado,
+        votante: this.usuario.id_usuario,
+      };
 
-        this.puntoUsuarioService.saveVote(votoData).subscribe(() => {
-          console.log(`solicitud realizada`);
-          this.resetForm();
-          this.toastr.success('Voto manual registrado correctamente', 'Éxito');
-          this.cerrarModal('votoManualModal', this.votoManualForm);
-        });
+      this.puntoUsuarioService.saveVote(votoData).subscribe(() => {
+        console.log(`solicitud realizada`);
+        this.resetForm();
+        this.toastr.success('Voto manual registrado correctamente', 'Éxito');
+        this.cerrarModal('votoManualModal', this.votoManualForm);
       });
     }
   }
@@ -349,7 +534,7 @@ export class VotacionComponent implements OnInit {
     this.showOptions = !this.showOptions;
   }
 
-  cerrarModal(modalId: string, form: FormGroup) {
+  cerrarModal(modalId: string, form?: FormGroup) {
     const modalElement = document.getElementById(modalId);
     if (modalElement) {
       modalElement.classList.remove('show');
@@ -377,12 +562,9 @@ export class VotacionComponent implements OnInit {
 
   // Alterna la visibilidad del dropdown asociado a un puntoUsuario específico
   toggleDropdownxd(id_punto_usuario: number, event: Event) {
-    event.stopPropagation(); // Evita que el clic se propague al documento
-    if (this.activeDropdown === id_punto_usuario) {
-      this.activeDropdown = null; // Cierra el dropdown si ya está abierto
-    } else {
-      this.activeDropdown = id_punto_usuario; // Abre el dropdown específico
-    }
+    event.stopPropagation();
+    this.activeDropdown =
+      this.activeDropdown === id_punto_usuario ? null : id_punto_usuario;
   }
 
   // Maneja la acción de click en los elementos del dropdown
@@ -397,52 +579,173 @@ export class VotacionComponent implements OnInit {
     this.activeDropdown = null;
   }
 
+  cambiarPrincipalAlternoNomina(idUsuario: number) {
+  if (!this.idSesion || !idUsuario) return;
+
+  this.puntoUsuarioService
+    .cambiarPrincipalAlterno(this.idSesion, idUsuario)
+    .subscribe({
+      next: () => {
+        this.toastr.success('Cambio realizado correctamente', 'Éxito');
+
+        // Recarga forzada de votos con referencia nueva
+        this.puntoUsuarioService
+          .getAllDataBy(
+            `punto.id_punto=${this.puntoSeleccionado.id_punto}`,
+            ['usuario', 'usuario.usuarioReemplazo', 'usuario.grupoUsuario']
+          )
+          .subscribe((data) => {
+            this.puntoUsuarios = [...data.sort((a, b) => a.estado === b.estado ? 0 : a.estado ? -1 : 1)];
+            this.cdr.detectChanges(); // 🔁 Reforzar actualización visual
+          });
+      },
+      error: (err) => {
+        console.error('Error HTTP:', err);
+        this.toastr.error('Error al cambiar el estado', 'Error');
+      },
+    });
+}
+
+
+
+
   reemplazo(puntoUsuario: any) {
-    console.log('reemplazo');
-
-    if (puntoUsuario.usuario.usuarioReemplazo) {
-      let puntoUsuarioData = {
-        id_punto_usuario: puntoUsuario.id_punto_usuario,
-        es_principal: !puntoUsuario.es_principal,
-      };
-
-      // Actualiza el objeto localmente
-      //puntoUsuario.es_principal = !puntoUsuario.es_principal;
-
-      this.puntoUsuarioService.saveData(puntoUsuarioData).subscribe(
-        () => {
-          console.log('solicitud realizada');
-          if (puntoUsuario.es_principal) {
-            // Actualiza el objeto localmente
-            puntoUsuario.es_principal = !puntoUsuario.es_principal;
-            this.toastr.success(
-              `Cambio a principal\n${puntoUsuario.usuario.nombre}`,
-              'Éxito'
-            );
-          } else {
-            // Actualiza el objeto localmente
-            puntoUsuario.es_principal = !puntoUsuario.es_principal;
-            this.toastr.success(
-              `Cambio a reemplazo\n${puntoUsuario.usuario.usuarioReemplazo.nombre}`,
-              `Éxito`
-            );
-          }
-          this.cdr.detectChanges(); // Fuerza la actualización del componente
-        },
-        (error) => {
-          console.error('Error al realizar la solicitud', error);
-          // Deshacer el cambio local en caso de error
-          puntoUsuario.es_principal = !puntoUsuario.es_principal;
-          this.toastr.error('No se pudo realizar el cambio', 'Error');
-        }
-      );
-    } else {
+    if (!puntoUsuario?.usuario?.usuarioReemplazo) {
       this.toastr.error(
         `${puntoUsuario.usuario.nombre} no tiene asignado un reemplazo`,
-        `Error`
+        'Error'
       );
+      return;
     }
-    this.activeDropdown = null;
+
+    const data = {
+      id_punto_usuario: puntoUsuario.id_punto_usuario,
+      es_principal: !puntoUsuario.es_principal,
+    };
+
+    this.puntoUsuarioService.saveData(data).subscribe({
+      next: () => {
+        puntoUsuario.es_principal = !puntoUsuario.es_principal;
+        this.toastr.success(
+          puntoUsuario.es_principal
+            ? `Cambio a principal: ${puntoUsuario.usuario.nombre}`
+            : `Cambio a reemplazo: ${puntoUsuario.usuario.usuarioReemplazo.nombre}`,
+          'Éxito'
+        );
+      },
+      error: () => {
+        this.toastr.error('No se pudo realizar el cambio', 'Error');
+      },
+    });
+
+    this.activeDropdown = null; // Cerrar el dropdown
+  }
+
+  irAPasoManual() {
+    this.pasoModalResultados = 2;
+  }
+
+  volverAlPasoInicial() {
+    this.pasoModalResultados = 1;
+  }
+
+  irAPasoConfirmacion() {
+    this.pasoModalResultados = 3;
+  }
+
+  volverAlPasoManual() {
+    this.pasoModalResultados = 2;
+  }
+
+  calcularResultadoAutomatico() {
+    if (!this.puntoSeleccionado) return;
+
+    this.puntoService
+      .calcularResultados(this.puntoSeleccionado.id_punto)
+      .subscribe({
+        next: () => {
+          this.toastr.success('Resultado calculado correctamente', 'Éxito');
+          this.getPuntos(); // Actualiza los valores del punto actual
+          this.getResolucion(this.puntoSeleccionado.id_punto);
+        },
+        error: () => {
+          this.toastr.error('Error al calcular el resultado', 'Error');
+        },
+      });
+  }
+
+  calcularResultadoManual() {
+    if (!this.puntoSeleccionado || !this.usuario?.id_usuario) return;
+
+    const data = {
+      id_punto: this.puntoSeleccionado.id_punto,
+      id_usuario: this.usuario.id_usuario,
+      resultado: this.resultadoManualSeleccionado, // 'aprobada' | 'rechazada' | 'pendiente'
+    };
+
+    this.puntoService.calcularResultadosManual(data).subscribe({
+      next: () => {
+        this.toastr.success('Resultado manual guardado correctamente', 'Éxito');
+        this.getPuntos();
+        this.getResolucion(this.puntoSeleccionado.id_punto);
+        this.pasoModalResultados = 1;
+      },
+      error: () => {
+        this.toastr.error('Error al guardar resultado manual', 'Error');
+        console.log(this.resultadoManualSeleccionado);
+        console.log(this.usuario?.id_usuario);
+        console.log(this.puntoSeleccionado?.id_punto);
+      },
+    });
+  }
+
+  crearResolucion() {
+    const resolucionData: IResolucion = {
+      punto: { id_punto: this.puntoSeleccionado.id_punto },
+      nombre: this.resolucionForm.value.nombre,
+      descripcion: this.resolucionForm.value.descripcion,
+      fecha: new Date(),
+    };
+
+    this.resolucionService.saveData(resolucionData).subscribe({
+      next: () => {
+        this.toastr.success('Resolución creada con éxito');
+        this.getResolucion(this.puntoSeleccionado.id_punto);
+        this.modoCreacionResolucion = false; // ✅ Oculta el formulario
+        //window.location.reload();
+      },
+      error: () => {
+        this.toastr.error('Error al crear la resolución');
+      },
+    });
+  }
+
+  editarResolucion() {
+    if (!this.puntoSeleccionado || !this.resolucionActual) return;
+
+    const updateResolucionData: IResolucion = {
+      punto: { id_punto: this.puntoSeleccionado.id_punto },
+      nombre: this.resolucionForm.value.nombre!,
+      descripcion: this.resolucionForm.value.descripcion!,
+    };
+
+    this.resolucionService.updateData(updateResolucionData).subscribe({
+      next: () => {
+        this.toastr.success('Resolución actualizada', 'Éxito');
+        this.getResolucion(this.puntoSeleccionado!.id_punto);
+      },
+      error: () => {
+        this.toastr.error('Error al actualizar la resolución', 'Error');
+      },
+    });
+  }
+
+  formularioResolucionModificado(): boolean {
+    return (
+      this.resolucionForm.value.nombre !== this.resolucionActual?.nombre ||
+      this.resolucionForm.value.descripcion !==
+        this.resolucionActual?.descripcion
+    );
   }
 
   goBack() {

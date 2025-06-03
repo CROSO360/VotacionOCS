@@ -24,6 +24,7 @@
             class="form-select form-select-sm w-auto"
             [(ngModel)]="asistencia.tipo_asistencia"
             [ngModelOptions]="{ standalone: true }"
+            [disabled]="sesion?.estado === false"
           >
             <option [ngValue]="null">Ninguno</option>
             <option value="presencial">Presencial</option>
@@ -46,7 +47,7 @@
     
 
     <!-- Botones de acción -->
-    <div class="d-flex justify-content-between flex-wrap gap-2">
+    <div class="d-flex justify-content-between flex-wrap gap-2" *ngIf="sesion?.estado === true">
       <button
         type="button"
         class="btn btn-secondary"

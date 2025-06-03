@@ -59,6 +59,19 @@ export class PuntoService {
     return this.http.post<any>(`${this.baseURL}/punto/reordenar`, data);
   }
 
+  //este es el veridico
+  calcularResultados(id: number): Observable<any> {
+    return this.http.post<any>(`${this.baseURL}/punto/calcular-resultados/${id}`, {});
+  }
+
+  calcularResultadosManual(data: any): Observable<any> { 
+    return this.http.post<any>(`${this.baseURL}/punto/resultado-manual`, data);
+  }
+
+
+
+  //-----------------------------------------------------------------------------------------------
+
   getResultados(id:number):Observable<any> {
     return this.http.get<any>(`${this.baseURL}/punto/resultado/${id}`)
   }

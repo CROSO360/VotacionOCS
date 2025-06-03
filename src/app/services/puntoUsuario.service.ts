@@ -67,4 +67,12 @@ export class PuntoUsuarioService {
     return this.http.post<any>(`${this.baseURL}/punto-usuario/eliminar-puntovoto/${idSesion}`, {})
   }
 
+  cambiarPrincipalAlterno(idSesion: number, idUsuario: number): Observable<any> {
+  return this.http.post<any>(`${this.baseURL}/punto-usuario/cambiar-principal-alterno`, {
+    id_sesion: idSesion,
+    id_usuario: idUsuario
+  });
+}
+
+
 }

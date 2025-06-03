@@ -35,6 +35,8 @@ export class PuntoComponent {
   puntoId: number | undefined;
   sesionId: number | undefined;
 
+  sesion: any | undefined;
+
   puntoDocumentos: IPuntoDocumento[] = [];
 
   resolucion: IResolucion | undefined;
@@ -80,6 +82,9 @@ export class PuntoComponent {
     this.getPuntoDocumentos();
 
     this.getResolucion();
+
+    this.getSesion();
+
   }
 
   getUsuario(){
@@ -87,6 +92,17 @@ export class PuntoComponent {
     this.usuarioService.getDataBy(query).subscribe((data) => {
       this.usuario = data;
       console.log(this.usuario);
+    });
+  }
+
+  getSesion() {
+    const query = `id_sesion=${this.sesionId}`;
+    this.sesionService.getDataBy(query).subscribe((data) => {
+      this.sesion = data;
+      if (data.estado === false) {
+        this.modificarPuntoForm.disable();
+        this.resolucionForm.disable();
+      }
     });
   }
 

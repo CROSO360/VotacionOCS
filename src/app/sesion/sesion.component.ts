@@ -136,7 +136,7 @@ export class SesionComponent implements OnInit {
       idPunto: punto.id_punto,
       nombre: punto.nombre,
       detalle: punto.detalle,
-      estado: punto.status,
+      estado: punto.estado,
     });
   }
 

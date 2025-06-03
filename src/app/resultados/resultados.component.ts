@@ -7,10 +7,6 @@ import { ISesion } from '../interfaces/ISesion';
 import { PuntoService } from '../services/punto.service';
 import { SesionService } from '../services/sesion.service';
 import { ActivatedRoute, Router } from '@angular/router';
-import pdfMake from 'pdfmake/build/pdfmake';
-import * as pdfFonts from 'pdfmake/build/vfs_fonts';
-
-pdfMake.vfs = pdfFonts.pdfMake.vfs;
 
 @Component({
   selector: 'app-resultados',
@@ -33,15 +29,14 @@ export class ResultadosComponent implements OnInit {
     private location: Location
   ) {}
 
-  puntos: IPunto[] = [];
-
+  puntos: any[] = [];
   idSesion: number | null = 0;
-
   sesion: ISesion | undefined;
-
   puntoSeleccionado: number | undefined;
-
   resultados: any[] = [];
+
+  generandoReporte = false;
+
 
   ngOnInit(): void {
     this.idSesion = parseInt(this.route.snapshot.paramMap.get('id')!);
@@ -51,7 +46,7 @@ export class ResultadosComponent implements OnInit {
 
   getPuntos() {
     const query = `sesion.id_sesion=${this.idSesion}`;
-    const relations = [`sesion`];
+    const relations = [`sesion`, `resolucion`];
     this.puntoService.getAllDataBy(query, relations).subscribe((data) => {
       this.puntos = data;
     });
@@ -76,85 +71,24 @@ export class ResultadosComponent implements OnInit {
     });
   }
 
-  async generarReporte() {
-    //console.log(this.resultados);
+  generarReporte() {
+    if (!this.idSesion) return;
 
-    const content: any[] = [
-      {
-        text: `Resultados de la sesión ${this.sesion.nombre}`,
-        style: 'header',
+    this.generandoReporte = true;
+
+    this.sesionService.getReporte(this.idSesion).subscribe({
+      next: (blob) => {
+        const url = window.URL.createObjectURL(blob);
+        window.open(url, '_blank'); // Abre el PDF en una nueva pestaña
       },
-    ];
-
-    // Aquí iteramos sobre los puntos para agregar tablas dinámicamente
-    this.puntos.forEach((punto) => {
-      content.push(
-        {
-          text: `Punto ${punto.nombre}`,
-          style: 'subheader',
-        }, // Cambia 'nombrePunto' según tu estructura
-        {
-          table: {
-            headerRows: 1,
-            widths: ['auto', '*', '*', '*', '*', '*', '*'],
-            body: [
-              [
-                { text: 'Grupo Usuario', bold: true, alignment: 'center', style: 'tableHeader', fillColor: '#CCCCCC' },
-                { text: 'A Favor', alignment: 'center', style: 'tableHeader', fillColor: '#CCCCCC' },
-                { text: 'A Favor Peso', alignment: 'center', style: 'tableHeader', fillColor: '#CCCCCC' },
-                { text: 'En Contra', alignment: 'center', style: 'tableHeader', fillColor: '#CCCCCC' },
-                { text: 'En Contra Peso', alignment: 'center', style: 'tableHeader', fillColor: '#CCCCCC' },
-                { text: 'Abstención', alignment: 'center', style: 'tableHeader', fillColor: '#CCCCCC' },
-                { text: 'Abstención Peso', alignment: 'center', style: 'tableHeader', fillColor: '#CCCCCC' },
-              ],
-              // Generamos las filas de cada tabla para el punto
-              ...this.resultados.map((resultado) => [
-                { text: resultado.grupo_usuario },
-                { text: resultado.afavor, alignment: 'right' },
-                { text: resultado.afavor_peso, alignment: 'right' },
-                { text: resultado.encontra, alignment: 'right' },
-                { text: resultado.encontra_peso, alignment: 'right' },
-                { text: resultado.abstinencia, alignment: 'right' },
-                { text: resultado.abstinencia_peso, alignment: 'right' },
-              ]),
-              // Fila de totales para cada tabla de punto
-              [
-                { text: 'Total', bold: true, alignment: 'center', fillColor: '#CCCCCC' },
-                { text: punto.n_afavor, alignment: 'right', fillColor: '#CCCCCC' },
-                { text: punto.p_afavor, alignment: 'right', fillColor: '#CCCCCC' }, 
-                { text: punto.n_encontra, alignment: 'right', fillColor: '#CCCCCC' }, 
-                { text: punto.p_encontra, alignment: 'right', fillColor: '#CCCCCC' }, 
-                { text: punto.n_abstencion, alignment: 'right', fillColor: '#CCCCCC' }, 
-                { text: punto.p_abstencion, alignment: 'right', fillColor: '#CCCCCC' }, 
-              ],
-            ],
-          },
-        }
-      );
+      error: (err) => {
+        console.error('Error al generar el reporte:', err);
+        alert('No se pudo generar el reporte. Intente nuevamente.');
+      },
+      complete: () => {
+        this.generandoReporte = false;
+      }
     });
-
-    // Definición del documento PDF
-    const documentDefinition = {
-      content: content,
-      styles: {
-        header: {
-          fontSize: 18,
-          bold: true,
-          margin: [0, 0, 0, 10],
-        },
-        subheader: {
-          fontSize: 16,
-          bold: true,
-          margin: [0, 10, 0, 5],
-        },
-      },
-    };
-
-    // Generar y descargar el PDF con el nombre basado en la sesión
-    const nombreArchivo = `reporte_sesion_${
-      this.sesion?.nombre || 'sin_nombre'
-    }.pdf`;
-    pdfMake.createPdf(documentDefinition).download(nombreArchivo);
   }
 
   goBack() {

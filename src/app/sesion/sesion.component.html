@@ -44,9 +44,10 @@
       cdkDrag
       [cdkDragData]="punto"
       class="draggable-row"
+      [cdkDragDisabled]="!punto.status || !sesion.estado"
     >
       <!-- Drag Handle (solo si status es true) -->
-      <td *ngIf="punto.status" class="drag-handle" cdkDragHandle title="Mover">
+      <td *ngIf="punto.status && sesion.estado" class="drag-handle" cdkDragHandle title="Mover">
         &#x2630;
       </td>
       <td *ngIf="!punto.status" class="drag-handle disabled-cell"></td>
@@ -55,7 +56,7 @@
       <td class="point-name">{{ punto.nombre }}</td>
 
       <!-- Botón fantasma -->
-      <td class="btn-container">LOOOL</td>
+      <td class="btn-container">{{ punto.orden }}</td>
 
       <!-- Botón ver punto -->
       <td class="btn-container">

@@ -5,11 +5,10 @@
   <button class="back-button" (click)="goBack()">←</button>
 
   <!-- Título de la página -->
-  <h2 class="text-center">Resultados de la sesión {{ sesion?.nombre
-   }}</h2>
+  <h2 class="text-center">Resultados de la sesión {{ sesion?.nombre }}</h2>
 
-  <!-- Agrega este código donde quieras que aparezca el combo de puntos -->
-  Punto:
+  <!-- Selector de punto -->
+  <label class="form-label">Punto:</label>
   <select
     [(ngModel)]="puntoSeleccionado"
     (change)="onChangePuntoSeleccionado()"
@@ -20,14 +19,30 @@
   </select>
 
   <!-- Botón Generar Reporte -->
-  <button *ngIf="sesion.estado==false" class="btn btn-primary" (click)="generarReporte()">
-    Generar Reporte
-  </button>
+  <div class="mb-4">
+    <button
+      *ngIf="sesion?.estado === false"
+      class="btn btn-primary"
+      (click)="generarReporte()"
+      [disabled]="generandoReporte"
+    >
+      <span *ngIf="!generandoReporte">Generar Reporte</span>
+      <span *ngIf="generandoReporte">
+        <span class="spinner-border spinner-border-sm me-2"></span>
+        Generando...
+      </span>
+    </button>
+  </div>
 
-
+  <!-- Mostrar resultados del punto seleccionado -->
   <div *ngFor="let punto of puntos">
     <p *ngIf="punto.id_punto == puntoSeleccionado">{{ punto.detalle }}</p>
-    <div class="points-container" *ngIf="punto.id_punto == puntoSeleccionado">
+
+    <!-- Tabla de resultados automáticos -->
+    <div
+      class="points-container"
+      *ngIf="punto.id_punto == puntoSeleccionado && !punto.resolucion?.voto_manual"
+    >
       <table class="results-table">
         <thead>
           <tr>
@@ -41,26 +56,69 @@
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let resultado of resultados">
-            <td>{{ resultado.grupo_usuario }}</td>
-            <td>{{ resultado.afavor }}</td>
-            <td>{{ resultado.afavor_peso }}</td>
-            <td>{{ resultado.encontra }}</td>
-            <td>{{ resultado.encontra_peso }}</td>
-            <td>{{ resultado.abstinencia }}</td>
-            <td>{{ resultado.abstinencia_peso }}</td>
+          <ng-container *ngFor="let resultado of resultados">
+            <tr *ngIf="!resultado.resultado">
+              <td>{{ resultado.grupo_usuario }}</td>
+              <td>{{ resultado.afavor }}</td>
+              <td>{{ resultado.afavor_peso }}</td>
+              <td>{{ resultado.encontra }}</td>
+              <td>{{ resultado.encontra_peso }}</td>
+              <td>{{ resultado.abstencion }}</td>
+              <td>{{ resultado.abstencion_peso }}</td>
+            </tr>
+          </ng-container>
+          <ng-container *ngIf="resultados.length">
+            <ng-container
+              *ngIf="resultados[resultados.length - 1].resultado as total"
+            >
+              <tr class="total-row">
+                <td>Total</td>
+                <td>{{ punto.n_afavor || 0 }}</td>
+                <td>{{ total.afavor_peso }} ({{ punto.p_afavor }}%)</td>
+                <td>{{ punto.n_encontra || 0 }}</td>
+                <td>{{ total.encontra_peso }} ({{ punto.p_encontra }}%)</td>
+                <td>{{ punto.n_abstencion || 0 }}</td>
+                <td>{{ total.abstencion_peso }} ({{ punto.p_abstencion }}%)</td>
+              </tr>
+            </ng-container>
+          </ng-container>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Resultado del punto -->
+    <div *ngIf="punto.id_punto == puntoSeleccionado" class="mt-3">
+      <strong>Resultado del punto:</strong> {{ punto.resultado | titlecase }}
+    </div>
+
+    <!-- Tabla de resolución -->
+    <div
+      *ngIf="punto.id_punto == puntoSeleccionado && punto.resolucion"
+      class="mt-3"
+    >
+      <table class="results-table">
+        <tbody>
+          <tr>
+            <th style="width: 200px">Resolución</th>
+            <td>{{ punto.resolucion.nombre }}</td>
           </tr>
-          <tr class="total-row">
-            <td>Total</td>
-            <td>{{punto.n_afavor}}</td>
-            <td>{{punto.p_afavor}}</td>
-            <td>{{punto.n_encontra}}</td>
-            <td>{{punto.p_encontra}}</td>
-            <td>{{punto.n_abstencion}}</td>
-            <td>{{punto.p_abstencion}}</td>
+          <tr>
+            <th>Descripción</th>
+            <td style="white-space: pre-wrap">
+              {{ punto.resolucion.descripcion }}
+            </td>
           </tr>
         </tbody>
-      </table><br><br>
+      </table>
+      <br />
+      <strong>Tipo de resolución: </strong>
+      <span *ngIf="punto.resolucion.voto_manual; else auto">
+        Manual (registrada por la Secretaría General)
+      </span>
+      <ng-template #auto>
+        Automática (calculada por el sistema)
+      </ng-template>
+      <br /><br />
     </div>
   </div>
 </div>
