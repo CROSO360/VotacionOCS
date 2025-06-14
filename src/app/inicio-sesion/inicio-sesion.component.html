@@ -1,10 +1,27 @@
+<!-- =======================
+   Contenedor general con margen
+   ======================= -->
 <div class="container my-5">
+
+  <!-- =======================
+       Tarjeta centrada de login
+       ======================= -->
   <div class="card mx-auto" style="max-width: 400px">
+
+    <!-- Encabezado de la tarjeta -->
     <div class="card-header text-center">
       Sistema de voto electrónico de OCS
     </div>
+
+    <!-- =======================
+         Cuerpo del formulario de acceso
+         ======================= -->
     <div class="card-body">
+
+      <!-- Formulario reactivo vinculado con FormGroup -->
       <form [formGroup]="adminLoginForm" (ngSubmit)="onSubmit()">
+
+        <!-- Campo de código de usuario -->
         <div class="form-group">
           <label for="codigo">Código de usuario:</label>
           <input
@@ -15,6 +32,8 @@
             formControlName="codigo"
           />
         </div>
+
+        <!-- Campo de contraseña -->
         <div class="form-group">
           <label for="contrasena">Contraseña:</label>
           <input
@@ -26,13 +45,17 @@
           />
         </div>
 
+        <!-- Mensaje de error si las credenciales son inválidas -->
         <div *ngIf="errorMessage" class="error-message">
           {{ errorMessage }}
-        </div><br>
+        </div>
+        <br>
 
+        <!-- Botón de ingreso -->
         <div class="form-group text-center">
           <button type="submit" class="btn btn-dark">Ingresar</button>
         </div>
+
       </form>
     </div>
   </div>

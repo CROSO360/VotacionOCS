@@ -1,10 +1,12 @@
+<!-- BARRA SUPERIOR -->
 <app-barra-superior></app-barra-superior>
 
 <div class="container my-4">
-  <!-- Título de la página -->
+
+  <!-- TÍTULO DE LA PÁGINA -->
   <h2 class="text-center">Usuarios</h2>
 
-  <!-- Barra de búsqueda -->
+  <!-- BÚSQUEDA -->
   <input
     class="w-25"
     type="text"
@@ -13,203 +15,128 @@
     (input)="filtrarUsuarios()"
   />
 
-  <!-- Pestañas para grupos de usuarios -->
+  <!-- PESTAÑAS DE GRUPOS -->
   <ul class="nav nav-tabs">
     <li class="nav-item" *ngFor="let grupo of gruposUsuarios">
-      <a class="nav-link" (click)="cambiarGrupo(grupo)">{{ grupo.nombre }}</a>
+      <a class="nav-link" (click)="cambiarGrupo(grupo)">
+        {{ grupo.nombre }}
+      </a>
     </li>
     <li class="nav-item">
       <a class="nav-link" (click)="cambiarGrupo(null)">Todos</a>
     </li>
   </ul>
 
-  <!-- Lista de usuarios con checkbox -->
+  <!-- LISTADO DE USUARIOS -->
   <div class="list-group mt-3">
     <div *ngFor="let usuario of usuariosFiltrados">
-      <div
-        class="list-group-item"
-        [ngClass]="{ 'usuario-inactivo': !usuario.estado }"
-      >
+      <div class="list-group-item" [ngClass]="{ 'usuario-inactivo': !usuario.estado }">
         {{ usuario.cedula }} - {{ usuario.nombre }}
+
+        <!-- Botón para abrir modal de edición -->
         <button
           type="button"
           class="btn btn-secondary"
           data-bs-toggle="modal"
           data-bs-target="#exampleModal"
-          (click)="abrirEditar(usuario)"
-        >
+          (click)="abrirEditar(usuario)">
           Editar
         </button>
       </div>
     </div>
+
+    <!-- MENSAJE CUANDO NO HAY RESULTADOS -->
     <div *ngIf="usuariosFiltrados.length === 0" class="list-group-item">
       No se encontraron usuarios.
     </div>
   </div>
 
-  <!-- Botón de confirmar -->
-
+  <!-- ACCIONES INFERIORES -->
   <button class="btn btn-secondary my-3" (click)="goBack()">Cancelar</button>
-
   <button
     type="button"
     class="btn btn-secondary my-3 mx-3"
     data-bs-toggle="modal"
-    data-bs-target="#crearUsuarioModal"
-  >
+    data-bs-target="#crearUsuarioModal">
     Crear usuario
   </button>
 </div>
 
-<!-- Button trigger modal -->
-<!--button
-  type="button"
-  class="btn btn-primary"
-  data-bs-toggle="modal"
-  data-bs-target="#exampleModal"
->
-  Launch demo modal
-</button-->
-
-<!-- Modal para editar usuario -->
-<div
-  #exampleModal
-  class="modal fade"
-  id="exampleModal"
-  tabindex="-1"
-  aria-labelledby="exampleModalLabel"
-  aria-hidden="true"
->
+<!-- MODAL: EDITAR USUARIO -->
+<div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
   <div class="modal-dialog">
     <div class="modal-content">
+
+      <!-- CABECERA -->
       <div class="modal-header">
         <h1 class="modal-title fs-5" id="exampleModalLabel">Editar usuario</h1>
-        <button
-          type="button"
-          class="btn-close"
-          data-bs-dismiss="modal"
-          aria-label="Close"
-        ></button>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
+
+      <!-- FORMULARIO DE EDICIÓN -->
       <div class="modal-body">
         <form [formGroup]="modificarUsuarioForm" (ngSubmit)="editarUsuario()">
           <div class="form-group">
+
+            <!-- Campo oculto: ID -->
             <input type="hidden" formControlName="idUsuario" />
 
+            <!-- Nombre -->
             <label for="nombre" class="form-label">Nombre:</label>
-            <input
-              formControlName="nombre"
-              type="text"
-              id="nombre"
-              placeholder="Nombre"
-              class="form-control"
-            />
-            <div
-              *ngIf="
-                modificarUsuarioForm.get('nombre')?.invalid &&
-                (modificarUsuarioForm.get('nombre')?.dirty ||
-                  modificarUsuarioForm.get('nombre')?.touched)
-              "
-              class="text-danger"
-            >
+            <input formControlName="nombre" type="text" id="nombre" placeholder="Nombre" class="form-control" />
+            <div *ngIf="modificarUsuarioForm.get('nombre')?.invalid && (modificarUsuarioForm.get('nombre')?.dirty || modificarUsuarioForm.get('nombre')?.touched)" class="text-danger">
               El nombre es obligatorio.
             </div>
 
+            <!-- Código -->
             <label for="codigo" class="form-label">Código:</label>
-            <input
-              formControlName="codigo"
-              type="text"
-              id="codigo"
-              placeholder="Código"
-              class="form-control"
-            />
-            <div
-              *ngIf="
-                modificarUsuarioForm.get('codigo')?.invalid &&
-                (modificarUsuarioForm.get('codigo')?.dirty ||
-                  modificarUsuarioForm.get('codigo')?.touched)
-              "
-              class="text-danger"
-            >
+            <input formControlName="codigo" type="text" id="codigo" placeholder="Código" class="form-control" />
+            <div *ngIf="modificarUsuarioForm.get('codigo')?.invalid && (modificarUsuarioForm.get('codigo')?.dirty || modificarUsuarioForm.get('codigo')?.touched)" class="text-danger">
               El código es obligatorio.
             </div>
 
+            <!-- Cédula -->
             <label for="cedula" class="form-label">Cédula:</label>
-            <input
-              formControlName="cedula"
-              type="text"
-              id="cedula"
-              placeholder="Cédula"
-              class="form-control"
-            />
-            <div
-              *ngIf="
-                modificarUsuarioForm.get('cedula')?.invalid &&
-                (modificarUsuarioForm.get('cedula')?.dirty ||
-                  modificarUsuarioForm.get('cedula')?.touched)
-              "
-              class="text-danger"
-            >
+            <input formControlName="cedula" type="text" id="cedula" placeholder="Cédula" class="form-control" />
+            <div *ngIf="modificarUsuarioForm.get('cedula')?.invalid && (modificarUsuarioForm.get('cedula')?.dirty || modificarUsuarioForm.get('cedula')?.touched)" class="text-danger">
               La cédula es obligatoria.
             </div>
 
+            <!-- Grupo Usuario -->
             <label for="grupoUsuario" class="form-label">Grupo Usuario:</label>
-            <select
-              name="grupoUsuario"
-              id="grupoUsuario"
-              formControlName="grupoUsuario"
-              class="form-control capitalize-options"
-            >
+            <select formControlName="grupoUsuario" id="grupoUsuario" class="form-control capitalize-options">
               <option value="" disabled>Selecciona un grupo</option>
-              <option
-                *ngFor="let grupo of gruposUsuarios"
-                [value]="grupo.id_grupo_usuario"
-              >
+              <option *ngFor="let grupo of gruposUsuarios" [value]="grupo.id_grupo_usuario">
                 Representante {{ grupo.nombre }}
               </option>
             </select>
-            <div
-              *ngIf="
-                modificarUsuarioForm.get('grupoUsuario')?.invalid &&
-                (modificarUsuarioForm.get('grupoUsuario')?.dirty ||
-                  modificarUsuarioForm.get('grupoUsuario')?.touched)
-              "
-              class="text-danger"
-            >
+            <div *ngIf="modificarUsuarioForm.get('grupoUsuario')?.invalid && (modificarUsuarioForm.get('grupoUsuario')?.dirty || modificarUsuarioForm.get('grupoUsuario')?.touched)" class="text-danger">
               El grupo de usuario es obligatorio.
             </div>
 
-            <label for="usuarioReemplazo" class="form-label">Usuario de reemplazo:</label> 
-            
-            <select
-              name="usuarioReemplazo"
-              id="usuarioReemplazo"
-              formControlName="usuarioReemplazo"
-              class="form-control"
-            >
+            <!-- Reemplazo -->
+            <label for="usuarioReemplazo" class="form-label">Usuario de reemplazo:</label>
+            <select formControlName="usuarioReemplazo" id="usuarioReemplazo" class="form-control">
               <option *ngIf="mensajeReemplazo" value="0" selected>{{ mensajeReemplazo }}</option>
               <option *ngIf="!mensajeReemplazo" value="0">Ninguno</option>
-              <option
-                *ngFor="let usuario of reemplazosDisponibles"
-                [value]="usuario.id_usuario"
-              >
+              <option *ngFor="let usuario of reemplazosDisponibles" [value]="usuario.id_usuario">
                 {{ usuario.cedula }} - {{ usuario.nombre }}
               </option>
             </select>
 
+            <!-- Estado -->
             <label for="estado" class="form-label">Usuario activo:</label>
             <input type="checkbox" formControlName="estado" id="estado" />
           </div>
 
-          <button
-            type="submit"
-            class="btn btn-primary"
-            [disabled]="modificarUsuarioForm.invalid"
-          >
+          <!-- BOTÓN GUARDAR -->
+          <button type="submit" class="btn btn-primary" [disabled]="modificarUsuarioForm.invalid">
             Guardar cambios
           </button>
         </form>
       </div>
+
+      <!-- PIE DE MODAL -->
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
           Cancelar
@@ -219,147 +146,78 @@
   </div>
 </div>
 
-<!-- Modal para crear usuario -->
-<div
-  #crearUsuarioModal
-  class="modal fade"
-  id="crearUsuarioModal"
-  tabindex="-1"
-  aria-labelledby="crearUsuarioModalLabel"
-  aria-hidden="true"
->
+<!-- MODAL: CREAR USUARIO -->
+<div class="modal fade" id="crearUsuarioModal" tabindex="-1" aria-labelledby="crearUsuarioModalLabel" aria-hidden="true">
   <div class="modal-dialog">
     <div class="modal-content">
+
+      <!-- CABECERA -->
       <div class="modal-header">
-        <h1 class="modal-title fs-5" id="crearUsuarioModalLabel">
-          Crear usuario
-        </h1>
-        <button
-          type="button"
-          class="btn-close"
-          data-bs-dismiss="modal"
-          aria-label="Close"
-        ></button>
+        <h1 class="modal-title fs-5" id="crearUsuarioModalLabel">Crear usuario</h1>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
+
+      <!-- FORMULARIO DE CREACIÓN -->
       <div class="modal-body">
         <form [formGroup]="crearUsuarioForm" (ngSubmit)="crearUsuario()">
           <div class="form-group">
+
+            <!-- Nombre -->
             <label for="nombre" class="form-label">Nombre:</label>
-            <input
-              formControlName="nombrex"
-              type="text"
-              id="nombre"
-              placeholder="Nombre"
-              class="form-control"
-            />
-            <div
-              *ngIf="
-                crearUsuarioForm.get('nombrex')?.invalid &&
-                (crearUsuarioForm.get('nombrex')?.dirty ||
-                  crearUsuarioForm.get('nombrex')?.touched)
-              "
-              class="text-danger"
-            >
+            <input formControlName="nombrex" type="text" id="nombre" placeholder="Nombre" class="form-control" />
+            <div *ngIf="crearUsuarioForm.get('nombrex')?.invalid && (crearUsuarioForm.get('nombrex')?.dirty || crearUsuarioForm.get('nombrex')?.touched)" class="text-danger">
               El nombre es obligatorio.
             </div>
 
+            <!-- Código -->
             <label for="codigo" class="form-label">Código:</label>
-            <input
-              formControlName="codigox"
-              type="text"
-              id="codigo"
-              placeholder="Código"
-              class="form-control"
-            />
-            <div
-              *ngIf="
-                crearUsuarioForm.get('codigox')?.invalid &&
-                (crearUsuarioForm.get('codigox')?.dirty ||
-                  crearUsuarioForm.get('codigox')?.touched)
-              "
-              class="text-danger"
-            >
+            <input formControlName="codigox" type="text" id="codigo" placeholder="Código" class="form-control" />
+            <div *ngIf="crearUsuarioForm.get('codigox')?.invalid && (crearUsuarioForm.get('codigox')?.dirty || crearUsuarioForm.get('codigox')?.touched)" class="text-danger">
               El código es obligatorio.
             </div>
 
+            <!-- Cédula -->
             <label for="cedula" class="form-label">Cédula:</label>
-            <input
-              formControlName="cedulax"
-              type="text"
-              id="cedula"
-              placeholder="Cédula"
-              class="form-control"
-            />
-            <div
-              *ngIf="
-                crearUsuarioForm.get('cedulax')?.invalid &&
-                (crearUsuarioForm.get('cedulax')?.dirty ||
-                  crearUsuarioForm.get('cedulax')?.touched)
-              "
-              class="text-danger"
-            >
+            <input formControlName="cedulax" type="text" id="cedula" placeholder="Cédula" class="form-control" />
+            <div *ngIf="crearUsuarioForm.get('cedulax')?.invalid && (crearUsuarioForm.get('cedulax')?.dirty || crearUsuarioForm.get('cedulax')?.touched)" class="text-danger">
               La cédula es obligatoria.
             </div>
 
+            <!-- Grupo Usuario -->
             <label for="grupoUsuario" class="form-label">Grupo Usuario:</label>
-            <select
-              name="grupoUsuario"
-              id="grupoUsuario"
-              formControlName="grupoUsuariox"
-              class="form-control capitalize-options"
-            >
+            <select formControlName="grupoUsuariox" id="grupoUsuario" class="form-control capitalize-options">
               <option value="" disabled>Selecciona un grupo</option>
-              <option
-                *ngFor="let grupo of gruposUsuarios"
-                [value]="grupo.id_grupo_usuario"
-              >
+              <option *ngFor="let grupo of gruposUsuarios" [value]="grupo.id_grupo_usuario">
                 Representante {{ grupo.nombre }}
               </option>
             </select>
-            <div
-              *ngIf="
-                crearUsuarioForm.get('grupoUsuariox')?.invalid &&
-                (crearUsuarioForm.get('grupoUsuariox')?.dirty ||
-                  crearUsuarioForm.get('grupoUsuariox')?.touched)
-              "
-              class="text-danger"
-            >
+            <div *ngIf="crearUsuarioForm.get('grupoUsuariox')?.invalid && (crearUsuarioForm.get('grupoUsuariox')?.dirty || crearUsuarioForm.get('grupoUsuariox')?.touched)" class="text-danger">
               El grupo de usuario es obligatorio.
             </div>
 
-            <!-- label for="usuarioReemplazo" class="form-label">Usuario de reemplazo:</label>
-            <select
-              name="usuarioReemplazo"
-              id="usuarioReemplazo"
-              formControlName="usuarioReemplazox"
-              class="form-control"
-            >
+            <!-- Comentado: Reemplazo en creación -->
+            <!--
+            <label for="usuarioReemplazo" class="form-label">Usuario de reemplazo:</label>
+            <select formControlName="usuarioReemplazox" id="usuarioReemplazo" class="form-control">
               <option value="0">Ninguno</option>
-              <option
-                *ngFor="let usuario of usuarios"
-                [value]="usuario.id_usuario"
-              >
+              <option *ngFor="let usuario of usuarios" [value]="usuario.id_usuario">
                 {{ usuario.cedula }} - {{ usuario.nombre }}
               </option>
-            </select -->
+            </select>
+            -->
+
           </div>
 
-          <button
-            type="submit"
-            class="btn btn-primary"
-            [disabled]="crearUsuarioForm.invalid"
-          >
+          <!-- BOTÓN GUARDAR -->
+          <button type="submit" class="btn btn-primary" [disabled]="crearUsuarioForm.invalid">
             Guardar cambios
           </button>
         </form>
       </div>
+
+      <!-- PIE DE MODAL -->
       <div class="modal-footer">
-        <button
-          type="button"
-          (click)="cerrarModal('crearUsuarioModal', this.crearUsuarioForm)"
-          class="btn btn-secondary"
-          data-bs-dismiss="modal"
-        >
+        <button type="button" (click)="cerrarModal('crearUsuarioModal', this.crearUsuarioForm)" class="btn btn-secondary" data-bs-dismiss="modal">
           Cancelar
         </button>
       </div>

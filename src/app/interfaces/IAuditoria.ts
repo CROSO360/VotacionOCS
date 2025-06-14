@@ -1,18 +1,72 @@
-import { IPunto } from "./IPunto";
-import { IUsuario } from "./IUsuario";
+// =======================
+// Interfaz: IAuditoria
+// Representa un registro de auditoría sobre cambios en una resolución
+// =======================
+
+import { IPunto } from './IPunto';
+import { IUsuario } from './IUsuario';
 
 export interface IAuditoria {
-    id_auditoria?: number;
-    punto?: IPunto;
-    usuario?: IUsuario;
+  /**
+   * Identificador único del registro de auditoría
+   */
+  id_auditoria?: number;
 
-    fecha_anterior?: Date;
-    nombre_anterior?: string;
-    descripcion_anterior?: string;
-    voto_manual_anterior?: boolean;
+  /**
+   * Punto asociado al cambio registrado
+   */
+  punto?: IPunto;
 
-    fecha_actual?: Date;
-    nombre_actual?: string;
-    descripcion_actual?: string;
-    voto_manual_actual?: boolean;
+  /**
+   * Usuario que realizó la modificación
+   */
+  usuario?: IUsuario;
+
+  // =======================
+  // Valores anteriores (antes del cambio)
+  // =======================
+
+  /**
+   * Fecha anterior de la resolución
+   */
+  fecha_anterior?: Date;
+
+  /**
+   * Nombre anterior de la resolución
+   */
+  nombre_anterior?: string;
+
+  /**
+   * Descripción anterior de la resolución
+   */
+  descripcion_anterior?: string;
+
+  /**
+   * Valor anterior de la bandera de voto manual
+   */
+  voto_manual_anterior?: boolean;
+
+  // =======================
+  // Valores actuales (después del cambio)
+  // =======================
+
+  /**
+   * Fecha actual de la resolución
+   */
+  fecha_actual?: Date;
+
+  /**
+   * Nombre actual de la resolución
+   */
+  nombre_actual?: string;
+
+  /**
+   * Descripción actual de la resolución
+   */
+  descripcion_actual?: string;
+
+  /**
+   * Valor actual de la bandera de voto manual
+   */
+  voto_manual_actual?: boolean;
 }

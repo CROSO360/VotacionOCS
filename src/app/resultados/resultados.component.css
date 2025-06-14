@@ -1,19 +1,19 @@
-select {
-  padding: 8px;
-  font-size: 16px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  margin-bottom: 10px;
-}
-
+/* =======================
+   Estilos del botón "Volver"
+   ======================= */
 .back-button {
-  /*background-color: transparent;
-      border: 1px solid black;*/
   font-size: 24px;
   cursor: pointer;
   margin-bottom: 20px;
+  /* Puedes habilitar los siguientes estilos si quieres un borde visible:
+  background-color: transparent;
+  border: 1px solid black;
+  */
 }
 
+/* =======================
+   Estilos generales para botones
+   ======================= */
 button {
   background-color: #333;
   color: white;
@@ -26,14 +26,27 @@ button:hover {
   background-color: #555;
 }
 
-/* Agrega este estilo en tu archivo CSS (resultados.component.css) */
+/* =======================
+   Estilos del selector de punto
+   ======================= */
+select {
+  padding: 8px;
+  font-size: 16px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  margin-bottom: 10px;
+}
 
+/* =======================
+   Estilos de la tabla de resultados
+   ======================= */
 .results-table {
   width: 100%;
   border-collapse: collapse;
 }
 
-.results-table th, .results-table td {
+.results-table th,
+.results-table td {
   border: 1px solid #dddddd;
   padding: 8px;
   text-align: left;
@@ -51,6 +64,9 @@ button:hover {
   background-color: #f2f2f2;
 }
 
+/* =======================
+   Fila total destacada
+   ======================= */
 .total-row {
   font-weight: bold;
   background-color: #f2f2f2; /* Mismo color que la cabecera */

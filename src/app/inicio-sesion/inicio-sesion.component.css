@@ -1,9 +1,15 @@
+/* =======================
+   Estilo para cada grupo de formulario
+   ======================= */
 .form-group {
-    margin-bottom: 20px;
+  margin-bottom: 20px;
 }
 
+/* =======================
+   Estilo para mensajes de error
+   ======================= */
 .error-message {
-    color: red;
-    font-size: 15px;
-    margin-bottom: 5px;
+  color: red;
+  font-size: 15px;
+  margin-bottom: 5px;
 }

@@ -1,3 +1,10 @@
+// =======================
+// SesionesComponent
+// Componente encargado de listar, crear y editar sesiones.
+// Incluye filtrado por estado, navegación y formularios reactivos.
+// =======================
+
+// Importaciones Angular y Comunes
 import { CommonModule, Location } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import {
@@ -7,9 +14,13 @@ import {
   ReactiveFormsModule,
   Validators,
 } from '@angular/forms';
-import { BarraSuperiorComponent } from '../barra-superior/barra-superior.component';
-import { SesionService } from '../services/sesion.service';
 import { Router } from '@angular/router';
+
+// Componentes
+import { BarraSuperiorComponent } from '../barra-superior/barra-superior.component';
+
+// Servicios
+import { SesionService } from '../services/sesion.service';
 import { ToastrService } from 'ngx-toastr';
 
 @Component({
@@ -25,18 +36,30 @@ import { ToastrService } from 'ngx-toastr';
   styleUrls: ['./sesiones.component.css'],
 })
 export class SesionesComponent implements OnInit {
+
+  // =======================
+  // Propiedades públicas
+  // =======================
+
   busqueda: string = '';
   sesiones: any[] = [];
   sesionesFiltradas: any[] = [];
   estadoActual: boolean | null = null;
   sesionesCargadas: boolean = false;
 
+  // =======================
+  // Constructor
+  // =======================
   constructor(
     private sesionService: SesionService,
     private location: Location,
     private router: Router,
     private toastrService: ToastrService
   ) {}
+
+  // =======================
+  // Formularios
+  // =======================
 
   modificarSesionForm = new FormGroup({
     idSesion: new FormControl('', Validators.required),
@@ -54,18 +77,26 @@ export class SesionesComponent implements OnInit {
     tipo: new FormControl('', Validators.required),
   });
 
+  // =======================
+  // Ciclo de vida
+  // =======================
+
   ngOnInit(): void {
     this.getSesiones();
     this.cambiarGrupo(null);
     console.log(`estado actual al iniciar: ${this.estadoActual}`);
   }
 
+  // =======================
+  // Carga y filtrado de datos
+  // =======================
+
   getSesiones() {
     const query = 'status=1';
     const relations = [''];
     this.sesionService.getAllDataBy(query, relations).subscribe((data: any) => {
       this.sesiones = data;
-      this.sesionesCargadas = true; // Marcar que las sesiones se han cargado
+      this.sesionesCargadas = true;
       this.cambiarGrupo(null);
     });
   }
@@ -84,20 +115,27 @@ export class SesionesComponent implements OnInit {
       (sesion) =>
         (this.estadoActual === null || sesion.estado === this.estadoActual) &&
         (sesion.nombre!.toLowerCase().includes(this.busqueda.toLowerCase()) ||
-          sesion.codigo!.includes(this.busqueda))
+         sesion.codigo!.includes(this.busqueda))
     );
 
     console.log('Sesiones filtradas: ', this.sesionesFiltradas);
   }
 
+  // =======================
+  // Navegación
+  // =======================
+
   irADetalleSesion(id: number) {
     if (id) {
-      const idString = id.toString();
-      this.router.navigate(['/sesion', idString]);
+      this.router.navigate(['/sesion', id.toString()]);
     } else {
       console.error(`ID de sesión no definido: ${id}`);
     }
   }
+
+  // =======================
+  // Operaciones CRUD
+  // =======================
 
   abrirEditar(sesion: any) {
     this.modificarSesionForm.setValue({
@@ -110,31 +148,6 @@ export class SesionesComponent implements OnInit {
     });
   }
 
-  cerrarModal(modalId: string, form: FormGroup) {
-    const modalElement = document.getElementById(modalId);
-    if (modalElement) {
-      modalElement.classList.remove('show');
-      modalElement.style.display = 'none';
-      modalElement.setAttribute('aria-hidden', 'true');
-      modalElement.removeAttribute('aria-modal');
-      modalElement.removeAttribute('role');
-    }
-
-    // Limpieza de estilos y clases
-    document.body.classList.remove('modal-open');
-    document.body.style.overflow = '';
-    document.body.style.paddingRight = '';
-
-    // Elimina cualquier backdrop sobrante
-    const backdrops = document.getElementsByClassName('modal-backdrop');
-    while (backdrops[0]) {
-      backdrops[0].parentNode?.removeChild(backdrops[0]);
-    }
-
-    // Restablecer el formulario
-    form.reset();
-  }
-
   editarSesion() {
     const sesionData: any = {
       id_sesion: parseInt(this.modificarSesionForm.value.idSesion!),
@@ -144,18 +157,17 @@ export class SesionesComponent implements OnInit {
       tipo: this.modificarSesionForm.value.tipo,
     };
 
-    this.sesionService.saveData(sesionData).subscribe(
-      (response) => {
-        console.log(response);
+    this.sesionService.saveData(sesionData).subscribe({
+      next: () => {
         this.toastrService.success('Sesión actualizada con éxito.');
         this.getSesiones();
         this.cerrarModal('exampleModal', this.modificarSesionForm);
       },
-      (error) => {
-        console.error(error);
-        this.toastrService.error('Error al actualizar la sesión.', error);
-      }
-    );
+      error: (err) => {
+        console.error(err);
+        this.toastrService.error('Error al actualizar la sesión.', err);
+      },
+    });
   }
 
   crearSesion() {
@@ -166,22 +178,44 @@ export class SesionesComponent implements OnInit {
       tipo: this.crearSesionForm.value.tipo,
     };
 
-    console.log(sesionData);
-
-    this.sesionService.saveData(sesionData).subscribe(
-      (response) => {
-        console.log(response);
+    this.sesionService.saveData(sesionData).subscribe({
+      next: () => {
         this.toastrService.success('Sesión creada con éxito.');
         this.getSesiones();
         this.cerrarModal('crearSesionModal', this.crearSesionForm);
       },
-      (error) => {
-        console.error(error);
-        this.toastrService.error('Error al crear la sesión.', error);
-      }
-    );
+      error: (err) => {
+        console.error(err);
+        this.toastrService.error('Error al crear la sesión.', err);
+      },
+    });
   }
 
+  // =======================
+  // Utilidades
+  // =======================
+
+  cerrarModal(modalId: string, form: FormGroup) {
+    const modalElement = document.getElementById(modalId);
+    if (modalElement) {
+      modalElement.classList.remove('show');
+      modalElement.style.display = 'none';
+      modalElement.setAttribute('aria-hidden', 'true');
+      modalElement.removeAttribute('aria-modal');
+      modalElement.removeAttribute('role');
+    }
+
+    document.body.classList.remove('modal-open');
+    document.body.style.overflow = '';
+    document.body.style.paddingRight = '';
+
+    const backdrops = document.getElementsByClassName('modal-backdrop');
+    while (backdrops[0]) {
+      backdrops[0].parentNode?.removeChild(backdrops[0]);
+    }
+
+    form.reset();
+  }
 
   goBack() {
     this.location.back();

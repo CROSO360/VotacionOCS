@@ -1,18 +1,31 @@
+// =======================
+// AsistenciaComponent
+// Componente encargado de gestionar las asistencias a una sesión del OCS.
+// Permite generar, sincronizar y eliminar asistencias, además de filtrar y seleccionar usuarios.
+// =======================
+
+// Importaciones Angular y Comunes
 import { CommonModule, Location } from '@angular/common';
 import { Component, OnInit, HostListener } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
+import { forkJoin, Observable } from 'rxjs';
+
+// Componentes
 import { BarraSuperiorComponent } from '../barra-superior/barra-superior.component';
+
+// Interfaces
 import { ISesion } from '../interfaces/ISesion';
 import { IAsistencia } from '../interfaces/IAsistencia';
 import { IUsuario } from '../interfaces/IUsuario';
+
+// Servicios
 import { SesionService } from '../services/sesion.service';
 import { AsistenciaService } from '../services/asistencia.service';
 import { UsuarioService } from '../services/usuario.service';
 import { GrupoUsuarioService } from '../services/grupoUsuario.service';
 import { MiembroService } from '../services/miembro.service';
 import { ToastrService } from 'ngx-toastr';
-import { ActivatedRoute } from '@angular/router';
-import { forkJoin, Observable } from 'rxjs';
 
 @Component({
   selector: 'app-asistencia',
@@ -27,6 +40,11 @@ import { forkJoin, Observable } from 'rxjs';
   styleUrl: './asistencia.component.css',
 })
 export class AsistenciaComponent implements OnInit {
+
+  // =======================
+  // Propiedades públicas
+  // =======================
+
   idSesion: number | null = null;
   sesion: ISesion | undefined;
 
@@ -44,6 +62,9 @@ export class AsistenciaComponent implements OnInit {
   showOptions: boolean = false;
   todosSeleccionados: boolean = false;
 
+  // =======================
+  // Constructor
+  // =======================
   constructor(
     private sesionService: SesionService,
     private asistenciaService: AsistenciaService,
@@ -55,6 +76,9 @@ export class AsistenciaComponent implements OnInit {
     private route: ActivatedRoute
   ) {}
 
+  // =======================
+  // Ciclo de Vida
+  // =======================
   ngOnInit(): void {
     this.idSesion = parseInt(this.route.snapshot.paramMap.get('idSesion')!, 10);
 
@@ -89,6 +113,10 @@ export class AsistenciaComponent implements OnInit {
     });
   }
 
+  // =======================
+  // Carga de datos
+  // =======================
+
   cargarUsuarios(): Observable<IUsuario[]> {
     const query = `tipo=votante&estado=1`;
     const relations = [`grupoUsuario`, `usuarioReemplazo`];
@@ -114,6 +142,10 @@ export class AsistenciaComponent implements OnInit {
     const query = `id_sesion=${this.idSesion}`;
     return this.sesionService.getDataBy(query);
   }
+
+  // =======================
+  // Lógica de negocio
+  // =======================
 
   filtrarUsuarios() {
     this.usuariosFiltrados = this.usuarios.filter(
@@ -148,6 +180,10 @@ export class AsistenciaComponent implements OnInit {
       this.actualizarSeleccion(usuario);
     });
   }
+
+  // =======================
+  // Operaciones de asistencia
+  // =======================
 
   generarAsistencias() {
     if (!this.idSesion) return;
@@ -189,8 +225,11 @@ export class AsistenciaComponent implements OnInit {
         this.toastr.error('Error al guardar asistencias', 'Error');
       },
     });
-
   }
+
+  // =======================
+  // Utilidades
+  // =======================
 
   esMiembroOCS(idUsuario: number): boolean {
     return this.miembrosOCS.some(u => u.id_usuario === idUsuario);
@@ -220,6 +259,9 @@ export class AsistenciaComponent implements OnInit {
     this.location.back();
   }
 
+  // =======================
+  // Eventos del DOM
+  // =======================
   @HostListener('document:click', ['$event'])
   handleClickOutside(event: Event) {
     const clickedInside = (event.target as HTMLElement).closest('.custom-select');

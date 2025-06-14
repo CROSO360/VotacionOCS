@@ -1,37 +1,44 @@
+/* ==== ESTILO PARA USUARIOS INACTIVOS ==== */
 .usuario-inactivo {
-  background-color: #dddddd; /* Cambia el color de fondo a gris */
+  background-color: #dddddd; /* Color gris para usuarios con estado inactivo */
 }
 
+
+/* ==== ESTILOS GENERALES DE MODALES ==== */
 .modal-content {
-  padding: 20px;
+  padding: 20px; /* Espaciado interno general */
 }
 
 .modal-header,
 .modal-footer {
   border-bottom: 1px solid #dee2e6;
   border-top: 1px solid #dee2e6;
-  padding: 15px;
+  padding: 15px; /* Espaciado superior e inferior */
 }
 
 .modal-title {
-  font-size: 1.5rem;
+  font-size: 1.5rem; /* Tamaño del título en los modales */
 }
 
+
+/* ==== ESTILOS DE FORMULARIOS ==== */
 .form-group {
-  margin-bottom: 15px;
+  margin-bottom: 15px; /* Espacio entre grupos de campos */
 }
 
 .form-label {
   font-weight: 500;
-  margin-bottom: 5px;
+  margin-bottom: 5px; /* Separación entre etiqueta y campo */
 }
 
 .form-control {
-  border-radius: 0.25rem;
+  border-radius: 0.25rem; /* Bordes redondeados */
   padding: 10px;
-  width: 100%;
+  width: 100%; /* Ocupa todo el ancho del contenedor */
 }
 
+
+/* ==== CAMPOS ESPECÍFICOS ==== */
 input[type="file"] {
   border: 1px solid #ced4da;
   border-radius: 0.25rem;
@@ -40,16 +47,17 @@ input[type="file"] {
 }
 
 input[type="checkbox"] {
-  margin-left: 5px;
+  margin-left: 5px; /* Espacio a la izquierda del checkbox */
 }
 
 select {
   border-radius: 0.25rem;
   padding: 10px;
-  width: 100%;
+  width: 100%; /* Ancho completo para selects */
 }
 
 
+/* ==== RESPONSIVE: TAMAÑO DEL MODAL SEGÚN LA PANTALLA ==== */
 @media (min-width: 576px) {
   .modal-dialog {
     max-width: 500px;
@@ -74,6 +82,8 @@ select {
   }
 }
 
+
+/* ==== ESTILO PARA TEXTO CAPITALIZADO EN OPCIONES DE SELECT ==== */
 .capitalize-options option {
   text-transform: capitalize;
 }

@@ -1,9 +1,15 @@
+/* ===========================
+   Estilo general de la lista
+   =========================== */
 .list-group {
   width: 100%;
-  max-width: 100%; /* Ajusta para que ocupe todo el ancho del contenedor */
-  margin: 0 auto;
+  max-width: 100%; /* Ocupa todo el ancho disponible */
+  margin: 0 auto;  /* Centrado horizontal */
 }
 
+/* ===========================
+   Ítems individuales dentro de la lista
+   =========================== */
 .list-group-item {
   display: flex;
   align-items: center;
@@ -13,12 +19,18 @@
   width: 100%;
 }
 
+/* ===========================
+   Estilo del checkbox de usuario
+   =========================== */
 .list-group-item input[type="checkbox"] {
   margin-right: 10px;
   width: 18px;
   height: 18px;
 }
 
+/* ===========================
+   Estilo para la etiqueta del usuario (nombre/cedula)
+   =========================== */
 .list-group-item label {
   flex-grow: 1;
   text-align: left;
@@ -28,30 +40,37 @@
   text-overflow: ellipsis;
 }
 
+/* ===========================
+   Estilo de las pestañas de navegación por grupo
+   =========================== */
 .nav-tabs {
   display: flex;
   justify-content: flex-start;
   width: 100%;
 }
 
+/* Espaciado entre las pestañas */
 .nav-tabs .nav-item {
   margin-right: 10px;
 }
 
+/* Estilo de los enlaces dentro de las pestañas */
 .nav-tabs .nav-link {
   color: blue;
   cursor: pointer;
 }
 
-/* Asegurar que la lista se alinee con la barra de grupos de usuarios */
+/* ===========================
+   Responsividad para dispositivos medianos y grandes
+   =========================== */
 @media (min-width: 768px) {
   .list-group {
-    max-width: 90%;
+    max-width: 90%; /* Ajuste para pantallas medianas */
   }
 }
 
 @media (min-width: 992px) {
   .list-group {
-    max-width: 100%;
+    max-width: 100%; /* Reestablece ancho completo en pantallas grandes */
   }
 }

@@ -1,11 +1,18 @@
+/* ===== ESTADO DE LA SESIÓN ===== */
+
+/* Fondo gris para sesiones finalizadas */
 .sesion-finalizada {
-  background-color: #dddddd; /* Cambia el color de fondo a gris */
+  background-color: #dddddd;
 }
+
+
+/* ===== ESTILOS GENERALES DE MODAL ===== */
 
 .modal-content {
   padding: 20px;
 }
 
+/* Encabezado y pie del modal */
 .modal-header,
 .modal-footer {
   border-bottom: 1px solid #dee2e6;
@@ -16,6 +23,9 @@
 .modal-title {
   font-size: 1.5rem;
 }
+
+
+/* ===== FORMULARIOS ===== */
 
 .form-group {
   margin-bottom: 15px;
@@ -31,6 +41,7 @@
   padding: 10px;
 }
 
+/* Campo de carga de archivos (no usado aquí pero previsto) */
 input[type="file"] {
   border: 1px solid #ced4da;
   border-radius: 0.25rem;
@@ -38,17 +49,20 @@ input[type="file"] {
   width: 100%;
 }
 
+/* Alineación de checkbox */
 input[type="checkbox"] {
   margin-left: 5px;
 }
 
-
-
+/* Estilo uniforme para <select> */
 select {
   border-radius: 0.25rem;
   padding: 10px;
   width: 100%;
 }
+
+
+/* ===== MEDIA QUERIES: ANCHOS RESPONSIVOS DE MODAL ===== */
 
 @media (min-width: 576px) {
   .modal-dialog {

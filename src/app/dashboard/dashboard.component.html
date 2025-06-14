@@ -1,20 +1,42 @@
+<!-- =======================
+   Barra superior fija
+   ======================= -->
 <app-barra-superior></app-barra-superior>
 
+<!-- =======================
+   Contenedor principal del dashboard
+   ======================= -->
 <div class="container my-5">
-    <h2 class="text-center">Bienvenido {{payload.nombre}}</h2>
-    <h3 class="mt-4">Sesiones en curso</h3>
-    <div class="reuniones-container">
-        <div class="reuniones-grid">
-            <button *ngFor="let sesion of sesiones" class="reunion-card" (click)="irADetalleSesion(sesion.id_sesion!)">
-                {{sesion.nombre}}
-                <br>
-                {{sesion.codigo}}
-            </button>
-        </div>
+
+  <!-- Mensaje de bienvenida personalizado -->
+  <h2 class="text-center">Bienvenido {{ payload.nombre }}</h2>
+
+  <!-- Título de sección -->
+  <h3 class="mt-4">Sesiones en curso</h3>
+
+  <!-- =======================
+       Lista de sesiones activas
+       ======================= -->
+  <div class="reuniones-container">
+    <div class="reuniones-grid">
+      <button
+        *ngFor="let sesion of sesiones"
+        class="reunion-card"
+        (click)="irADetalleSesion(sesion.id_sesion!)"
+      >
+        {{ sesion.nombre }}
+        <br>
+        {{ sesion.codigo }}
+      </button>
     </div>
-    <div class="buttons-container my-4">
-        <button class="btn btn-secondary" (click)="irASesiones()">Sesiones</button>
-        <button class="btn btn-secondary" (click)="irAMiembros()">Miembros</button>
-        <button class="btn btn-secondary" (click)="irAUsuarios()">Usuarios</button>
-    </div>
+  </div>
+
+  <!-- =======================
+       Botones de navegación a otras secciones
+       ======================= -->
+  <div class="buttons-container my-4">
+    <button class="btn btn-secondary" (click)="irASesiones()">Sesiones</button>
+    <button class="btn btn-secondary" (click)="irAMiembros()">Miembros</button>
+    <button class="btn btn-secondary" (click)="irAUsuarios()">Usuarios</button>
+  </div>
 </div>

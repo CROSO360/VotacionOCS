@@ -1,17 +1,27 @@
+<!-- =======================
+BARRA SUPERIOR
+======================= -->
 <app-barra-superior></app-barra-superior>
 
 <div class="container my-4">
+  <!-- Botón de retroceso -->
   <button class="back-button mb-3" (click)="goBack()">←</button>
   <h2 class="text-center">Gestión de Asistencia</h2>
 
-  <!-- Estado sin asistencia -->
+  <!-- =======================
+   ESTADO: Asistencia no generada
+  ======================= -->
   <div *ngIf="asistencias.length === 0" class="text-center mt-5">
     <button class="btn btn-primary" (click)="generarAsistencias()">Generar asistencia</button>
   </div>
 
-  <!-- Estado con asistencia generada -->
+  <!-- =======================
+   ESTADO: Asistencia generada
+  ======================= -->
   <div *ngIf="asistencias.length > 0">
     <h5>Miembros y Asistentes</h5>
+
+    <!-- Lista de asistencias registradas -->
     <ul class="list-group mb-4">
       <li
         *ngFor="let asistencia of asistencias"
@@ -19,7 +29,8 @@
       >
         <div class="d-flex align-items-center flex-wrap gap-2">
           <span class="fw-semibold me-3">{{ asistencia.usuario?.nombre }}</span>
-    
+
+          <!-- Selector de tipo de asistencia -->
           <select
             class="form-select form-select-sm w-auto"
             [(ngModel)]="asistencia.tipo_asistencia"
@@ -32,7 +43,8 @@
             <option value="ausente">Ausente</option>
           </select>
         </div>
-    
+
+        <!-- Distintivo de tipo de asistente -->
         <span
           class="badge"
           [ngClass]="{
@@ -44,16 +56,12 @@
         </span>
       </li>
     </ul>
-    
 
-    <!-- Botones de acción -->
+    <!-- =======================
+     BOTONES de acción
+    ======================= -->
     <div class="d-flex justify-content-between flex-wrap gap-2" *ngIf="sesion?.estado === true">
-      <button
-        type="button"
-        class="btn btn-secondary"
-        data-bs-toggle="modal"
-        data-bs-target="#modalAsistencia"
-      >
+      <button type="button" class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#modalAsistencia">
         Añadir/Quitar usuarios
       </button>
 
@@ -68,31 +76,19 @@
   </div>
 </div>
 
-
-
-<!-- Modal para Añadir/Quitar Asistentes -->
-<div
-  class="modal fade"
-  id="modalAsistencia"
-  tabindex="-1"
-  aria-labelledby="modalAsistenciaLabel"
-  aria-hidden="true"
->
+<!-- =======================
+ MODAL: Añadir / Quitar asistentes
+======================= -->
+<div class="modal fade" id="modalAsistencia" tabindex="-1" aria-labelledby="modalAsistenciaLabel" aria-hidden="true">
   <div class="modal-dialog modal-lg">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="modalAsistenciaLabel">
-          Añadir / Quitar Asistentes
-        </h5>
-        <button
-          type="button"
-          class="btn-close"
-          data-bs-dismiss="modal"
-          aria-label="Cerrar"
-        ></button>
+        <h5 class="modal-title" id="modalAsistenciaLabel">Añadir / Quitar Asistentes</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
       </div>
+
       <div class="modal-body">
-        <!-- Barra de búsqueda -->
+        <!-- 🔍 Barra de búsqueda -->
         <input
           type="text"
           [(ngModel)]="busqueda"
@@ -108,25 +104,24 @@
               class="nav-link"
               (click)="cambiarGrupo(grupo)"
               [class.active]="grupoActual === grupo"
-              >{{ grupo.nombre }}</a
             >
+              {{ grupo.nombre }}
+            </a>
           </li>
           <li class="nav-item">
             <a
               class="nav-link"
               (click)="cambiarGrupo(null)"
               [class.active]="grupoActual === null"
-              >Todos</a
             >
+              Todos
+            </a>
           </li>
         </ul>
 
-        <!-- Lista de usuarios -->
+        <!-- Lista de usuarios filtrados -->
         <div class="list-group">
-          <div
-            *ngFor="let usuario of usuariosFiltrados"
-            class="list-group-item d-flex align-items-center"
-          >
+          <div *ngFor="let usuario of usuariosFiltrados" class="list-group-item d-flex align-items-center">
             <input
               type="checkbox"
               class="form-check-input me-2"
@@ -141,20 +136,17 @@
               </span>
             </label>
           </div>
-          <div
-            *ngIf="usuariosFiltrados.length === 0"
-            class="list-group-item text-muted"
-          >
+
+          <!-- Mensaje cuando no hay resultados -->
+          <div *ngIf="usuariosFiltrados.length === 0" class="list-group-item text-muted">
             No se encontraron usuarios.
           </div>
         </div>
       </div>
+
+      <!-- Acciones del modal -->
       <div class="modal-footer">
-        <button
-          class="btn btn-secondary"
-          type="button"
-          data-bs-dismiss="modal"
-        >
+        <button class="btn btn-secondary" type="button" data-bs-dismiss="modal">
           Cancelar
         </button>
         <button class="btn btn-primary" (click)="sincronizarAsistencias()">
@@ -165,24 +157,15 @@
   </div>
 </div>
 
-<!-- Modal Confirmar Eliminación -->
-<div
-  class="modal fade"
-  id="modalConfirmarEliminar"
-  tabindex="-1"
-  aria-labelledby="modalConfirmarEliminarLabel"
-  aria-hidden="true"
->
+<!-- =======================
+  MODAL: Confirmar eliminación
+======================= -->
+<div class="modal fade" id="modalConfirmarEliminar" tabindex="-1" aria-labelledby="modalConfirmarEliminarLabel" aria-hidden="true">
   <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title" id="modalConfirmarEliminarLabel">Eliminar Asistencia</h5>
-        <button
-          type="button"
-          class="btn-close"
-          data-bs-dismiss="modal"
-          aria-label="Cerrar"
-        ></button>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
       </div>
       <div class="modal-body">
         ¿Estás seguro de que deseas eliminar la asistencia actual? Esta acción no se puede deshacer.
@@ -197,25 +180,15 @@
   </div>
 </div>
 
-
-<!-- Modal Confirmar Envío -->
-<div
-  class="modal fade"
-  id="modalConfirmarEnvio"
-  tabindex="-1"
-  aria-labelledby="modalConfirmarEnvioLabel"
-  aria-hidden="true"
->
+<!-- =======================
+ MODAL: Confirmar registro
+======================= -->
+<div class="modal fade" id="modalConfirmarEnvio" tabindex="-1" aria-labelledby="modalConfirmarEnvioLabel" aria-hidden="true">
   <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title" id="modalConfirmarEnvioLabel">Registrar Asistencia</h5>
-        <button
-          type="button"
-          class="btn-close"
-          data-bs-dismiss="modal"
-          aria-label="Cerrar"
-        ></button>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
       </div>
       <div class="modal-body">
         ¿Deseas registrar la asistencia registrada? Esta acción puede estar sujeta a revisión final.
@@ -229,6 +202,3 @@
     </div>
   </div>
 </div>
-
-
-

@@ -1,3 +1,9 @@
+// =======================
+// InicioSesionComponent
+// Componente para inicio de sesión de usuarios administradores
+// =======================
+
+//  Importaciones Angular
 import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import {
@@ -6,11 +12,15 @@ import {
   ReactiveFormsModule,
   Validators,
 } from '@angular/forms';
+import { Router } from '@angular/router';
+
+//  Servicios
 import { AuthService } from '../services/auth.service';
 import { CookieService } from 'ngx-cookie-service';
-import { Router } from '@angular/router';
-import { GrupoUsuarioService } from '../services/grupoUsuario.service';
 
+// =======================
+// Decorador del componente
+// =======================
 @Component({
   selector: 'app-inicio-sesion',
   standalone: true,
@@ -19,6 +29,10 @@ import { GrupoUsuarioService } from '../services/grupoUsuario.service';
   styleUrl: './inicio-sesion.component.css',
 })
 export class InicioSesionComponent implements OnInit {
+
+  // =======================
+  // Constructor e inyección de dependencias
+  // =======================
   constructor(
     private fb: FormBuilder,
     private cookieService: CookieService,
@@ -26,20 +40,32 @@ export class InicioSesionComponent implements OnInit {
     private router: Router,
   ) {}
 
+  // =======================
+  // Formulario reactivo
+  // =======================
   adminLoginForm = this.fb.group({
     codigo: ['', [Validators.required]],
     contrasena: ['', [Validators.required]],
   });
 
+  // =======================
+  // Mensaje de error al iniciar sesión
+  // =======================
   errorMessage: string = ''; 
 
+  // =======================
+  // Verifica si hay cookies activas al iniciar el componente
+  // =======================
   async ngOnInit() {
-     const cookie = await this.cookieService.check('token');
+    const cookie = await this.cookieService.check('token');
     if (cookie) {
-      await this.cookieService.deleteAll('cookie');
+      await this.cookieService.deleteAll('cookie'); // ❗ Posible corrección: debería ser 'token' si el objetivo es borrar la sesión actual
     }
   }
 
+  // =======================
+  // Procesar envío del formulario de login
+  // =======================
   onSubmit(): void {
     const formData = this.adminLoginForm.value;
 
@@ -64,5 +90,4 @@ export class InicioSesionComponent implements OnInit {
       },
     });
   }
-
 }

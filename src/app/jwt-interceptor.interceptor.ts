@@ -1,14 +1,23 @@
+// =======================================
+// INTERCEPTOR HTTP PARA ADJUNTAR JWT
+// =======================================
+
 import { HttpInterceptorFn } from '@angular/common/http';
 import { inject } from '@angular/core';
-import { request } from 'http';
 import { CookieService } from 'ngx-cookie-service';
+
+// =======================================
+// INTERCEPTOR DE AUTENTICACIÓN JWT
+// Se ejecuta en cada solicitud HTTP saliente
+// =======================================
 
 export const jwtInterceptorInterceptor: HttpInterceptorFn = (req, next) => {
 
+  // Inyectamos el servicio de cookies para acceder al token
   const cookieService = inject(CookieService);
-
   const token: string = cookieService.get('token');
 
+  // Clonamos la solicitud original si hay token
   let modifiedReq = req;
 
   if (token) {
@@ -17,6 +26,6 @@ export const jwtInterceptorInterceptor: HttpInterceptorFn = (req, next) => {
     });
   }
 
+  // Continuamos con la solicitud (modificada o no)
   return next(modifiedReq);
-
 };

@@ -1,88 +1,113 @@
+/* =======================
+   Contenedor principal centrado
+   ======================= */
 .main-container {
-    max-width: 80%;
-    margin: 0 auto;
-    padding: 15px;
-  }
-  
-  .back-button {
-    font-size: 20px;
-    cursor: pointer;
-    margin-bottom: 20px;
-    background-color: #333;
-    color: white;
-    border: none;
-    padding: 10px 15px;
-    border-radius: 5px;
-  }
-  
-  .back-button:hover {
-    background-color: #555;
-  }
-  
-  .documents-container {
-    max-height: 280px;
-    overflow-y: auto;
-    border: 1px solid #ccc;
-    padding: 15px;
-    margin-bottom: 20px;
-  }
-  
-  .documents-table {
-    width: 100%;
-    border-collapse: collapse;
-  }
-  
-  .documents-table td {
-    padding: 10px;
-    border: 1px solid #ccc;
-    text-align: center;
-    vertical-align: middle;
-  }
-  
-  .upload-container {
-    width: 100%;
-  }
-  
-  .upload-label {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 100%;
-    background-color: #f8f9fa;
-    padding: 12px;
-    border: 2px dashed #ccc;
-    cursor: pointer;
-  }
-  
-  .upload-label:hover {
-    background-color: #e9ecef;
-  }
-  
-  .file-input {
-    display: none;
-  }
-  
-  .document-name {
-    width: 50%;
-    text-align: left;
-    padding-left: 10px;
-  }
-  
-  .btn-container {
-    width: 25%;
-  }
-  
-  .btn {
-    padding: 8px 15px;
-    min-width: 100px;
-  }
-  
-  .btn-danger {
-    background-color: #dc3545;
-    border: none;
-    color: white;
-  }
-  
-  .btn-danger:hover {
-    background-color: #c82333;
-  }
+  max-width: 80%;
+  margin: 0 auto;
+  padding: 15px;
+}
+
+/* =======================
+   Botón para regresar
+   ======================= */
+.back-button {
+  font-size: 20px;
+  cursor: pointer;
+  margin-bottom: 20px;
+  background-color: #333;
+  color: white;
+  border: none;
+  padding: 10px 15px;
+  border-radius: 5px;
+}
+
+.back-button:hover {
+  background-color: #555;
+}
+
+/* =======================
+   Contenedor con scroll para la tabla de documentos
+   ======================= */
+.documents-container {
+  max-height: 280px;
+  overflow-y: auto;
+  border: 1px solid #ccc;
+  padding: 15px;
+  margin-bottom: 20px;
+}
+
+/* =======================
+   Estilo de tabla de documentos
+   ======================= */
+.documents-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.documents-table td {
+  padding: 10px;
+  border: 1px solid #ccc;
+  text-align: center;
+  vertical-align: middle;
+}
+
+/* =======================
+   Estilo del contenedor para subir archivo
+   ======================= */
+.upload-container {
+  width: 100%;
+}
+
+.upload-label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  background-color: #f8f9fa;
+  padding: 12px;
+  border: 2px dashed #ccc;
+  cursor: pointer;
+}
+
+.upload-label:hover {
+  background-color: #e9ecef;
+}
+
+/* Ocultar el input de archivo */
+.file-input {
+  display: none;
+}
+
+/* =======================
+   Estilo para el nombre del documento
+   ======================= */
+.document-name {
+  width: 50%;
+  text-align: left;
+  padding-left: 10px;
+}
+
+/* =======================
+   Contenedor de botones de acción (Ver/Eliminar)
+   ======================= */
+.btn-container {
+  width: 25%;
+}
+
+.btn {
+  padding: 8px 15px;
+  min-width: 100px;
+}
+
+/* =======================
+   Botón de eliminar documento
+   ======================= */
+.btn-danger {
+  background-color: #dc3545;
+  border: none;
+  color: white;
+}
+
+.btn-danger:hover {
+  background-color: #c82333;
+}

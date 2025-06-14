@@ -1,3 +1,9 @@
+// =======================
+// BarraSuperiorComponent
+// Componente responsable de mostrar la barra superior con opciones de navegación y cierre de sesión.
+// =======================
+
+// Importaciones base
 import { CommonModule } from '@angular/common';
 import { Component } from '@angular/core';
 import { Router } from '@angular/router';
@@ -12,18 +18,28 @@ import { CookieService } from 'ngx-cookie-service';
 })
 export class BarraSuperiorComponent {
 
+  // =======================
+  // Constructor
+  // =======================
   constructor(
     private cookieService: CookieService,
     private router: Router,
-  ){}
+  ) {}
 
-  async logout(){
+  // =======================
+  // Cerrar sesión del usuario
+  // Elimina las cookies y redirige a la pantalla de login
+  // =======================
+  async logout() {
     await this.cookieService.deleteAll('token');
     await this.router.navigate(['/', 'login']);
   }
 
-  inicio(){
+  // =======================
+  // Redirigir al inicio
+  // Navega a la ruta principal del sistema
+  // =======================
+  inicio() {
     this.router.navigate(['/', 'home']);
   }
-
 }

@@ -1,23 +1,38 @@
+/* =======================
+   Estilo para opciones con capitalización automática
+   ======================= */
 .capitalize-options {
-    text-transform: capitalize;
-  }
-  
-  .modal-body .form-control {
-    width: 100%;
-    max-width: 400px;
-    margin: auto;
-  }
-  
-  .list-group-item {
-    display: flex;
-    align-items: center;
-    justify-content: flex-start;
-    padding: 10px;
-    border-bottom: 1px solid #ddd;
-  }
-  
-  .list-group-item .badge {
-    font-size: 0.8rem;
-    padding: 4px 8px;
-  }
-  
+  text-transform: capitalize;
+}
+
+/* =======================
+   Campo de búsqueda dentro del modal
+   - Centrado
+   - Con ancho máximo limitado
+   ======================= */
+.modal-body .form-control {
+  width: 100%;
+  max-width: 400px;
+  margin: auto;
+}
+
+/* =======================
+   Estilo base para los ítems de lista
+   - Alineación horizontal y vertical
+   - Separación visual con borde
+   ======================= */
+.list-group-item {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 10px;
+  border-bottom: 1px solid #ddd;
+}
+
+/* =======================
+   Tamaño y espaciado del badge dentro del ítem
+   ======================= */
+.list-group-item .badge {
+  font-size: 0.8rem;
+  padding: 4px 8px;
+}

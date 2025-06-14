@@ -1,17 +1,26 @@
+<!-- =======================
+   Barra superior fija
+   ======================= -->
 <app-barra-superior></app-barra-superior>
 
-<!-- Contenedor principal -->
+<!-- =======================
+   Contenedor principal
+   ======================= -->
 <div class="main-container my-5">
-  <!-- Botón para regresar -->
+
+  <!-- Botón para regresar a la vista anterior -->
   <button class="back-button" (click)="goBack()">&#8592;</button>
 
-  <!-- Título de la página -->
+  <!-- Título de la página con el nombre de la sesión -->
   <h2 class="text-center">Documentos {{ sesion?.nombre }}</h2>
 
-  <!-- Contenedor con Scroll para los documentos -->
+  <!-- =======================
+       Tabla contenedora de documentos
+       ======================= -->
   <div class="documents-container">
     <table class="documents-table">
-      <!-- Primer elemento: Subir archivo -->
+
+      <!-- Fila para subir nuevos archivos -->
       <tr>
         <td colspan="3" class="upload-container">
           <label class="upload-label">
@@ -25,9 +34,11 @@
         </td>
       </tr>
 
-      <!-- Documentos listados -->
+      <!-- Fila por cada documento subido -->
       <tr *ngFor="let documento of sesionDocumentos">
-        <td class="document-name">{{ documento.documento.nombre }}</td>
+        <td class="document-name">
+          {{ documento.documento.nombre }}
+        </td>
         <td class="btn-container">
           <button
             class="btn btn-secondary"
@@ -45,6 +56,7 @@
           </button>
         </td>
       </tr>
+
     </table>
   </div>
 </div>

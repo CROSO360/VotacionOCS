@@ -1,22 +1,29 @@
 import { Component } from '@angular/core';
-import { PuntoService } from '../services/punto.service';
-//import { Router } from 'express';
 import { ActivatedRoute } from '@angular/router';
-import { ToastrService } from 'ngx-toastr';
 import { CommonModule, Location } from '@angular/common';
+import { FormGroup, FormControl, Validators, FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { jwtDecode } from 'jwt-decode';
+
+// Servicios
+import { PuntoService } from '../services/punto.service';
 import { SesionService } from '../services/sesion.service';
 import { ResolucionService } from '../services/resolucion.service';
 import { DocumentoService } from '../services/documento.service';
 import { PuntoDocumentoService } from '../services/puntoDocumento.service';
-import { FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
+import { UsuarioService } from '../services/usuario.service';
+
+// Interfaces
 import { IPuntoDocumento } from '../interfaces/IPuntoDocumento';
 import { IDocumento } from '../interfaces/IDocumento';
 import { IResolucion } from '../interfaces/IResolucion';
-import { jwtDecode } from 'jwt-decode';
-import { CookieService } from 'ngx-cookie-service';
-import { UsuarioService } from '../services/usuario.service';
 import { IUsuario } from '../interfaces/IUsuario';
+
+// Componentes
 import { BarraSuperiorComponent } from '../barra-superior/barra-superior.component';
+
+// Librerías externas
+import { ToastrService } from 'ngx-toastr';
+import { CookieService } from 'ngx-cookie-service';
 
 @Component({
   selector: 'app-punto',
@@ -24,90 +31,98 @@ import { BarraSuperiorComponent } from '../barra-superior/barra-superior.compone
   imports: [
     CommonModule,
     ReactiveFormsModule,
-    BarraSuperiorComponent,
     FormsModule,
+    BarraSuperiorComponent,
   ],
   templateUrl: './punto.component.html',
   styleUrl: './punto.component.css',
 })
 export class PuntoComponent {
+
+  // =====================
+  // Propiedades principales
+  // =====================
   punto: any | undefined;
   puntoId: number | undefined;
   sesionId: number | undefined;
-
   sesion: any | undefined;
-
-  puntoDocumentos: IPuntoDocumento[] = [];
-
   resolucion: IResolucion | undefined;
-
-  payload: any = jwtDecode(this.cookieService.get('token'))
+  puntoDocumentos: IPuntoDocumento[] = [];
   usuario: IUsuario | undefined;
 
-  constructor(
-    private puntoService: PuntoService,
-    private sesionService: SesionService,
-    private route: ActivatedRoute,
-    private location: Location,
-    private toastrService: ToastrService,
-    private resolucionService: ResolucionService,
-    private documentoService: DocumentoService,
-    private puntoDocumentoService: PuntoDocumentoService,
-    private cookieService: CookieService,
-    private usuarioService: UsuarioService
-  ) {}
+  payload: any = jwtDecode(this.cookieService.get('token'));
 
+  // =====================
+  // Formularios reactivos
+  // =====================
   modificarPuntoForm = new FormGroup({
-    //idPunto: new FormControl('', Validators.required),
     nombre: new FormControl('', Validators.required),
     detalle: new FormControl('', Validators.required),
-    es_administrativa: new FormControl(''),
+    es_administrativa: new FormControl('')
   });
 
-  //formulario para crear y editar resoluciones
   resolucionForm = new FormGroup({
-    //idPunto: new FormControl('', Validators.required),
     nombre: new FormControl('', Validators.required),
     descripcion: new FormControl('', Validators.required),
   });
 
+  // =====================
+  // Constructor e inyección de dependencias
+  // =====================
+  constructor(
+    private puntoService: PuntoService,
+    private sesionService: SesionService,
+    private resolucionService: ResolucionService,
+    private documentoService: DocumentoService,
+    private puntoDocumentoService: PuntoDocumentoService,
+    private usuarioService: UsuarioService,
+    private route: ActivatedRoute,
+    private location: Location,
+    private toastrService: ToastrService,
+    private cookieService: CookieService,
+  ) {}
+
+  // =====================
+  // Inicialización
+  // =====================
   ngOnInit(): void {
     this.puntoId = parseInt(this.route.snapshot.paramMap.get('idPunto')!, 10);
     this.sesionId = parseInt(this.route.snapshot.paramMap.get('idSesion')!, 10);
 
     this.getUsuario();
-
-    this.getPunto();
-
-    this.getPuntoDocumentos();
-
-    this.getResolucion();
-
     this.getSesion();
-
+    this.getPunto();
+    this.getPuntoDocumentos();
+    this.getResolucion();
   }
 
-  getUsuario(){
+  // =====================
+  // Usuario actual
+  // =====================
+  getUsuario() {
     const query = `codigo=${this.payload.codigo}`;
     this.usuarioService.getDataBy(query).subscribe((data) => {
       this.usuario = data;
-      console.log(this.usuario);
     });
   }
 
+  // =====================
+  // Datos de sesión
+  // =====================
   getSesion() {
     const query = `id_sesion=${this.sesionId}`;
     this.sesionService.getDataBy(query).subscribe((data) => {
       this.sesion = data;
-      if (data.estado === false) {
+      if (!data.estado) {
         this.modificarPuntoForm.disable();
         this.resolucionForm.disable();
       }
     });
   }
 
-  //PUNTOS
-
+  // =====================
+  // Gestión de punto
+  // =====================
   getPunto() {
     const query = `id_punto=${this.puntoId}`;
     this.puntoService.getDataBy(query).subscribe((data) => {
@@ -122,7 +137,7 @@ export class PuntoComponent {
 
   editarPunto() {
     const puntoData: any = {
-      id_punto: this.puntoId, //parseInt(this.modificarPuntoForm.value.idPunto!),
+      id_punto: this.puntoId,
       nombre: this.modificarPuntoForm.value.nombre,
       detalle: this.modificarPuntoForm.value.detalle,
       es_administrativa: this.modificarPuntoForm.value.es_administrativa,
@@ -146,19 +161,16 @@ export class PuntoComponent {
            this.modificarPuntoForm.value.detalle !== this.punto?.detalle ||
            this.modificarPuntoForm.value.es_administrativa !== this.punto?.es_administrativa;
   }
-  
 
-
-  //DOCUMENTOS
-
+  // =====================
+  // Gestión de documentos del punto
+  // =====================
   getPuntoDocumentos() {
     const query = `punto.id_punto=${this.puntoId}`;
     const relations = ['documento'];
-    this.puntoDocumentoService
-      .getAllDataBy(query, relations)
-      .subscribe((data) => {
-        this.puntoDocumentos = data;
-      });
+    this.puntoDocumentoService.getAllDataBy(query, relations).subscribe((data) => {
+      this.puntoDocumentos = data;
+    });
   }
 
   abrirDocumento(documento: IDocumento) {
@@ -167,10 +179,8 @@ export class PuntoComponent {
 
   onFileSelected(event: Event) {
     const input = event.target as HTMLInputElement;
-
-    if (input.files && input.files.length > 0) {
-      const selectedFile = input.files[0];
-      this.subirDocumento(selectedFile);
+    if (input.files?.length) {
+      this.subirDocumento(input.files[0]);
     }
   }
 
@@ -194,77 +204,69 @@ export class PuntoComponent {
     });
   }
 
-
-  //RESOLUCIONES
-
-  getResolucion(){
+  // =====================
+  // Gestión de resolución
+  // =====================
+  getResolucion() {
     const query = `id_punto=${this.puntoId}`;
     this.resolucionService.getDataBy(query).subscribe((data) => {
       this.resolucion = data;
       this.resolucionForm.patchValue({
-        nombre: this.resolucion.nombre,
-        descripcion: this.resolucion.descripcion
+        nombre: data.nombre,
+        descripcion: data.descripcion,
       });
     });
   }
 
-  crearResolucion(){
+  crearResolucion() {
     const resolucionData: IResolucion = {
-      punto: {id_punto: this.puntoId},
-      nombre: this.resolucionForm.value.nombre,
-      descripcion: this.resolucionForm.value.descripcion,
+      punto: { id_punto: this.puntoId },
+      nombre: this.resolucionForm.value.nombre!,
+      descripcion: this.resolucionForm.value.descripcion!,
       fecha: new Date(),
     };
 
-    this.resolucionService.saveData(resolucionData).subscribe(
-      (response) => {
-        console.log(response);
+    this.resolucionService.saveData(resolucionData).subscribe({
+      next: () => {
         this.toastrService.success('Resolución creada con éxito.');
-        this.getResolucion(); // Actualizar la resolución
+        this.getResolucion();
       },
-      (error) => {
-        console.error(error);
-        this.toastrService.error('Error al crear la resolución.', error);
+      error: () => {
+        this.toastrService.error('Error al crear la resolución.');
       }
-    );
+    });
   }
 
-  editarResolucion(){
-    if (!this.usuario?.id_usuario) {
-      console.error('Usuario no cargado todavía');
-      return;
-    }
-    
-    const updateResolucionData: any = {
+  editarResolucion() {
+    if (!this.usuario?.id_usuario) return;
+
+    const updateResolucionData = {
       id_punto: this.puntoId,
       id_usuario: this.usuario.id_usuario,
       nombre: this.resolucionForm.value.nombre,
       descripcion: this.resolucionForm.value.descripcion,
     };
 
-    this.resolucionService.updateData(updateResolucionData).subscribe(
-      (response) => {
-        console.log(response);
+    this.resolucionService.updateData(updateResolucionData).subscribe({
+      next: () => {
         this.toastrService.success('Resolución actualizada con éxito.');
-        this.getResolucion(); // Actualizar la resolución
+        this.getResolucion();
       },
-      (error) => {
-        console.error(error);
-        this.toastrService.error('Error al actualizar la resolución.', error);
+      error: () => {
+        this.toastrService.error('Error al actualizar la resolución.');
       }
-    );
+    });
   }
 
   formularioResolucionModificado(): boolean {
     return this.resolucionForm.value.nombre !== this.resolucion?.nombre ||
            this.resolucionForm.value.descripcion !== this.resolucion?.descripcion;
   }
-  
 
-
+  // =====================
+  // Navegación
+  // =====================
   goBack() {
     this.location.back();
   }
-
-
 }

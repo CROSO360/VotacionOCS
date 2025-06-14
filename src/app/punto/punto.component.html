@@ -1,12 +1,19 @@
+<!-- Barra superior fija -->
 <app-barra-superior></app-barra-superior>
 
+<!-- Contenedor general -->
 <div class="container my-4">
+
+  <!-- Botón de retroceso -->
   <button class="back-button mb-3" (click)="goBack()">&#8592;</button>
+
+  <!-- Título principal -->
   <h2 class="text-center">Gestión del Punto</h2>
 
-  <!-- Sección de punto y resolución lado a lado -->
+  <!-- Sección dividida: Punto (izquierda) y Resolución (derecha) -->
   <div class="row">
-    <!-- Formulario del Punto -->
+
+    <!-- === Formulario para editar datos del punto === -->
     <div class="col-md-6">
       <h5>Editar Punto</h5>
       <form [formGroup]="modificarPuntoForm" (ngSubmit)="editarPunto()">
@@ -14,63 +21,81 @@
           <label>Nombre:</label>
           <input type="text" formControlName="nombre" class="form-control" />
         </div>
+
         <div class="form-group">
           <label>Detalle:</label>
           <textarea formControlName="detalle" rows="3" class="form-control"></textarea>
         </div>
+
         <div class="form-group">
           <label for="es_administrativa" class="form-label">Tema administrativo</label>
           <input type="checkbox" formControlName="es_administrativa" id="es_administrativa" />
         </div>
-        <button class="btn btn-primary mt-2" type="submit" [disabled]="!formularioPuntoModificado() || modificarPuntoForm.invalid">
+
+        <button
+          class="btn btn-primary mt-2"
+          type="submit"
+          [disabled]="!formularioPuntoModificado() || modificarPuntoForm.invalid"
+        >
           Confirmar cambios
         </button>
       </form>
     </div>
 
-    <!-- Gestión de Resolución -->
+    <!-- === Sección de resolución (crear/editar) === -->
     <div class="col-md-6">
       <h5>Resolución</h5>
 
-      <!-- Si no hay resolución -->
+      <!-- Si no existe resolución, permitir crear una nueva -->
       <div *ngIf="!resolucion">
-        <button class="btn btn-secondary" (click)="resolucion = {};">Nueva resolución</button>
+        <button class="btn btn-secondary" (click)="resolucion = {};">
+          Nueva resolución
+        </button>
       </div>
 
-      <!-- Si hay resolución o se está creando -->
-      <form *ngIf="resolucion" [formGroup]="resolucionForm" (ngSubmit)="resolucion?.nombre ? editarResolucion() : crearResolucion()">
+      <!-- Si existe resolución o se está creando -->
+      <form
+        *ngIf="resolucion"
+        [formGroup]="resolucionForm"
+        (ngSubmit)="resolucion?.nombre ? editarResolucion() : crearResolucion()"
+      >
         <div class="form-group mt-3">
           <label>Nombre:</label>
           <input type="text" formControlName="nombre" class="form-control" />
         </div>
+
         <div class="form-group">
           <label>Descripción:</label>
           <textarea formControlName="descripcion" rows="3" class="form-control"></textarea>
         </div>
-        <!-- Fuente del resultado (solo si aplica) -->
-          <p
-            class="text-muted fst-italic mt-3"
-            *ngIf="resolucion?.voto_manual != null"
-          >
-            Resuelto mediante:
-            {{
-              resolucion?.voto_manual
-                ? "Cálculo manual por Secretaría"
-                : "Cálculo automático del sistema"
-            }}
-          </p>
-        <button class="btn btn-primary mt-2" type="submit" [disabled]="!formularioResolucionModificado() || resolucionForm.invalid">
+
+        <!-- Mostrar tipo de resolución (manual o automática) -->
+        <p class="text-muted fst-italic mt-3" *ngIf="resolucion?.voto_manual != null">
+          Resuelto mediante:
+          {{
+            resolucion?.voto_manual
+              ? "Cálculo manual por Secretaría"
+              : "Cálculo automático del sistema"
+          }}
+        </p>
+
+        <button
+          class="btn btn-primary mt-2"
+          type="submit"
+          [disabled]="!formularioResolucionModificado() || resolucionForm.invalid"
+        >
           Confirmar cambios
         </button>
       </form>
     </div>
   </div>
 
-  <!-- Gestión de documentos -->
+  <!-- === Documentos asociados al punto === -->
   <div class="documents-container mt-5">
     <h5>Documentos del Punto</h5>
+
     <table class="documents-table">
-      <!-- Primer elemento: Subir archivo -->
+      <!-- Subir nuevo documento -->
       <tr>
         <td colspan="3" class="upload-container">
           <label class="upload-label">
@@ -80,14 +105,18 @@
         </td>
       </tr>
 
-      <!-- Documentos listados -->
+      <!-- Listado de documentos -->
       <tr *ngFor="let documento of puntoDocumentos">
         <td class="document-name">{{ documento.documento.nombre }}</td>
         <td class="btn-container">
-          <button class="btn btn-secondary" (click)="abrirDocumento(documento.documento)">Ver</button>
+          <button class="btn btn-secondary" (click)="abrirDocumento(documento.documento)">
+            Ver
+          </button>
         </td>
         <td class="btn-container">
-          <button class="btn btn-danger" (click)="eliminarDocumento(documento.documento.id_documento)">Eliminar</button>
+          <button class="btn btn-danger" (click)="eliminarDocumento(documento.documento.id_documento)">
+            Eliminar
+          </button>
         </td>
       </tr>
     </table><br><br>

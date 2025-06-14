@@ -1,12 +1,25 @@
+// =======================
+// ResultadosComponent
+// Componente encargado de visualizar los resultados de votación de los puntos
+// pertenecientes a una sesión del OCS, así como generar el reporte PDF.
+// =======================
+
+// Importaciones Angular y Comunes
 import { CommonModule, Location } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { ActivatedRoute, Router } from '@angular/router';
+
+// Componentes
 import { BarraSuperiorComponent } from '../barra-superior/barra-superior.component';
+
+// Interfaces
 import { IPunto } from '../interfaces/IPunto';
 import { ISesion } from '../interfaces/ISesion';
+
+// Servicios
 import { PuntoService } from '../services/punto.service';
 import { SesionService } from '../services/sesion.service';
-import { ActivatedRoute, Router } from '@angular/router';
 
 @Component({
   selector: 'app-resultados',
@@ -21,6 +34,20 @@ import { ActivatedRoute, Router } from '@angular/router';
   styleUrl: './resultados.component.css',
 })
 export class ResultadosComponent implements OnInit {
+
+  // =======================
+  // Propiedades públicas
+  // =======================
+  puntos: any[] = [];
+  idSesion: number | null = 0;
+  sesion: ISesion | undefined;
+  puntoSeleccionado: number | undefined;
+  resultados: any[] = [];
+  generandoReporte = false;
+
+  // =======================
+  // Constructor
+  // =======================
   constructor(
     private puntoService: PuntoService,
     private sesionService: SesionService,
@@ -29,24 +56,21 @@ export class ResultadosComponent implements OnInit {
     private location: Location
   ) {}
 
-  puntos: any[] = [];
-  idSesion: number | null = 0;
-  sesion: ISesion | undefined;
-  puntoSeleccionado: number | undefined;
-  resultados: any[] = [];
-
-  generandoReporte = false;
-
-
+  // =======================
+  // Ciclo de vida
+  // =======================
   ngOnInit(): void {
-    this.idSesion = parseInt(this.route.snapshot.paramMap.get('id')!);
+    this.idSesion = parseInt(this.route.snapshot.paramMap.get('id')!, 10);
     this.getPuntos();
     this.getSesion();
   }
 
+  // =======================
+  // Carga de datos
+  // =======================
   getPuntos() {
     const query = `sesion.id_sesion=${this.idSesion}`;
-    const relations = [`sesion`, `resolucion`];
+    const relations = ['sesion', 'resolucion'];
     this.puntoService.getAllDataBy(query, relations).subscribe((data) => {
       this.puntos = data;
     });
@@ -59,6 +83,9 @@ export class ResultadosComponent implements OnInit {
     });
   }
 
+  // =======================
+  // Lógica de negocio
+  // =======================
   onChangePuntoSeleccionado() {
     if (this.puntoSeleccionado) {
       this.getResultados(this.puntoSeleccionado);
@@ -91,6 +118,9 @@ export class ResultadosComponent implements OnInit {
     });
   }
 
+  // =======================
+  // Utilidades
+  // =======================
   goBack() {
     this.location.back();
   }

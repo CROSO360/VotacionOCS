@@ -1,10 +1,13 @@
+<!-- Barra superior de navegación -->
 <app-barra-superior></app-barra-superior>
 
+<!-- Contenedor principal -->
 <div class="container my-4">
-  <!-- Título de la página -->
+
+  <!-- Título principal -->
   <h2 class="text-center">Sesiones</h2>
 
-  <!-- Barra de búsqueda -->
+  <!-- Campo de búsqueda -->
   <input
     class="w-25"
     type="text"
@@ -13,52 +16,68 @@
     (input)="filtrarSesiones()"
   />
 
-  <!-- Pestañas para grupos de usuarios -->
-  <ul class="nav nav-tabs">
+  <!-- Filtro por estado (tabs) -->
+  <ul class="nav nav-tabs mt-3">
     <li class="nav-item">
-        <a class="nav-link" (click)="cambiarGrupo(true)">Activas</a>
+      <a class="nav-link" (click)="cambiarGrupo(true)">Activas</a>
     </li>
     <li class="nav-item">
-        <a class="nav-link" (click)="cambiarGrupo(false)">Finalizadas</a>
+      <a class="nav-link" (click)="cambiarGrupo(false)">Finalizadas</a>
     </li>
     <li class="nav-item">
       <a class="nav-link" (click)="cambiarGrupo(null)">Todas</a>
     </li>
   </ul>
 
-  <!-- Lista de usuarios con checkbox -->
+  <!-- Lista de sesiones filtradas -->
   <div class="list-group mt-3">
     <div *ngFor="let sesion of sesionesFiltradas">
       <div class="list-group-item" [ngClass]="{ 'sesion-finalizada': !sesion.estado }">
         {{ sesion.codigo }} - {{ sesion.nombre }}
+
+        <!-- Botón de edición -->
         <button 
-        class="btn btn-secondary" 
-        [disabled]="!sesion.estado"
-        type="button"
-        data-bs-toggle="modal"
-        data-bs-target="#exampleModal"
-        (click)="abrirEditar(sesion)"
-        >Editar</button>
-        <button class="btn btn-secondary mx-2" (click)="irADetalleSesion(sesion.id_sesion)">Ver</button>
+          class="btn btn-secondary"
+          [disabled]="!sesion.estado"
+          type="button"
+          data-bs-toggle="modal"
+          data-bs-target="#exampleModal"
+          (click)="abrirEditar(sesion)"
+        >
+          Editar
+        </button>
+
+        <!-- Botón de ver detalles -->
+        <button
+          class="btn btn-secondary mx-2"
+          (click)="irADetalleSesion(sesion.id_sesion)"
+        >
+          Ver
+        </button>
       </div>
     </div>
+
+    <!-- Mensaje cuando no hay resultados -->
     <div *ngIf="sesionesFiltradas.length === 0" class="list-group-item">
       No se encontraron sesiones.
     </div>
   </div>
-  
 
-  <!-- Botón de confirmar -->
-
+  <!-- Botones inferiores -->
   <button class="btn btn-secondary my-3" (click)="goBack()">Cancelar</button>
-
-  <button class="btn btn-secondary my-3 mx-3" type="button"
-  data-bs-toggle="modal"
-  data-bs-target="#crearSesionModal">Crear sesión</button>
+  <button
+    class="btn btn-secondary my-3 mx-3"
+    type="button"
+    data-bs-toggle="modal"
+    data-bs-target="#crearSesionModal"
+  >
+    Crear sesión
+  </button>
 </div>
 
-
-<!-- Modal para editar sesion -->
+<!-- =============================== -->
+<!-- Modal: Editar sesión -->
+<!-- =============================== -->
 <div
   #exampleModal
   class="modal fade"
@@ -71,73 +90,53 @@
     <div class="modal-content">
       <div class="modal-header">
         <h1 class="modal-title fs-5" id="exampleModalLabel">Editar sesión</h1>
-        <button
-          type="button"
-          class="btn-close"
-          data-bs-dismiss="modal"
-          aria-label="Close"
-        ></button>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
+
       <div class="modal-body">
-        <form [formGroup]="modificarSesionForm" (ngSubmit)="editarSesion()" enctype="multipart/form-data">
-          <div class="form-group">
-            <input type="hidden" formControlName="idSesion" />
-            <label for="nombre" class="form-label">Nombre:</label>
-            <input
-              formControlName="nombre"
-              type="text"
-              id="nombre"
-              placeholder="Nombre"
-              class="form-control"
-            />
-            <div *ngIf="modificarSesionForm.get('nombre')?.invalid && (modificarSesionForm.get('nombre')?.dirty || modificarSesionForm.get('nombre')?.touched)" class="text-danger">
-              El nombre es obligatorio.
-            </div>
-        
-            <label for="codigo" class="form-label">Código:</label>
-            <input
-              formControlName="codigo"
-              type="text"
-              id="codigo"
-              placeholder="Código"
-              class="form-control"
-            />
-            <div *ngIf="modificarSesionForm.get('codigo')?.invalid && (modificarSesionForm.get('codigo')?.dirty || modificarSesionForm.get('codigo')?.touched)" class="text-danger">
-              El código es obligatorio.
-            </div>
-        
-            <label for="fecha_inicio" class="form-label">Fecha de inicio:</label>
-            <input
-              formControlName="fecha_inicio"
-              type="date"
-              id="fecha_inicio"
-              placeholder="Fecha de inicio"
-              class="form-control"
-            />
-            <div *ngIf="modificarSesionForm.get('fecha_inicio')?.invalid && (modificarSesionForm.get('fecha_inicio')?.dirty || modificarSesionForm.get('fecha_inicio')?.touched)" class="text-danger">
-              La fecha es obligatoria.
-            </div>
-        
-            <label for="tipo" class="form-label">Tipo:</label>
-            <select
-              name="tipo"
-              id="tipo"
-              formControlName="tipo"
-              class="form-control"
-            >
-              <option value="">Selecciona un tipo</option>
-              <option value="ordinaria">Ordinaria</option>
-              <option value="extraordinaria">Extraordinaria</option>
-            </select>
-            <div *ngIf="modificarSesionForm.get('tipo')?.invalid && (modificarSesionForm.get('tipo')?.dirty || modificarSesionForm.get('tipo')?.touched)" class="text-danger">
-              El tipo es obligatorio.
-            </div>
+        <form [formGroup]="modificarSesionForm" (ngSubmit)="editarSesion()">
+          <!-- ID oculto -->
+          <input type="hidden" formControlName="idSesion" />
+
+          <!-- Campo: Nombre -->
+          <label for="nombre" class="form-label">Nombre:</label>
+          <input type="text" id="nombre" class="form-control" formControlName="nombre" />
+          <div *ngIf="modificarSesionForm.get('nombre')?.invalid && modificarSesionForm.get('nombre')?.touched" class="text-danger">
+            El nombre es obligatorio.
           </div>
-        
-          <button type="submit" class="btn btn-primary" [disabled]="modificarSesionForm.invalid">Guardar cambios</button>
+
+          <!-- Campo: Código -->
+          <label for="codigo" class="form-label">Código:</label>
+          <input type="text" id="codigo" class="form-control" formControlName="codigo" />
+          <div *ngIf="modificarSesionForm.get('codigo')?.invalid && modificarSesionForm.get('codigo')?.touched" class="text-danger">
+            El código es obligatorio.
+          </div>
+
+          <!-- Campo: Fecha -->
+          <label for="fecha_inicio" class="form-label">Fecha de inicio:</label>
+          <input type="date" id="fecha_inicio" class="form-control" formControlName="fecha_inicio" />
+          <div *ngIf="modificarSesionForm.get('fecha_inicio')?.invalid && modificarSesionForm.get('fecha_inicio')?.touched" class="text-danger">
+            La fecha es obligatoria.
+          </div>
+
+          <!-- Campo: Tipo -->
+          <label for="tipo" class="form-label">Tipo:</label>
+          <select id="tipo" class="form-control" formControlName="tipo">
+            <option value="">Selecciona un tipo</option>
+            <option value="ordinaria">Ordinaria</option>
+            <option value="extraordinaria">Extraordinaria</option>
+          </select>
+          <div *ngIf="modificarSesionForm.get('tipo')?.invalid && modificarSesionForm.get('tipo')?.touched" class="text-danger">
+            El tipo es obligatorio.
+          </div>
+
+          <!-- Botón: Guardar -->
+          <button type="submit" class="btn btn-primary mt-3" [disabled]="modificarSesionForm.invalid">
+            Guardar cambios
+          </button>
         </form>
-        
       </div>
+
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
           Cancelar
@@ -147,7 +146,9 @@
   </div>
 </div>
 
-<!-- Modal para crear sesion -->
+<!-- =============================== -->
+<!-- Modal: Crear sesión -->
+<!-- =============================== -->
 <div
   #crearSesionModal
   class="modal fade"
@@ -160,73 +161,50 @@
     <div class="modal-content">
       <div class="modal-header">
         <h1 class="modal-title fs-5" id="crearSesionModalLabel">Crear sesión</h1>
-        <button
-          type="button"
-          class="btn-close"
-          data-bs-dismiss="modal"
-          aria-label="Close"
-        ></button>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
+
       <div class="modal-body">
         <form [formGroup]="crearSesionForm" (ngSubmit)="crearSesion()">
-          <div class="form-group">
-            <label for="nombre" class="form-label">Nombre:</label>
-            <input
-              formControlName="nombre"
-              type="text"
-              id="nombre"
-              placeholder="Nombre"
-              class="form-control"
-            />
-            <div *ngIf="crearSesionForm.get('nombre')?.invalid && (crearSesionForm.get('nombre')?.dirty || crearSesionForm.get('nombre')?.touched)" class="text-danger">
-              El nombre es obligatorio.
-            </div>
-        
-            <label for="codigo" class="form-label">Código:</label>
-            <input
-              formControlName="codigo"
-              type="text"
-              id="codigo"
-              placeholder="Código"
-              class="form-control"
-            />
-            <div *ngIf="crearSesionForm.get('codigo')?.invalid && (crearSesionForm.get('codigo')?.dirty || crearSesionForm.get('codigo')?.touched)" class="text-danger">
-              El código es obligatorio.
-            </div>
-        
-            <label for="fecha_inicio" class="form-label">Fecha de inicio:</label>
-            <input
-              formControlName="fecha_inicio"
-              type="date"
-              id="fecha_inicio"
-              placeholder="Fecha de inicio"
-              class="form-control"
-            />
-            <div *ngIf="crearSesionForm.get('fecha_inicio')?.invalid && (crearSesionForm.get('fecha_inicio')?.dirty || crearSesionForm.get('fecha_inicio')?.touched)" class="text-danger">
-              La fecha es obligatoria.
-            </div>
-        
-            <label for="tipo" class="form-label">Tipo:</label>
-            <select
-              name="tipo"
-              id="tipo"
-              formControlName="tipo"
-              class="form-control"
-            >
-              <option value="">Selecciona un tipo</option>
-              <option value="ordinaria">Ordinaria</option>
-              <option value="extraordinaria">Extraordinaria</option>
-            </select>
-            <div *ngIf="crearSesionForm.get('tipo')?.invalid && (crearSesionForm.get('tipo')?.dirty || crearSesionForm.get('tipo')?.touched)" class="text-danger">
-              El tipo es obligatorio.
-            </div>
-        
+          <!-- Campo: Nombre -->
+          <label for="nombre" class="form-label">Nombre:</label>
+          <input type="text" id="nombre" class="form-control" formControlName="nombre" />
+          <div *ngIf="crearSesionForm.get('nombre')?.invalid && crearSesionForm.get('nombre')?.touched" class="text-danger">
+            El nombre es obligatorio.
           </div>
-        
-          <button type="submit" class="btn btn-primary" [disabled]="crearSesionForm.invalid">Guardar cambios</button>
+
+          <!-- Campo: Código -->
+          <label for="codigo" class="form-label">Código:</label>
+          <input type="text" id="codigo" class="form-control" formControlName="codigo" />
+          <div *ngIf="crearSesionForm.get('codigo')?.invalid && crearSesionForm.get('codigo')?.touched" class="text-danger">
+            El código es obligatorio.
+          </div>
+
+          <!-- Campo: Fecha -->
+          <label for="fecha_inicio" class="form-label">Fecha de inicio:</label>
+          <input type="date" id="fecha_inicio" class="form-control" formControlName="fecha_inicio" />
+          <div *ngIf="crearSesionForm.get('fecha_inicio')?.invalid && crearSesionForm.get('fecha_inicio')?.touched" class="text-danger">
+            La fecha es obligatoria.
+          </div>
+
+          <!-- Campo: Tipo -->
+          <label for="tipo" class="form-label">Tipo:</label>
+          <select id="tipo" class="form-control" formControlName="tipo">
+            <option value="">Selecciona un tipo</option>
+            <option value="ordinaria">Ordinaria</option>
+            <option value="extraordinaria">Extraordinaria</option>
+          </select>
+          <div *ngIf="crearSesionForm.get('tipo')?.invalid && crearSesionForm.get('tipo')?.touched" class="text-danger">
+            El tipo es obligatorio.
+          </div>
+
+          <!-- Botón: Crear -->
+          <button type="submit" class="btn btn-primary mt-3" [disabled]="crearSesionForm.invalid">
+            Guardar cambios
+          </button>
         </form>
-        
       </div>
+
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
           Cancelar
