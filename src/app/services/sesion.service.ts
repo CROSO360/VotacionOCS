@@ -7,17 +7,14 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ISesion } from '../interfaces/ISesion';
+import { environment } from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root',
 })
 export class SesionService {
 
-  // URL base para entorno local de pruebas
-  //private baseURL = `http://localhost:3000`;
-
-  // URL base para entorno productivo o proxy Angular
-  private baseURL = `/api`;
+  private baseURL = environment.baseURL; // URL base del backend, definida en environment.ts
 
   constructor(private http: HttpClient) {}
 

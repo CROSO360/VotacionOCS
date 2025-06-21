@@ -5,6 +5,7 @@
 
 import { Injectable } from '@angular/core';
 import { Socket } from 'ngx-socket-io';
+import { environment } from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root',
@@ -15,11 +16,7 @@ export class WebSocketService {
 
   constructor() {
     this.webSocket = new Socket({
-      // URL para entorno local (comentada por pruebas)
-       //url: "http://localhost:3000",
-
-      // URL para entorno productivo o proxificado
-      url: "/",
+      url: environment.socketURL, // URL del servidor WebSocket, definida en environment.ts
       options: {
         path: '/api/socket.io', // Ruta donde escucha el backend
         transports: ['websocket'], // Se fuerza uso de WebSocket

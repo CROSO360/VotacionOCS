@@ -30,11 +30,7 @@ export const routes: Routes = [
     pathMatch: 'full',
   },
 
-  // Ruta comodín para redirección a home
-  {
-    path: '**',
-    redirectTo: 'home'
-  },
+  
 
   // Ruta de login
   {
@@ -125,6 +121,12 @@ export const routes: Routes = [
     title: 'Asistencia',
     component: AsistenciaComponent,
     canActivate: [userGuardGuard],
+  },
+
+  // Ruta comodín para redirección a home
+  {
+    path: '**',
+    redirectTo: 'home'
   },
   
 ];
