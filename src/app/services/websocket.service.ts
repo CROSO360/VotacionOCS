@@ -18,7 +18,7 @@ export class WebSocketService {
     this.webSocket = new Socket({
       url: environment.socketURL, // URL del servidor WebSocket, definida en environment.ts
       options: {
-        path: '/api/socket.io', // Ruta donde escucha el backend
+        path: environment.socketPath, // Ruta donde escucha el backend
         transports: ['websocket'], // Se fuerza uso de WebSocket
         withCredentials: true,    // Habilita envío de cookies (auth)
       },

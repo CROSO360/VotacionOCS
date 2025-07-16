@@ -13,7 +13,6 @@ import { environment } from '../../environments/environment';
   providedIn: 'root',
 })
 export class PuntoUsuarioService {
-
   private baseURL = environment.baseURL; // URL base del backend, definida en environment.ts
 
   constructor(private http: HttpClient) {}
@@ -34,7 +33,9 @@ export class PuntoUsuarioService {
    * @param id ID del registro punto-usuario
    */
   getDataById(id: string): Observable<IPuntoUsuario> {
-    return this.http.get<IPuntoUsuario>(`${this.baseURL}/punto-usuario/find/${id}`);
+    return this.http.get<IPuntoUsuario>(
+      `${this.baseURL}/punto-usuario/find/${id}`
+    );
   }
 
   /**
@@ -58,7 +59,10 @@ export class PuntoUsuarioService {
    * @param query Filtro de búsqueda
    * @param relations Relaciones adicionales (opcional)
    */
-  getAllDataBy(query: string, relations?: string[]): Observable<IPuntoUsuario[]> {
+  getAllDataBy(
+    query: string,
+    relations?: string[]
+  ): Observable<IPuntoUsuario[]> {
     let url = `${this.baseURL}/punto-usuario/findAllBy?${query}`;
 
     if (relations?.length) {
@@ -77,14 +81,20 @@ export class PuntoUsuarioService {
    * Guarda o actualiza un registro punto-usuario (voto individual)
    */
   saveData(data: IPuntoUsuario): Observable<IPuntoUsuario> {
-    return this.http.post<IPuntoUsuario>(`${this.baseURL}/punto-usuario/save`, data);
+    return this.http.post<IPuntoUsuario>(
+      `${this.baseURL}/punto-usuario/save`,
+      data
+    );
   }
 
   /**
    * Guarda múltiples registros punto-usuario (votos masivos)
    */
   saveManyData(data: IPuntoUsuario[]): Observable<IPuntoUsuario[]> {
-    return this.http.post<IPuntoUsuario[]>(`${this.baseURL}/punto-usuario/save/many`, data);
+    return this.http.post<IPuntoUsuario[]>(
+      `${this.baseURL}/punto-usuario/save/many`,
+      data
+    );
   }
 
   /**
@@ -111,7 +121,10 @@ export class PuntoUsuarioService {
    * @param idSesion ID de la sesión
    */
   generarPuntosUsuario(idSesion: number): Observable<any> {
-    return this.http.post<any>(`${this.baseURL}/punto-usuario/generar-puntovoto/${idSesion}`, {});
+    return this.http.post<any>(
+      `${this.baseURL}/punto-usuario/generar-puntovoto/${idSesion}`,
+      {}
+    );
   }
 
   /**
@@ -119,7 +132,10 @@ export class PuntoUsuarioService {
    * @param idSesion ID de la sesión
    */
   eliminarPuntosUsuario(idSesion: number): Observable<any> {
-    return this.http.post<any>(`${this.baseURL}/punto-usuario/eliminar-puntovoto/${idSesion}`, {});
+    return this.http.post<any>(
+      `${this.baseURL}/punto-usuario/eliminar-puntovoto/${idSesion}`,
+      {}
+    );
   }
 
   /**
@@ -127,10 +143,40 @@ export class PuntoUsuarioService {
    * @param idSesion ID de la sesión
    * @param idUsuario ID del usuario a alternar
    */
-  cambiarPrincipalAlterno(idSesion: number, idUsuario: number): Observable<any> {
-    return this.http.post<any>(`${this.baseURL}/punto-usuario/cambiar-principal-alterno`, {
-      id_sesion: idSesion,
-      id_usuario: idUsuario
-    });
+  cambiarPrincipalAlterno(
+    idSesion: number,
+    idUsuario: number
+  ): Observable<any> {
+    return this.http.post<any>(
+      `${this.baseURL}/punto-usuario/cambiar-principal-alterno`,
+      {
+        id_sesion: idSesion,
+        id_usuario: idUsuario,
+      }
+    );
+  }
+
+  /**
+   * Emite un solo voto para todos los puntos de un grupo
+   * @param idGrupo ID del grupo
+   * @param data Objeto VotarGrupoDto
+   */
+  votarGrupo(
+    idGrupo: number,
+    data: {
+      codigo: string;
+      idUsuario: number;
+      opcion: 'afavor' | 'encontra' | 'abstencion' | null;
+      es_razonado: boolean;
+      votante: number;
+    }
+  ): Observable<{
+    mensaje: string;
+    ids: number[];
+  }> {
+    return this.http.post<{
+      mensaje: string;
+      ids: number[];
+    }>(`${this.baseURL}/punto-usuario/votar-grupo/${idGrupo}`, data);
   }
 }

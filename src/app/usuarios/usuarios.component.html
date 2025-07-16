@@ -89,11 +89,32 @@
             </div>
 
             <!-- Código -->
-            <label for="codigo" class="form-label">Código:</label>
-            <input formControlName="codigo" type="text" id="codigo" placeholder="Código" class="form-control" />
-            <div *ngIf="modificarUsuarioForm.get('codigo')?.invalid && (modificarUsuarioForm.get('codigo')?.dirty || modificarUsuarioForm.get('codigo')?.touched)" class="text-danger">
-              El código es obligatorio.
-            </div>
+<label for="codigo" class="form-label">Código:</label>
+<div class="custom-input position-relative">
+  <input
+    formControlName="codigo"
+    type="text"
+    id="codigo"
+    placeholder="Código"
+    class="form-control"
+  />
+  <div class="input-actualizar" (click)="generarCodigoUsuario(modificarUsuarioForm)">
+    <span class="actualizar-icon">Generar</span>
+  </div>
+
+  <!-- Revertir debajo del botón -->
+  <span
+    class="revertir-text"
+    *ngIf="codigoOriginal"
+    (click)="revertirCodigo(modificarUsuarioForm)"
+  >
+    Revertir
+  </span>
+</div>
+
+
+
+
 
             <!-- Cédula -->
             <label for="cedula" class="form-label">Cédula:</label>
@@ -170,11 +191,24 @@
             </div>
 
             <!-- Código -->
-            <label for="codigo" class="form-label">Código:</label>
-            <input formControlName="codigox" type="text" id="codigo" placeholder="Código" class="form-control" />
-            <div *ngIf="crearUsuarioForm.get('codigox')?.invalid && (crearUsuarioForm.get('codigox')?.dirty || crearUsuarioForm.get('codigox')?.touched)" class="text-danger">
-              El código es obligatorio.
-            </div>
+<label for="codigoUsuario" class="form-label">Código:</label>
+<div class="custom-input">
+  <input
+    formControlName="codigox"
+    type="text"
+    id="codigoUsuario"
+    placeholder="Código"
+    class="form-control"
+  />
+  <div class="input-actualizar" (click)="generarCodigoUsuario(crearUsuarioForm)">
+    <span class="actualizar-icon">Generar</span>
+  </div>
+</div>
+<div *ngIf="crearUsuarioForm.get('codigox')?.invalid && (crearUsuarioForm.get('codigox')?.dirty || crearUsuarioForm.get('codigox')?.touched)" class="text-danger">
+  El código es obligatorio.
+</div>
+
+
 
             <!-- Cédula -->
             <label for="cedula" class="form-label">Cédula:</label>

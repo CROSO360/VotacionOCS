@@ -42,6 +42,8 @@ import { IPuntoUsuario } from '../interfaces/IPuntoUsuario';
 import { IUsuario } from '../interfaces/IUsuario';
 import { IAsistencia } from '../interfaces/IAsistencia';
 import { IResolucion } from '../interfaces/IResolucion';
+import { IGrupo } from '../interfaces/IGrupo';
+import { GrupoService } from '../services/grupo.service';
 
 @Component({
   selector: 'app-votacion',
@@ -76,7 +78,8 @@ export class VotacionComponent implements OnInit {
     private asistenciaService: AsistenciaService,
     private miembroService: MiembroService,
     private resolucionService: ResolucionService,
-    private cookieService: CookieService
+    private cookieService: CookieService,
+    private grupoService: GrupoService,
   ) {}
 
 // =======================================
@@ -124,6 +127,9 @@ export class VotacionComponent implements OnInit {
 
   modoCreacionResolucion = false;
 
+  grupos: IGrupo[] = []; // Lista de grupos de la sesión
+
+  pantallaGrupo: number = 1; // 1 = gestión, 2 = crear grupo
 
 // =====================
 // Formularios reactivos
@@ -138,6 +144,11 @@ export class VotacionComponent implements OnInit {
     descripcion: new FormControl('', [Validators.required]),
   });
 
+  grupoForm: FormGroup = new FormGroup({
+    nombre: new FormControl(''),
+    puntos: new FormControl([], Validators.required),
+  });
+
 // =====================
 // Inicialización de datos
 // =====================
@@ -148,9 +159,11 @@ export class VotacionComponent implements OnInit {
     const queryPuntos = `sesion.id_sesion=${this.idSesion}`;
     const queryUsuario = `codigo=${this.payload.codigo}`;
     const queryAsistencia = `sesion.id_sesion=${this.idSesion}`;
+    const queryGrupo = `sesion.id_sesion=${this.idSesion}`;
     const relationsAsistencia = ['usuario'];
     const relationsPuntos = ['sesion'];
     const relationsMiembros = ['usuario'];
+    const relationsGrupos = ['puntoGrupos', 'puntoGrupos.punto'];
 
     forkJoin({
       sesion: this.sesionService.getDataBy(querySesion),
@@ -161,13 +174,15 @@ export class VotacionComponent implements OnInit {
         relationsAsistencia
       ),
       miembrosOCS: this.miembroService.getAllDataBy('', relationsMiembros),
+      grupos: this.grupoService.getAllDataBy(queryGrupo, relationsGrupos),
     }).subscribe({
-      next: ({ sesion, puntos, usuario, asistencia, miembrosOCS }) => {
+      next: ({ sesion, puntos, usuario, asistencia, miembrosOCS, grupos }) => {
         this.sesion = sesion;
         this.puntos = puntos;
         this.usuario = usuario;
         this.nomina = asistencia;
         this.miembrosOCS = miembrosOCS.map((m: any) => m.usuario);
+        this.grupos = grupos;
 
         if (this.puntos.length > 0) {
           this.puntoSeleccionado = this.puntos[0];
@@ -264,6 +279,21 @@ export class VotacionComponent implements OnInit {
     });
   }
 
+  getGruposDeSesion() {
+  const query = `sesion.id_sesion=${this.idSesion}`;
+  const relations = ['puntoGrupos', 'puntoGrupos.punto'];
+
+  this.grupoService.getAllDataBy(query, relations).subscribe({
+    next: (data) => {
+      this.grupos = data;
+    },
+    error: () => {
+      this.toastr.error('Error al cargar los grupos', 'Error');
+    },
+  });
+}
+
+
 // =====================
 // Métodos de administración de puntos
 // =====================
@@ -290,6 +320,129 @@ export class VotacionComponent implements OnInit {
       }
     });
   }
+
+  cambiarEstadoGrupo(grupo: IGrupo) {
+  const grupoData = {
+    id_grupo: grupo.id_grupo,
+    estado: !grupo.estado,
+  };
+
+  this.grupoService.saveData(grupoData).subscribe({
+    next: () => {
+      grupo.estado = !grupo.estado;
+      this.toastr.success(
+        `Grupo ${grupo.nombre} ${grupo.estado ? 'habilitado' : 'deshabilitado'}`,
+        'Estado actualizado'
+      );
+    },
+    error: () => {
+      this.toastr.error('Error al actualizar el grupo', 'Error');
+    },
+  });
+}
+
+crearGrupoDesdeFormulario() {
+  const puntosSeleccionados = this.grupoForm.value.puntos;
+  if (!puntosSeleccionados || puntosSeleccionados.length < 2) {
+    this.toastr.warning('Debe seleccionar al menos 2 puntos');
+    return;
+  }
+
+  const grupoData = {
+    idSesion: this.idSesion!,
+    nombre: this.grupoForm.value.nombre || `Grupo ${Date.now()}`, // Nombre opcional
+    puntos: puntosSeleccionados.map((p: IPunto) => p.id_punto),
+  };
+
+  this.grupoService.agruparPuntos(grupoData).subscribe({
+    next: (nuevoGrupo) => {
+      this.toastr.success('Grupo creado correctamente');
+      this.getGruposDeSesion(); // Recargar la lista de grupos
+      this.pantallaGrupo = 1;
+      this.grupoForm.reset();
+    },
+    error: () => {
+      this.toastr.error('Error al crear el grupo');
+    },
+  });
+}
+
+onSeleccionPuntoGrupo(punto: IPunto, event: Event) {
+  const seleccionados: IPunto[] = this.grupoForm.value.puntos || [];
+  const checked = (event.target as HTMLInputElement).checked;
+
+  if (checked) {
+    this.grupoForm.patchValue({ puntos: [...seleccionados, punto] });
+  } else {
+    this.grupoForm.patchValue({
+      puntos: seleccionados.filter((p) => p.id_punto !== punto.id_punto),
+    });
+  }
+}
+
+solicitarReconsideracion(): void {
+  if (!this.puntoSeleccionado) return;
+
+  this.puntoService.reconsideracion(this.puntoSeleccionado.id_punto).subscribe({
+    next: () => {
+      this.toastr.success('Se ha solicitado la reconsideración correctamente.', 'Reconsideración creada');
+      this.getPuntos(); // recargar puntos actualizados
+    },
+    error: (error) => {
+      console.error(error);
+      this.toastr.error(error.error.message, 'No se pudo solicitar la reconsideración.');
+    },
+  });
+}
+
+aprobarReconsideracion(): void {
+  if (!this.puntoSeleccionado) return;
+
+  this.puntoService.aprobarReconsideracion(this.puntoSeleccionado.id_punto).subscribe({
+    next: () => {
+      this.toastr.success('Se ha creado una nueva votación basada en la reconsideración.', 'Punto repetido creado');
+      this.getPuntos(); // recargar puntos actualizados
+    },
+    error: (error) => {
+      console.error(error);
+      this.toastr.error(error.error.message, 'No se pudo crear el punto reconsiderado.');
+    },
+  });
+}
+
+
+mostrarBotonSolicitarReconsideracion(punto: IPunto): boolean {
+  return (
+    punto.tipo === 'normal' &&
+    punto.resultado !== null &&
+    punto.resultado !== 'empate' &&
+    this.sesion?.fase === 'activa' &&
+    !this.existeReconsideracionPara(punto.id_punto)
+  );
+}
+
+mostrarBotonAprobarReconsideracion(punto: IPunto): boolean {
+  return (
+    punto.tipo === 'reconsideracion' &&
+    punto.resultado === 'aprobada' &&
+    this.sesion?.fase === 'activa' &&
+    !this.existeRepetidoPara(punto.puntoReconsiderado?.id_punto)
+  );
+}
+
+existeReconsideracionPara(idPuntoOriginal: number): boolean {
+  return this.puntos.some(
+    p => p.tipo === 'reconsideracion' && p.puntoReconsiderado?.id_punto === idPuntoOriginal
+  );
+}
+
+existeRepetidoPara(idPuntoOriginal: number): boolean {
+  return this.puntos.some(
+    p => p.tipo === 'repetido' && p.puntoReconsiderado?.id_punto === idPuntoOriginal
+  );
+}
+
+
 
 // =====================
 // Métodos de administración de sesion
@@ -588,7 +741,7 @@ export class VotacionComponent implements OnInit {
     if (!this.puntoSeleccionado) return;
 
     this.puntoService
-      .calcularResultados(this.puntoSeleccionado.id_punto)
+      .calcularResultados(this.puntoSeleccionado.id_punto, this.usuario.id_usuario)
       .subscribe({
         next: () => {
           this.toastr.success('Resultado calculado correctamente', 'Éxito');
@@ -627,7 +780,7 @@ export class VotacionComponent implements OnInit {
   }
 
 // =====================
-// Resolucione
+// Resolucion
 // =====================
 
   crearResolucion() {
@@ -805,6 +958,12 @@ export class VotacionComponent implements OnInit {
   volverAlPasoManual() {
     this.pasoModalResultados = 2;
   }
+
+  volverAGestionGrupos() {
+    this.pantallaGrupo = 1;
+    this.grupoForm.reset({ nombre: '', puntos: [] });
+  }
+
 
   goBack() {
     this.location.back();

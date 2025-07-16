@@ -108,4 +108,8 @@ export class UsuarioService {
   reemplazosDispobibles(id: number): Observable<any[]> {
     return this.http.get<IUsuario[]>(`${this.baseURL}/usuario/reemplazos-disponibles/${id}`);
   }
+
+  generarCodigo(): Observable<any> {
+    return this.http.get<any>(`${this.baseURL}/usuario/generar-codigo`);
+  }
 }

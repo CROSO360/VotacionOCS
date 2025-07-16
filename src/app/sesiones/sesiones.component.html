@@ -105,12 +105,24 @@
             El nombre es obligatorio.
           </div>
 
-          <!-- Campo: Código -->
-          <label for="codigo" class="form-label">Código:</label>
-          <input type="text" id="codigo" class="form-control" formControlName="codigo" />
-          <div *ngIf="modificarSesionForm.get('codigo')?.invalid && modificarSesionForm.get('codigo')?.touched" class="text-danger">
-            El código es obligatorio.
-          </div>
+          <!-- Campo: Código Sesión -->
+<label for="codigoSesion" class="form-label">Código Sesión:</label>
+<div class="custom-input">
+  <input
+    type="text"
+    id="codigoSesion"
+    class="form-control"
+    formControlName="codigo"
+    placeholder="Código"
+  />
+  <div class="input-actualizar" (click)="generarCodigoSesion(modificarSesionForm)">
+    <span class="actualizar-icon">Generar</span>
+  </div>
+</div>
+<div *ngIf="modificarSesionForm.get('codigo')?.invalid && modificarSesionForm.get('codigo')?.touched" class="text-danger">
+  El código es obligatorio.
+</div>
+
 
           <!-- Campo: Fecha -->
           <label for="fecha_inicio" class="form-label">Fecha de inicio:</label>
@@ -173,12 +185,24 @@
             El nombre es obligatorio.
           </div>
 
-          <!-- Campo: Código -->
-          <label for="codigo" class="form-label">Código:</label>
-          <input type="text" id="codigo" class="form-control" formControlName="codigo" />
-          <div *ngIf="crearSesionForm.get('codigo')?.invalid && crearSesionForm.get('codigo')?.touched" class="text-danger">
-            El código es obligatorio.
-          </div>
+          <!-- Campo: Código Sesión -->
+<label for="codigoSesion" class="form-label">Código Sesión:</label>
+<div class="custom-input">
+  <input
+    type="text"
+    id="codigoSesion"
+    class="form-control"
+    formControlName="codigo"
+    placeholder="Código"
+  />
+  <div class="input-actualizar" (click)="generarCodigoSesion(crearSesionForm)">
+    <span class="actualizar-icon">Generar</span>
+  </div>
+</div>
+<div *ngIf="crearSesionForm.get('codigo')?.invalid && crearSesionForm.get('codigo')?.touched" class="text-danger">
+  El código es obligatorio.
+</div>
+
 
           <!-- Campo: Fecha -->
           <label for="fecha_inicio" class="form-label">Fecha de inicio:</label>

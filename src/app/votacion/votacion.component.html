@@ -46,13 +46,22 @@
   <!-- Contenedor de acciones -->
   <div class="d-flex justify-content-between my-4 flex-wrap align-items-center">
     <!-- Botón Generar votos -->
-    <button
+    <!--button
       *ngIf="sesion?.fase === 'pendiente'"
       class="btn btn-primary"
       data-bs-toggle="modal"
       data-bs-target="#modalConfirmarGenerar"
     >
       Generar votos
+    </button-->
+
+    <button
+      class="btn btn-outline-primary"
+      data-bs-toggle="modal"
+      data-bs-target="#modalGrupos"
+      (click)="pantallaGrupo = 1"
+    >
+      Grupos de puntos
     </button>
 
     <button
@@ -161,6 +170,33 @@
       *ngIf="resolucionActual && !puntoSeleccionado.resultado"
     >
       Calcular resultado
+    </button>
+
+    <button
+      class="btn btn-primary"
+      data-bs-toggle="modal"
+      data-bs-target="#modalResultados"
+      *ngIf="resolucionActual && puntoSeleccionado.resultado==='empate'"
+    >
+      Calcular resultado dirimente
+    </button>
+
+    <!-- Botón para solicitar reconsideración -->
+    <button
+      *ngIf="mostrarBotonSolicitarReconsideracion(puntoSeleccionado)"
+      class="btn btn-warning me-2"
+      (click)="solicitarReconsideracion()"
+    >
+      Solicitar reconsideración
+    </button>
+
+    <!-- Botón para aprobar reconsideración (crear copia del punto original) -->
+    <button
+      *ngIf="mostrarBotonAprobarReconsideracion(puntoSeleccionado)"
+      class="btn btn-success"
+      (click)="aprobarReconsideracion()"
+    >
+      Crear nueva votación (reconsiderado)
     </button>
 
     <!-- Mensaje de advertencia -->
@@ -414,7 +450,7 @@
 </div>
 
 <!-- Modal de confirmación para generar votos -->
-<div
+<!--div
   class="modal fade"
   id="modalConfirmarGenerar"
   tabindex="-1"
@@ -453,7 +489,7 @@
       </div>
     </div>
   </div>
-</div>
+</div-->
 
 <!-- Modal de confirmación para iniciar la sesion -->
 <div
@@ -541,12 +577,17 @@
                 <!-- Botón de cambio de rol -->
                 <button
                   class="btn btn-outline-secondary btn-sm"
-                  *ngIf="esMiembroOCS(asistencia.usuario.id_usuario) && sesion?.estado === true"
-                  (click)="cambiarPrincipalAlternoNomina(asistencia.usuario.id_usuario)"
+                  *ngIf="
+                    esMiembroOCS(asistencia.usuario.id_usuario) &&
+                    sesion?.estado === true &&
+                    sesion?.fase === 'activa'
+                  "
+                  (click)="
+                    cambiarPrincipalAlternoNomina(asistencia.usuario.id_usuario)
+                  "
                 >
                   Cambiar Principal/Alterno
                 </button>
-
               </div>
 
               <span
@@ -577,7 +618,7 @@
           type="button"
           class="btn btn-success"
           (click)="confirmarAsistencia()"
-          [disabled]="sesion?.estado === false"
+          [disabled]="sesion?.estado === false || nomina.length === 0"
         >
           Confirmar asistencia
         </button>
@@ -702,21 +743,19 @@
       <div class="modal-body">
         <!-- Si no hay resolución aún -->
         <div *ngIf="!resolucionActual && !modoCreacionResolucion">
-  <button
-    class="btn btn-secondary"
-    (click)="modoCreacionResolucion = true; resolucionForm.reset()"
-  >
-    Nueva resolución
-  </button>
-</div>
-
+          <button
+            class="btn btn-secondary"
+            (click)="modoCreacionResolucion = true; resolucionForm.reset()"
+          >
+            Nueva resolución
+          </button>
+        </div>
 
         <!-- Formulario si ya existe o se está creando -->
         <form
           *ngIf="modoCreacionResolucion || resolucionActual"
           [formGroup]="resolucionForm"
           (ngSubmit)="resolucionActual ? editarResolucion() : crearResolucion()"
-
         >
           <div class="form-group mt-3">
             <label for="nombre">Nombre:</label>
@@ -769,6 +808,139 @@
 
       <div class="modal-footer">
         <button class="btn btn-secondary" data-bs-dismiss="modal">
+          Cerrar
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Gestión de Grupos -->
+<div
+  class="modal fade"
+  id="modalGrupos"
+  tabindex="-1"
+  aria-labelledby="modalGruposLabel"
+  aria-hidden="true"
+>
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="modalGruposLabel">
+          {{
+            pantallaGrupo === 1
+              ? "Gestión de Grupos de Puntos"
+              : "Crear Nuevo Grupo"
+          }}
+        </h5>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+          aria-label="Cerrar"
+        ></button>
+      </div>
+
+      <div class="modal-body">
+        <!-- ========================= -->
+        <!-- PANTALLA 1: VER GRUPOS -->
+        <!-- ========================= -->
+        <div *ngIf="pantallaGrupo === 1">
+          <div *ngIf="grupos.length === 0" class="text-muted">
+            No hay grupos creados aún.
+          </div>
+
+          <div *ngFor="let grupo of grupos" class="mb-3 border rounded p-3">
+            <div class="d-flex justify-content-between align-items-center">
+              <strong>{{ grupo.nombre }}</strong>
+              <button
+                class="btn btn-sm btn-outline-primary"
+                (click)="cambiarEstadoGrupo(grupo)"
+              >
+                {{ grupo.estado ? "Deshabilitar" : "Habilitar" }}
+              </button>
+            </div>
+
+            <div class="mt-2">
+              <span class="text-muted small">Puntos del grupo:</span>
+              <ul class="mb-0">
+                <li *ngFor="let pg of grupo.puntoGrupos">
+                  {{ pg.punto?.nombre }}
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <!-- ========================= -->
+        <!-- PANTALLA 2: CREAR GRUPO -->
+        <!-- ========================= -->
+        <div *ngIf="pantallaGrupo === 2">
+          <form
+            [formGroup]="grupoForm"
+            (ngSubmit)="crearGrupoDesdeFormulario()"
+          >
+            <div class="form-group mb-3">
+              <label for="nombreGrupo">Nombre del grupo (opcional)</label>
+              <input
+                type="text"
+                class="form-control"
+                formControlName="nombre"
+                id="nombreGrupo"
+                placeholder="Ej: Grupo de puntos financieros"
+              />
+            </div>
+
+            <div class="form-group mb-3">
+              <label>Puntos a agrupar (mínimo 2)</label>
+              <div *ngFor="let punto of puntos" class="form-check">
+                <input
+                  type="checkbox"
+                  class="form-check-input"
+                  [value]="punto"
+                  (change)="onSeleccionPuntoGrupo(punto, $event)"
+                  [checked]="grupoForm.value.puntos?.includes(punto)"
+                  id="puntoCheckbox{{ punto.id_punto }}"
+                />
+                <label
+                  class="form-check-label"
+                  [for]="'puntoCheckbox' + punto.id_punto"
+                >
+                  {{ punto.nombre }}
+                </label>
+              </div>
+            </div>
+
+            <div class="d-flex justify-content-between">
+              <button
+                type="button"
+                class="btn btn-secondary"
+                (click)="volverAGestionGrupos()"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                class="btn btn-success"
+                [disabled]="grupoForm.value.puntos?.length < 2"
+              >
+                Crear grupo
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Footer común -->
+      <div class="modal-footer" *ngIf="pantallaGrupo === 1">
+        <button
+          type="button"
+          class="btn btn-primary"
+          (click)="pantallaGrupo = 2"
+        >
+          + Crear nuevo grupo
+        </button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
           Cerrar
         </button>
       </div>

@@ -105,6 +105,14 @@ export class PuntoService {
     return this.http.post<any>(`${this.baseURL}/punto/reordenar`, data);
   }
 
+  reconsideracion(id: number): Observable<any> {
+    return this.http.post<any>(`${this.baseURL}/punto/reconsideracion/${id}`, {});
+  }
+
+  aprobarReconsideracion(id: number): Observable<any> {
+    return this.http.post<any>(`${this.baseURL}/punto/reconsideracion/aprobar/${id}`, {});
+  }
+
   // =======================
   // Métodos para resultados de votación
   // =======================
@@ -113,8 +121,8 @@ export class PuntoService {
    * Calcula automáticamente el resultado de un punto
    * @param id ID del punto
    */
-  calcularResultados(id: number): Observable<any> {
-    return this.http.post<any>(`${this.baseURL}/punto/calcular-resultados/${id}`, {});
+  calcularResultados(idPunto: number, idUsuario: number): Observable<any> {
+    return this.http.post<any>(`${this.baseURL}/punto/calcular-resultados/${idPunto}/${idUsuario}`, {});
   }
 
   /**

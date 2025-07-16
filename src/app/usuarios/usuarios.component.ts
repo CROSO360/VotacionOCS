@@ -55,6 +55,9 @@ export class UsuariosComponent implements OnInit {
   mensajeReemplazo: string = '';
   ultimoUsuarioEditadoId: number | null = null;
 
+  codigoOriginal: string | null = null;
+
+
   // =====================
   // CONSTRUCTOR
   // =====================
@@ -144,6 +147,15 @@ export class UsuariosComponent implements OnInit {
   // GESTIÓN DE FORMULARIO EDITAR
   // =====================
 
+revertirCodigo(formulario: FormGroup): void {
+  if (this.codigoOriginal) {
+    formulario.get('codigo')?.setValue(this.codigoOriginal);
+    formulario.get('codigo')?.markAsDirty();
+    this.toastrService.info('Código revertido al valor original.');
+  }
+}
+
+
   abrirEditar(usuario: any) {
     if (this.ultimoUsuarioEditadoId === usuario.id_usuario) return;
     this.ultimoUsuarioEditadoId = usuario.id_usuario;
@@ -153,6 +165,7 @@ export class UsuariosComponent implements OnInit {
       this.mensajeReemplazo = '';
 
       if (!data.reemplazo && !data.esReemplazoDe) {
+        this.codigoOriginal = usuario.codigo;
         this.modificarUsuarioForm.setValue({
           idUsuario: usuario.id_usuario,
           nombre: usuario.nombre,
@@ -163,6 +176,7 @@ export class UsuariosComponent implements OnInit {
           estado: usuario.estado,
         });
       } else if (data.reemplazo) {
+        this.codigoOriginal = usuario.codigo;
         this.modificarUsuarioForm.setValue({
           idUsuario: usuario.id_usuario,
           nombre: usuario.nombre,
@@ -245,7 +259,7 @@ export class UsuariosComponent implements OnInit {
         this.cerrarModal('exampleModal', this.modificarUsuarioForm);
       },
       (error) => {
-        this.toastrService.error('Error al actualizar el usuario.', error);
+        this.toastrService.error(error.error.message,'Error al actualizar el usuario.');
       }
     );
   }
@@ -273,10 +287,28 @@ export class UsuariosComponent implements OnInit {
         this.cerrarModal('crearUsuarioModal', this.crearUsuarioForm);
       },
       (error) => {
-        this.toastrService.error('Error al crear el usuario.', error);
+        this.toastrService.error(error.error.message, 'Error al crear el usuario.');
       }
     );
   }
+
+  generarCodigoUsuario(formulario: FormGroup): void {
+  this.usuarioService.generarCodigo().subscribe({
+    next: (res) => {
+      const campoCodigo = formulario.get('codigox') || formulario.get('codigo');
+
+      if (campoCodigo) {
+        campoCodigo.setValue(res.codigo);
+        campoCodigo.markAsDirty();
+      } else {
+        this.toastrService.warning('No se encontró el campo de código en el formulario.');
+      }
+    },
+    error: () => {
+      this.toastrService.error('Error al generar el código del usuario.');
+    }
+  });
+}
 
   // =====================
   // UTILIDADES

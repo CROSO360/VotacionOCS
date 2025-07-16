@@ -79,6 +79,12 @@ export interface IPunto {
    */
   resultado?: string;
 
+  tipo?: string;
+
+  puntoReconsiderado?: IPunto;
+
+  requiere_voto_dirimente?: boolean;
+
   /**
    * Indica si el punto está activo (según lógica de negocio)
    */

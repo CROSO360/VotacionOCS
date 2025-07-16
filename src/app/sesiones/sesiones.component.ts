@@ -47,6 +47,9 @@ export class SesionesComponent implements OnInit {
   estadoActual: boolean | null = null;
   sesionesCargadas: boolean = false;
 
+  codigoOriginalSesion: string | null = null;
+
+
   // =======================
   // Constructor
   // =======================
@@ -84,7 +87,7 @@ export class SesionesComponent implements OnInit {
   ngOnInit(): void {
     this.getSesiones();
     this.cambiarGrupo(null);
-    console.log(`estado actual al iniciar: ${this.estadoActual}`);
+    //console.log(`estado actual al iniciar: ${this.estadoActual}`);
   }
 
   // =======================
@@ -109,7 +112,7 @@ export class SesionesComponent implements OnInit {
   }
 
   filtrarSesiones() {
-    console.log('Estado actual: ', this.estadoActual);
+    //console.log('Estado actual: ', this.estadoActual);
 
     this.sesionesFiltradas = this.sesiones.filter(
       (sesion) =>
@@ -118,7 +121,7 @@ export class SesionesComponent implements OnInit {
          sesion.codigo!.includes(this.busqueda))
     );
 
-    console.log('Sesiones filtradas: ', this.sesionesFiltradas);
+    //console.log('Sesiones filtradas: ', this.sesionesFiltradas);
   }
 
   // =======================
@@ -136,6 +139,14 @@ export class SesionesComponent implements OnInit {
   // =======================
   // Operaciones CRUD
   // =======================
+
+  revertirCodigoSesion(formulario: FormGroup): void {
+  if (this.codigoOriginalSesion) {
+    formulario.get('codigo')?.setValue(this.codigoOriginalSesion);
+    formulario.get('codigo')?.markAsDirty();
+    this.toastrService.info('Código revertido al valor original.');
+  }
+}
 
   abrirEditar(sesion: any) {
     this.modificarSesionForm.setValue({
@@ -190,6 +201,24 @@ export class SesionesComponent implements OnInit {
       },
     });
   }
+
+  generarCodigoSesion(formulario: FormGroup): void {
+  this.sesionService.generarCodigo().subscribe({
+    next: (res) => {
+      const campo = formulario.get('codigo');
+      if (campo) {
+        campo.setValue(res.codigo);
+        campo.markAsDirty();
+      } else {
+        this.toastrService.warning('No se encontró el campo de código en el formulario.');
+      }
+    },
+    error: () => {
+      this.toastrService.error('Error al generar código de sesión.');
+    }
+  });
+}
+
 
   // =======================
   // Utilidades

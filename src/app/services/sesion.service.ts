@@ -103,4 +103,9 @@ export class SesionService {
       responseType: 'blob',
     });
   }
+
+  generarCodigo(): Observable<any> {
+    return this.http.get<any>(`${this.baseURL}/sesion/generar-codigo`);
+  }
+
 }
