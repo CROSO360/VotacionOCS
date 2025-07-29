@@ -11,7 +11,7 @@ import { FormBuilder, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 
 // Componentes
-import { BarraSuperiorComponent } from '../barra-superior/barra-superior.component';
+import { BarraSuperiorComponent } from '../components/barra-superior/barra-superior.component';
 
 // Servicios
 import { SesionService } from '../services/sesion.service';
@@ -22,6 +22,7 @@ import { ISesion } from '../interfaces/ISesion';
 
 // Utilidades
 import { jwtDecode } from 'jwt-decode';
+import { FooterComponent } from "../components/footer/footer.component";
 
 @Component({
   selector: 'app-dashboard',
@@ -32,8 +33,9 @@ import { jwtDecode } from 'jwt-decode';
     CommonModule,
     FormsModule,
     ReactiveFormsModule,
-    BarraSuperiorComponent
-  ]
+    BarraSuperiorComponent,
+    FooterComponent
+]
 })
 export class DashboardComponent implements OnInit {
 

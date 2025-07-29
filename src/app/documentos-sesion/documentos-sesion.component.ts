@@ -16,17 +16,19 @@ import { DocumentoService } from '../services/documento.service';
 import { ToastrService } from 'ngx-toastr';
 
 // Componentes
-import { BarraSuperiorComponent } from '../barra-superior/barra-superior.component';
+import { BarraSuperiorComponent } from '../components/barra-superior/barra-superior.component';
 
 // Interfaces
 import { ISesion } from '../interfaces/ISesion';
 import { ISesionDocumento } from '../interfaces/ISesionDocumento';
 import { IDocumento } from '../interfaces/IDocumento';
+import { BotonAtrasComponent } from "../components/boton-atras/boton-atras.component";
+import { FooterComponent } from "../components/footer/footer.component";
 
 @Component({
   selector: 'app-documentos-sesion',
   standalone: true,
-  imports: [CommonModule, BarraSuperiorComponent],
+  imports: [CommonModule, BarraSuperiorComponent, BotonAtrasComponent, FooterComponent],
   templateUrl: './documentos-sesion.component.html',
   styleUrl: './documentos-sesion.component.css'
 })
@@ -38,6 +40,9 @@ export class DocumentosSesionComponent {
   idSesion: number | null = 0;
   sesion: ISesion | undefined;
   sesionDocumentos: ISesionDocumento[] = [];
+
+  //flags
+  eliminandoDocumento: Map<number, boolean> = new Map();
 
   // =======================
   // Constructor
@@ -119,12 +124,23 @@ export class DocumentosSesionComponent {
   // =======================
   // Eliminar documento por ID
   // =======================
-  eliminarDocumento(id: number) {
-    this.documentoService.eliminarDocumento(id).subscribe(() => {
+  eliminarDocumento(id: number): void {
+  this.eliminandoDocumento.set(id, true);
+
+  this.documentoService.eliminarDocumento(id).subscribe({
+    next: () => {
       this.toastrService.success('Documento eliminado correctamente');
       this.getSesionDocumentos();
-    });
-  }
+    },
+    error: (err) => {
+      this.toastrService.error('No se pudo eliminar el documento', err.error.message);
+      this.eliminandoDocumento.set(id, false);
+    },
+    complete: () => {
+      this.eliminandoDocumento.set(id, false);
+    }
+  });
+}
 
   // =======================
   // Volver a la vista anterior

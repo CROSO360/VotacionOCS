@@ -23,7 +23,7 @@ export interface IAsistencia {
   usuario?: IUsuario;
 
   /**
-   * Tipo de asistencia: 'presencial', 'remoto' o 'ausente'
+   * Tipo de asistencia: 'presente', 'remoto' o 'ausente'
    */
   tipo_asistencia?: string;
 

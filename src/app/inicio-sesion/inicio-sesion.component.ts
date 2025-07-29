@@ -17,6 +17,7 @@ import { Router } from '@angular/router';
 //  Servicios
 import { AuthService } from '../services/auth.service';
 import { CookieService } from 'ngx-cookie-service';
+import { FooterComponent } from "../components/footer/footer.component";
 
 // =======================
 // Decorador del componente
@@ -24,12 +25,11 @@ import { CookieService } from 'ngx-cookie-service';
 @Component({
   selector: 'app-inicio-sesion',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, FooterComponent],
   templateUrl: './inicio-sesion.component.html',
   styleUrl: './inicio-sesion.component.css',
 })
 export class InicioSesionComponent implements OnInit {
-
   // =======================
   // Constructor e inyección de dependencias
   // =======================
@@ -37,8 +37,10 @@ export class InicioSesionComponent implements OnInit {
     private fb: FormBuilder,
     private cookieService: CookieService,
     private authService: AuthService,
-    private router: Router,
+    private router: Router
   ) {}
+
+  iniciandoSesion = false;
 
   // =======================
   // Formulario reactivo
@@ -51,7 +53,7 @@ export class InicioSesionComponent implements OnInit {
   // =======================
   // Mensaje de error al iniciar sesión
   // =======================
-  errorMessage: string = ''; 
+  errorMessage: string = '';
 
   // =======================
   // Verifica si hay cookies activas al iniciar el componente
@@ -67,6 +69,9 @@ export class InicioSesionComponent implements OnInit {
   // Procesar envío del formulario de login
   // =======================
   onSubmit(): void {
+    if (this.adminLoginForm.invalid) return;
+
+    this.iniciandoSesion = true;
     const formData = this.adminLoginForm.value;
 
     const loginData = {
@@ -80,13 +85,16 @@ export class InicioSesionComponent implements OnInit {
         this.router.navigate(['/', 'home']);
       },
       error: (e) => {
-        console.log('error: ', e);
         if (e.status === 401) {
           this.errorMessage = 'Credenciales incorrectas';
         } else {
           this.errorMessage =
             'Se produjo un error. Por favor, inténtalo de nuevo.';
         }
+        this.iniciandoSesion = false;
+      },
+      complete: () => {
+        this.iniciandoSesion = false;
       },
     });
   }

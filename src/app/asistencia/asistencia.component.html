@@ -5,86 +5,203 @@ BARRA SUPERIOR
 
 <div class="container my-4">
   <!-- Botón de retroceso -->
-  <button class="back-button mb-3" (click)="goBack()">←</button>
   <h2 class="text-center">Gestión de Asistencia</h2>
 
+  <app-boton-atras></app-boton-atras> <br /><br />
+
   <!-- =======================
-   ESTADO: Asistencia no generada
-  ======================= -->
-  <div *ngIf="asistencias.length === 0" class="text-center mt-5">
-    <button class="btn btn-primary" (click)="generarAsistencias()">Generar asistencia</button>
+ ESTADO: Asistencia no generada
+======================= -->
+  <div
+    *ngIf="asistencias.length === 0"
+    class="d-flex justify-content-center mt-5"
+  >
+    <button
+      class="btn btn-primary d-flex align-items-center justify-content-center"
+      (click)="generarAsistencias()"
+      [disabled]="generandoAsistencia"
+    >
+      <ng-container *ngIf="!generandoAsistencia; else cargando">
+        <i class="bi bi-plus-circle me-2"></i>
+        Generar asistencia
+      </ng-container>
+      <ng-template #cargando>
+        <span
+          class="spinner-border spinner-border-sm me-2"
+          role="status"
+        ></span>
+        Generando...
+      </ng-template>
+    </button>
   </div>
 
   <!-- =======================
    ESTADO: Asistencia generada
-  ======================= -->
+======================= -->
   <div *ngIf="asistencias.length > 0">
     <h5>Miembros y Asistentes</h5>
 
-    <!-- Lista de asistencias registradas -->
-    <ul class="list-group mb-4">
-      <li
-        *ngFor="let asistencia of asistencias"
-        class="list-group-item d-flex justify-content-between align-items-center flex-wrap"
-      >
-        <div class="d-flex align-items-center flex-wrap gap-2">
-          <span class="fw-semibold me-3">{{ asistencia.usuario?.nombre }}</span>
+    <!-- Leyenda de colores -->
+    <div class="d-flex align-items-center gap-3 mb-2 flex-wrap">
+      <div class="d-flex align-items-center gap-1">
+        <span class="cuadro-color bg-primary"></span>
+        <small class="text-muted">Miembros</small>
+      </div>
+      <div class="d-flex align-items-center gap-1">
+        <span class="cuadro-color bg-secondary"></span>
+        <small class="text-muted">Extras</small>
+      </div>
+    </div>
 
-          <!-- Selector de tipo de asistencia -->
-          <select
-            class="form-select form-select-sm w-auto"
-            [(ngModel)]="asistencia.tipo_asistencia"
-            [ngModelOptions]="{ standalone: true }"
-            [disabled]="sesion?.estado === false"
-          >
-            <option [ngValue]="null">Ninguno</option>
-            <option value="presencial">Presencial</option>
-            <option value="remoto">Remoto</option>
-            <option value="ausente">Ausente</option>
-          </select>
-        </div>
+    <div class="input-group w-50 mb-3">
+      <input
+        class="form-control w-50 mx-auto my-3 shadow-sm"
+        type="text"
+        placeholder="Buscar por nombre"
+        [(ngModel)]="busqueda"
+        (input)="filtrarAsistencias()"
+      />
+    </div>
 
-        <!-- Distintivo de tipo de asistente -->
-        <span
-          class="badge"
-          [ngClass]="{
-            'bg-primary': esMiembroOCS(asistencia.usuario.id_usuario),
-            'bg-secondary': !esMiembroOCS(asistencia.usuario.id_usuario)
-          }"
+    <!-- Filtro por tipo de asistencia -->
+    <ul class="nav nav-pills mb-3">
+      <li class="nav-item">
+        <a
+          class="nav-link"
+          (click)="cambiarTipoAsistencia(null)"
+          [class.active]="tipoAsistenciaActual === null"
         >
-          {{ esMiembroOCS(asistencia.usuario.id_usuario) ? 'Miembro' : 'Extra' }}
-        </span>
+          Todos
+        </a>
+      </li>
+      <li class="nav-item">
+        <a
+          class="nav-link"
+          (click)="cambiarTipoAsistencia('presente')"
+          [class.active]="tipoAsistenciaActual === 'presente'"
+        >
+          Presentes
+        </a>
+      </li>
+      <li class="nav-item">
+        <a
+          class="nav-link"
+          (click)="cambiarTipoAsistencia('ausente')"
+          [class.active]="tipoAsistenciaActual === 'ausente'"
+        >
+          Ausentes
+        </a>
       </li>
     </ul>
 
+    <!-- Contenedor tipo tabla en 3 columnas -->
+    <!-- Contenedor agrupado por grupoUsuario -->
+    <div class="row gy-4">
+      <div
+        class="col-12 col-md-6 col-lg-4"
+        *ngFor="let grupo of agrupadosPorGrupoAsistencia"
+      >
+        <!-- Panel del grupo -->
+        <div class="p-2 border rounded shadow-sm h-100">
+          <!-- Título del grupo -->
+          <h6 class="mb-3 border-start border-3 ps-2 text-primary">
+            {{ getNombreGrupoFormateado(grupo.grupo) }}
+          </h6>
+
+          <!-- Lista de asistencias en este grupo -->
+          <div
+            *ngFor="let asistencia of grupo.asistencias"
+            class="asistencia-item mb-2"
+            [ngClass]="{
+              'asistencia-miembro': esMiembroOCS(asistencia.usuario.id_usuario),
+              'asistencia-extra': !esMiembroOCS(asistencia.usuario.id_usuario)
+            }"
+          >
+            <!-- Nombre -->
+            <div class="asistencia-nombre">
+              <span>
+                {{ asistencia.usuario?.nombre }}
+              </span>
+            </div>
+
+            <!-- Selector -->
+            <div class="asistencia-select">
+              <select
+                class="form-select form-select-sm"
+                [(ngModel)]="asistencia.tipo_asistencia"
+                [ngModelOptions]="{ standalone: true }"
+                [disabled]="sesion?.estado === false"
+              >
+                <option [ngValue]="null" disabled selected hidden>
+                  Ninguno
+                </option>
+                <option value="presente">Presente</option>
+                <option value="ausente">Ausente</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <br /><br />
+
     <!-- =======================
      BOTONES de acción
-    ======================= -->
-    <div class="d-flex justify-content-between flex-wrap gap-2" *ngIf="sesion?.estado === true">
-      <button type="button" class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#modalAsistencia">
+  ======================= -->
+    <div
+      class="d-flex justify-content-between flex-wrap gap-2"
+      *ngIf="sesion?.estado === true"
+    >
+      <button
+        type="button"
+        class="btn btn-secondary"
+        (click)="abrirModalAsistencia()"
+      >
         Añadir/Quitar usuarios
       </button>
 
-      <button class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#modalConfirmarEliminar">
+      <button
+        class="btn btn-danger"
+        data-bs-toggle="modal"
+        data-bs-target="#modalConfirmarEliminar"
+      >
         Eliminar asistencia
       </button>
 
-      <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalConfirmarEnvio">
+      <button
+        class="btn btn-success"
+        data-bs-toggle="modal"
+        data-bs-target="#modalConfirmarEnvio"
+      >
         Registrar asistencia
       </button>
-    </div><br><br>
+    </div>
+    <br /><br />
   </div>
 </div>
 
 <!-- =======================
  MODAL: Añadir / Quitar asistentes
 ======================= -->
-<div class="modal fade" id="modalAsistencia" tabindex="-1" aria-labelledby="modalAsistenciaLabel" aria-hidden="true">
+<div
+  class="modal fade"
+  id="modalAsistencia"
+  tabindex="-1"
+  aria-labelledby="modalAsistenciaLabel"
+  aria-hidden="true"
+>
   <div class="modal-dialog modal-lg">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="modalAsistenciaLabel">Añadir / Quitar Asistentes</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        <h5 class="modal-title" id="modalAsistenciaLabel">
+          Añadir / Quitar Asistentes
+        </h5>
+        <button
+          type="button"
+          class="btn-close"
+          aria-label="Cerrar"
+          (click)="cerrarModal('modalAsistencia')"
+        ></button>
       </div>
 
       <div class="modal-body">
@@ -121,7 +238,10 @@ BARRA SUPERIOR
 
         <!-- Lista de usuarios filtrados -->
         <div class="list-group">
-          <div *ngFor="let usuario of usuariosFiltrados" class="list-group-item d-flex align-items-center">
+          <div
+            *ngFor="let usuario of usuariosFiltrados"
+            class="list-group-item d-flex align-items-center"
+          >
             <input
               type="checkbox"
               class="form-check-input me-2"
@@ -138,7 +258,10 @@ BARRA SUPERIOR
           </div>
 
           <!-- Mensaje cuando no hay resultados -->
-          <div *ngIf="usuariosFiltrados.length === 0" class="list-group-item text-muted">
+          <div
+            *ngIf="usuariosFiltrados.length === 0"
+            class="list-group-item text-muted"
+          >
             No se encontraron usuarios.
           </div>
         </div>
@@ -149,8 +272,21 @@ BARRA SUPERIOR
         <button class="btn btn-secondary" type="button" data-bs-dismiss="modal">
           Cancelar
         </button>
-        <button class="btn btn-primary" (click)="sincronizarAsistencias()">
-          Guardar cambios
+        <button
+          class="btn btn-primary d-flex align-items-center justify-content-center"
+          (click)="sincronizarAsistencias()"
+          [disabled]="sincronizandoAsistencias"
+        >
+          <ng-container
+            *ngIf="!sincronizandoAsistencias; else loadingSincronizar"
+          >
+            <i class="bi bi-save me-2"></i>
+            Guardar cambios
+          </ng-container>
+          <ng-template #loadingSincronizar>
+            <span class="spinner-border spinner-border-sm me-2"></span>
+            Guardando...
+          </ng-template>
         </button>
       </div>
     </div>
@@ -160,20 +296,47 @@ BARRA SUPERIOR
 <!-- =======================
   MODAL: Confirmar eliminación
 ======================= -->
-<div class="modal fade" id="modalConfirmarEliminar" tabindex="-1" aria-labelledby="modalConfirmarEliminarLabel" aria-hidden="true">
+<div
+  class="modal fade"
+  id="modalConfirmarEliminar"
+  tabindex="-1"
+  aria-labelledby="modalConfirmarEliminarLabel"
+  aria-hidden="true"
+>
   <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="modalConfirmarEliminarLabel">Eliminar Asistencia</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        <h5 class="modal-title" id="modalConfirmarEliminarLabel">
+          Eliminar Asistencia
+        </h5>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+          aria-label="Cerrar"
+        ></button>
       </div>
       <div class="modal-body">
-        ¿Estás seguro de que deseas eliminar la asistencia actual? Esta acción no se puede deshacer.
+        ¿Estás seguro de que deseas eliminar la asistencia actual? Esta acción
+        no se puede deshacer.
       </div>
       <div class="modal-footer">
-        <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-        <button class="btn btn-danger" (click)="eliminarAsistencias()" data-bs-dismiss="modal">
-          Confirmar eliminación
+        <button class="btn btn-secondary" data-bs-dismiss="modal">
+          Cancelar
+        </button>
+        <button
+          class="btn btn-danger d-flex align-items-center justify-content-center"
+          (click)="eliminarAsistencias()"
+          [disabled]="eliminandoAsistencias"
+        >
+          <ng-container *ngIf="!eliminandoAsistencias; else loadingEliminar">
+            <i class="bi bi-trash me-2"></i>
+            Confirmar eliminación
+          </ng-container>
+          <ng-template #loadingEliminar>
+            <span class="spinner-border spinner-border-sm me-2"></span>
+            Eliminando...
+          </ng-template>
         </button>
       </div>
     </div>
@@ -183,22 +346,51 @@ BARRA SUPERIOR
 <!-- =======================
  MODAL: Confirmar registro
 ======================= -->
-<div class="modal fade" id="modalConfirmarEnvio" tabindex="-1" aria-labelledby="modalConfirmarEnvioLabel" aria-hidden="true">
+<div
+  class="modal fade"
+  id="modalConfirmarEnvio"
+  tabindex="-1"
+  aria-labelledby="modalConfirmarEnvioLabel"
+  aria-hidden="true"
+>
   <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="modalConfirmarEnvioLabel">Registrar Asistencia</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        <h5 class="modal-title" id="modalConfirmarEnvioLabel">
+          Registrar Asistencia
+        </h5>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+          aria-label="Cerrar"
+        ></button>
       </div>
       <div class="modal-body">
-        ¿Deseas registrar la asistencia registrada? Esta acción puede estar sujeta a revisión final.
+        ¿Deseas registrar la asistencia registrada? Esta acción puede estar
+        sujeta a revisión final.
       </div>
       <div class="modal-footer">
-        <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-        <button class="btn btn-success" (click)="enviarAsistencia()" data-bs-dismiss="modal">
-          Confirmar registro
+        <button class="btn btn-secondary" data-bs-dismiss="modal">
+          Cancelar
+        </button>
+        <button
+          class="btn btn-success d-flex align-items-center justify-content-center"
+          (click)="enviarAsistencia()"
+          [disabled]="enviandoAsistencia"
+        >
+          <ng-container *ngIf="!enviandoAsistencia; else loadingEnviar">
+            <i class="bi bi-send-check me-2"></i>
+            Confirmar registro
+          </ng-container>
+          <ng-template #loadingEnviar>
+            <span class="spinner-border spinner-border-sm me-2"></span>
+            Enviando...
+          </ng-template>
         </button>
       </div>
     </div>
   </div>
 </div>
+
+<app-footer></app-footer>

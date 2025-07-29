@@ -6,13 +6,19 @@
 
 // Importaciones Angular y Comunes
 import { CommonModule, Location } from '@angular/common';
-import { Component, OnInit, HostListener } from '@angular/core';
+import {
+  Component,
+  OnInit,
+  HostListener,
+  ViewChild,
+  ElementRef,
+} from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { forkJoin, Observable } from 'rxjs';
 
 // Componentes
-import { BarraSuperiorComponent } from '../barra-superior/barra-superior.component';
+import { BarraSuperiorComponent } from '../components/barra-superior/barra-superior.component';
 
 // Interfaces
 import { ISesion } from '../interfaces/ISesion';
@@ -26,6 +32,10 @@ import { UsuarioService } from '../services/usuario.service';
 import { GrupoUsuarioService } from '../services/grupoUsuario.service';
 import { MiembroService } from '../services/miembro.service';
 import { ToastrService } from 'ngx-toastr';
+import { BotonAtrasComponent } from '../components/boton-atras/boton-atras.component';
+
+import { Modal } from 'bootstrap';
+import { FooterComponent } from "../components/footer/footer.component"; // asegúrate que bootstrap está instalado
 
 @Component({
   selector: 'app-asistencia',
@@ -35,12 +45,13 @@ import { ToastrService } from 'ngx-toastr';
     FormsModule,
     ReactiveFormsModule,
     BarraSuperiorComponent,
-  ],
+    BotonAtrasComponent,
+    FooterComponent
+],
   templateUrl: './asistencia.component.html',
   styleUrl: './asistencia.component.css',
 })
 export class AsistenciaComponent implements OnInit {
-
   // =======================
   // Propiedades públicas
   // =======================
@@ -62,6 +73,26 @@ export class AsistenciaComponent implements OnInit {
   showOptions: boolean = false;
   todosSeleccionados: boolean = false;
 
+  //flags
+  generandoAsistencia = false;
+
+  sincronizandoAsistencias = false;
+
+  eliminandoAsistencias = false;
+
+  enviandoAsistencia = false;
+
+  asistenciaModalRef: any;
+
+  agrupadosPorGrupoAsistencia: { grupo: string; asistencias: IAsistencia[] }[] =
+    [];
+
+  asistenciasOriginales: IAsistencia[] = [];
+  asistenciasFiltradas: IAsistencia[] = [];
+  busquedaAsistencia: string = '';
+
+  tipoAsistenciaActual: string | null = null; // 'presente', 'ausente' o null (todos)
+
   // =======================
   // Constructor
   // =======================
@@ -82,6 +113,10 @@ export class AsistenciaComponent implements OnInit {
   ngOnInit(): void {
     this.idSesion = parseInt(this.route.snapshot.paramMap.get('idSesion')!, 10);
 
+    const asistenciaModalEl = document.getElementById('modalAsistencia');
+    if (asistenciaModalEl)
+      this.asistenciaModalRef = new Modal(asistenciaModalEl);
+
     forkJoin({
       grupos: this.cargarGruposUsuarios(),
       usuarios: this.cargarUsuarios(),
@@ -94,7 +129,8 @@ export class AsistenciaComponent implements OnInit {
         this.usuarios = usuarios;
         this.sesion = sesion;
         this.asistencias = asistencias || [];
-        this.miembrosOCS = miembros.map(m => m.usuario);
+        this.asistenciasOriginales = [...this.asistencias];
+        this.miembrosOCS = miembros.map((m) => m.usuario);
 
         this.usuarios.forEach((usuario) => {
           usuario.seleccionado = this.asistencias.some(
@@ -102,15 +138,34 @@ export class AsistenciaComponent implements OnInit {
           );
         });
 
-        this.usuariosSeleccionados = this.usuarios.filter((u) => u.seleccionado);
+        this.usuariosSeleccionados = this.usuarios.filter(
+          (u) => u.seleccionado
+        );
         this.filtrarUsuarios();
         this.cambiarGrupo(null);
+        this.filtrarAsistencias();
+        this.agrupadosPorGrupoAsistencia = this.agruparAsistenciasPorGrupo(
+          this.asistencias
+        );
       },
       error: (err) => {
         console.error('Error al cargar los datos:', err);
         this.toastr.error('Error al cargar los datos', 'Error');
       },
     });
+  }
+
+  getNombreGrupoFormateado(nombre: string): string {
+    const nombresMapeados: Record<string, string> = {
+      decano: 'Decanos',
+      estudiante: 'Estudiantes',
+      profesor: 'Profesores',
+      trabajador: 'Trabajadores',
+      rector: 'Rector',
+      vicerrector: 'Vicerrector',
+    };
+
+    return nombresMapeados[nombre.toLowerCase()] || nombre;
   }
 
   // =======================
@@ -129,7 +184,7 @@ export class AsistenciaComponent implements OnInit {
 
   cargarAsistencias(): Observable<IAsistencia[]> {
     const query = `sesion.id_sesion=${this.idSesion}`;
-    const relations = ['usuario'];
+    const relations = ['usuario', 'usuario.grupoUsuario'];
     return this.asistenciaService.getAllDataBy(query, relations);
   }
 
@@ -147,11 +202,37 @@ export class AsistenciaComponent implements OnInit {
   // Lógica de negocio
   // =======================
 
+  filtrarAsistencias(): void {
+    const filtro = this.busqueda.toLowerCase().trim();
+
+    this.asistenciasFiltradas = this.asistenciasOriginales.filter((a) => {
+      const coincideBusqueda =
+        a.usuario?.nombre?.toLowerCase().includes(filtro) ||
+        a.usuario?.cedula?.includes(filtro);
+
+      const coincideTipo =
+        !this.tipoAsistenciaActual ||
+        a.tipo_asistencia === this.tipoAsistenciaActual;
+
+      return coincideBusqueda && coincideTipo;
+    });
+
+    this.agrupadosPorGrupoAsistencia = this.agruparAsistenciasPorGrupo(
+      this.asistenciasFiltradas
+    );
+  }
+
+  cambiarTipoAsistencia(tipo: string | null): void {
+    this.tipoAsistenciaActual = tipo;
+    this.filtrarAsistencias();
+  }
+
   filtrarUsuarios() {
     this.usuariosFiltrados = this.usuarios.filter(
       (usuario) =>
         (!this.grupoActual ||
-          usuario.grupoUsuario?.id_grupo_usuario === this.grupoActual.id_grupo_usuario) &&
+          usuario.grupoUsuario?.id_grupo_usuario ===
+            this.grupoActual.id_grupo_usuario) &&
         (usuario.nombre?.toLowerCase().includes(this.busqueda.toLowerCase()) ||
           usuario.cedula?.includes(this.busqueda))
     );
@@ -164,7 +245,11 @@ export class AsistenciaComponent implements OnInit {
 
   actualizarSeleccion(usuario: any) {
     if (usuario.seleccionado) {
-      if (!this.usuariosSeleccionados.some(u => u.id_usuario === usuario.id_usuario)) {
+      if (
+        !this.usuariosSeleccionados.some(
+          (u) => u.id_usuario === usuario.id_usuario
+        )
+      ) {
         this.usuariosSeleccionados.push(usuario);
       }
     } else {
@@ -186,45 +271,135 @@ export class AsistenciaComponent implements OnInit {
   // =======================
 
   generarAsistencias() {
-    if (!this.idSesion) return;
-    this.asistenciaService.generarAsistencia(this.idSesion).subscribe(() => {
-      this.toastr.success('Asistencias generadas correctamente');
-      this.ngOnInit();
+    if (!this.idSesion || this.generandoAsistencia) return;
+
+    this.generandoAsistencia = true;
+
+    this.asistenciaService.generarAsistencia(this.idSesion).subscribe({
+      next: () => {
+        this.toastr.success('Asistencias generadas correctamente');
+        this.ngOnInit();
+        this.generandoAsistencia = false;
+      },
+      error: (err) => {
+        console.error('Error al generar asistencias:', err);
+        this.toastr.error('Error al generar asistencias');
+        this.generandoAsistencia = false;
+      },
     });
   }
 
   eliminarAsistencias() {
     if (!this.idSesion) return;
-    this.asistenciaService.eliminarAsistencia(this.idSesion).subscribe(() => {
-      this.toastr.success('Asistencia eliminada');
-      this.ngOnInit();
+    this.eliminandoAsistencias = true;
+
+    this.asistenciaService.eliminarAsistencia(this.idSesion).subscribe({
+      next: () => {
+        this.toastr.success('Asistencia eliminada');
+        this.ngOnInit();
+        this.eliminandoAsistencias = false;
+        this.cerrarModal('modalConfirmarEliminar');
+      },
+      error: (err) => {
+        this.toastr.error('Error al eliminar asistencia', 'Error');
+        this.eliminandoAsistencias = false;
+      },
     });
   }
 
   sincronizarAsistencias() {
-    const usuariosSeleccionados = this.usuariosSeleccionados.map(u => u.id_usuario!);
+    this.sincronizandoAsistencias = true;
+
+    const usuariosSeleccionados = this.usuariosSeleccionados.map(
+      (u) => u.id_usuario!
+    );
     if (!this.idSesion) return;
 
-    this.asistenciaService.sincronizarAsistencia(this.idSesion, usuariosSeleccionados).subscribe(() => {
-      this.toastr.success('Asistencias actualizadas');
-      this.cerrarModal('modalAsistencia');
-      this.ngOnInit();
-    });
+    this.asistenciaService
+      .sincronizarAsistencia(this.idSesion, usuariosSeleccionados)
+      .subscribe({
+        next: () => {
+          this.toastr.success('Asistencias actualizadas');
+          this.asistenciaModalRef?.hide();
+
+          this.ngOnInit();
+          this.sincronizandoAsistencias = false;
+        },
+        error: (err) => {
+          this.toastr.error('Error al sincronizar asistencias', 'Error');
+          this.sincronizandoAsistencias = false;
+        },
+      });
+  }
+
+  abrirModalAsistencia() {
+    if (this.asistenciaModalRef) {
+      this.asistenciaModalRef.show();
+
+      // Si necesitas refrescar algo, hazlo con un delay
+      setTimeout(() => {
+        this.filtrarUsuarios(); // o la lógica que quieras refrescar
+      }, 10);
+    }
   }
 
   enviarAsistencia() {
     if (!this.idSesion) return;
+    this.enviandoAsistencia = true;
 
     this.asistenciaService.saveManyData(this.asistencias).subscribe({
       next: () => {
         this.toastr.success('Asistencias guardadas correctamente');
         this.ngOnInit();
+        this.enviandoAsistencia = false;
+        this.cerrarModal('modalConfirmarEnvio');
       },
       error: (err) => {
         console.error('Error al guardar asistencias:', err);
-        this.toastr.error('Error al guardar asistencias', 'Error');
+        this.toastr.error('Error al guardar asistencias', err.error.message);
+        this.enviandoAsistencia = false;
       },
     });
+  }
+
+  agruparAsistenciasPorGrupo(
+    asistencias: IAsistencia[]
+  ): { grupo: string; asistencias: IAsistencia[] }[] {
+    const gruposMap = new Map<string, IAsistencia[]>();
+
+    asistencias.forEach((a) => {
+      const nombreGrupo = a.usuario?.grupoUsuario?.nombre || 'Sin grupo';
+      if (!gruposMap.has(nombreGrupo)) {
+        gruposMap.set(nombreGrupo, []);
+      }
+      gruposMap.get(nombreGrupo)?.push(a);
+    });
+
+    const ordenGruposPersonalizado: string[] = [
+      'decano',
+      'estudiante',
+      'profesor',
+      'rector',
+      'vicerrector',
+      'trabajador',
+    ];
+
+    return Array.from(gruposMap.entries())
+      .map(([grupo, asistencias]) => ({
+        grupo,
+        asistencias: asistencias.sort((a, b) =>
+          (a.usuario?.nombre || '').localeCompare(b.usuario?.nombre || '')
+        ),
+      }))
+      .sort((a, b) => {
+        const indexA = ordenGruposPersonalizado.indexOf(a.grupo.toLowerCase());
+        const indexB = ordenGruposPersonalizado.indexOf(b.grupo.toLowerCase());
+
+        const safeIndexA = indexA === -1 ? Number.MAX_SAFE_INTEGER : indexA;
+        const safeIndexB = indexB === -1 ? Number.MAX_SAFE_INTEGER : indexB;
+
+        return safeIndexA - safeIndexB;
+      });
   }
 
   // =======================
@@ -232,28 +407,41 @@ export class AsistenciaComponent implements OnInit {
   // =======================
 
   esMiembroOCS(idUsuario: number): boolean {
-    return this.miembrosOCS.some(u => u.id_usuario === idUsuario);
+    return this.miembrosOCS.some((u) => u.id_usuario === idUsuario);
   }
 
-  cerrarModal(modalId: string) {
-    const modalElement = document.getElementById(modalId);
-    if (modalElement) {
-      modalElement.classList.remove('show');
-      modalElement.style.display = 'none';
-      modalElement.setAttribute('aria-hidden', 'true');
-      modalElement.removeAttribute('aria-modal');
-      modalElement.removeAttribute('role');
-    }
+  cerrarModal(modalId: string): void {
+  try {
+    const modalEl = document.getElementById(modalId);
+    if (!modalEl) return;
 
-    document.body.classList.remove('modal-open');
-    document.body.style.overflow = '';
-    document.body.style.paddingRight = '';
+    // Cerrar con Bootstrap
+    const modalInstance = Modal.getInstance(modalEl) || new Modal(modalEl);
+    modalInstance.hide();
 
-    const backdrops = document.getElementsByClassName('modal-backdrop');
-    while (backdrops[0]) {
-      backdrops[0].parentNode?.removeChild(backdrops[0]);
-    }
+    // Esperar al evento 'hidden' para limpiar el body
+    const onHidden = () => {
+      const otrosAbiertos = document.querySelectorAll('.modal.show').length;
+
+      if (otrosAbiertos === 0) {
+        document.body.classList.remove('modal-open');
+        document.body.style.removeProperty('overflow');
+        document.body.style.removeProperty('padding-right');
+      }
+
+      // Limpiar backdrops
+      document.querySelectorAll('.modal-backdrop').forEach((b) => b.remove());
+
+      // Quitar el listener
+      modalEl.removeEventListener('hidden.bs.modal', onHidden);
+    };
+
+    modalEl.addEventListener('hidden.bs.modal', onHidden);
+  } catch (error) {
+    console.error(`Error al cerrar el modal "${modalId}":`, error);
   }
+}
+
 
   goBack() {
     this.location.back();
@@ -264,7 +452,9 @@ export class AsistenciaComponent implements OnInit {
   // =======================
   @HostListener('document:click', ['$event'])
   handleClickOutside(event: Event) {
-    const clickedInside = (event.target as HTMLElement).closest('.custom-select');
+    const clickedInside = (event.target as HTMLElement).closest(
+      '.custom-select'
+    );
     if (!clickedInside) {
       this.showOptions = false;
     }

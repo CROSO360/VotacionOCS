@@ -7,95 +7,145 @@
      Contenedor principal
      =========================== -->
 <div class="container my-4">
-
-  <!-- Botón para regresar a la vista anterior -->
-  <button class="back-button" (click)="goBack()">&#8592;</button>
+  
 
   <!-- Título central de la sección -->
   <h2 class="text-center">Gestión de Miembros del OCS</h2>
 
+  <!-- Botón para regresar a la vista anterior -->
+  <app-boton-atras></app-boton-atras><br>
+
   <!-- ===========================
        Campo de búsqueda por nombre o cédula
        =========================== -->
-  <input
-    class="w-25 form-control"
-    type="text"
-    placeholder="Buscar por nombre o cédula"
-    [(ngModel)]="busqueda"
-    (input)="filtrarUsuarios()"
-  />
+
+  <div class="input-group w-50 mb-3">
+    <input
+      class="form-control w-50 mx-auto my-3 shadow-sm"
+      type="text"
+      placeholder="Buscar por nombre o cédula"
+      [(ngModel)]="busqueda"
+      (input)="filtrarUsuarios()"
+    />
+  </div>
+  
 
   <!-- ===========================
        Navegación por grupos de usuarios
        =========================== -->
-  <ul class="nav nav-tabs mt-3">
-    <li class="nav-item">
-      <a class="nav-link" (click)="cambiarGrupo(null)">Todos</a>
-    </li>
-    <li class="nav-item" *ngFor="let grupo of gruposUsuarios">
-      <a
-        class="nav-link capitalize-options"
-        (click)="cambiarGrupo(grupo)"
-      >
-        {{ grupo.nombre }}
-      </a>
-    </li>
-  </ul>
+  <!-- Filtro por grupo de usuario -->
+<ul class="nav nav-tabs mt-3">
+  <li class="nav-item">
+    <a
+      class="nav-link"
+      [ngClass]="{ active: grupoActual === null }"
+      (click)="cambiarGrupo(null)"
+    >
+      Todos
+    </a>
+  </li>
+  <li class="nav-item" *ngFor="let grupo of gruposUsuarios">
+    <a
+      class="nav-link text-capitalize"
+      [ngClass]="{ active: grupoActual?.id_grupo_usuario === grupo.id_grupo_usuario }"
+      (click)="cambiarGrupo(grupo)"
+    >
+      {{ grupo.nombre }}
+    </a>
+  </li>
+</ul>
+
 
   <!-- ===========================
        Lista de usuarios con opción de selección
        =========================== -->
-  <div class="list-group mt-3">
-    <!-- Checkbox para seleccionar todos -->
-    <div class="list-group-item">
-      <input
-        type="checkbox"
-        [(ngModel)]="todosSeleccionados"
-        (change)="toggleSeleccionarTodosUsuarios()"
-      />
-      Seleccionar todos
-    </div>
-
-    <!-- Usuarios filtrados -->
-    <div *ngFor="let usuario of usuariosFiltrados">
-      <div class="list-group-item">
-        <input
-          type="checkbox"
-          [(ngModel)]="usuario.seleccionado"
-          (change)="actualizarSeleccion(usuario)"
-        />
-        {{ usuario.cedula }} - {{ usuario.nombre }}
-      </div>
-    </div>
-
-    <!-- Mensaje cuando no hay resultados -->
-    <div *ngIf="usuariosFiltrados.length === 0" class="list-group-item">
-      No se encontraron usuarios.
-    </div>
+<!-- Lista de usuarios con opción de selección -->
+<div class="usuarios-grid mt-3">
+  <!-- Checkbox para seleccionar todos -->
+  <div class="list-group-item bg-light fw-semibold d-flex align-items-center col-span-3">
+    <input
+      type="checkbox"
+      class="form-check-input me-2"
+      [(ngModel)]="todosSeleccionados"
+      (change)="toggleSeleccionarTodosUsuarios()"
+    />
+    Seleccionar todos
   </div>
 
-  <!-- ===========================
-       Vista de usuarios seleccionados
-       =========================== -->
-  <div class="mt-3">
-    <h5>Miembros Seleccionados</h5>
-    <ul>
-      <li *ngFor="let usuario of usuariosSeleccionados">
-        <input
-          type="checkbox"
-          [(ngModel)]="usuario.seleccionado"
-          (change)="actualizarSeleccion(usuario)"
-        />
-        {{ usuario.cedula }} - {{ usuario.nombre }} ({{ usuario.grupoUsuario.nombre }})
-      </li>
-    </ul>
+  <!-- Usuarios filtrados -->
+  <div
+    *ngFor="let usuario of usuariosFiltrados"
+    class="list-group-item d-flex align-items-center"
+  >
+    <input
+      type="checkbox"
+      class="form-check-input me-2"
+      [(ngModel)]="usuario.seleccionado"
+      (change)="actualizarSeleccion(usuario)"
+    />
+    <span class="usuario-nombre">
+      {{ usuario.cedula }} - {{ usuario.nombre }}
+    </span>
   </div>
 
-  <!-- ===========================
-       Botones de acción
-       =========================== -->
-  <div class="mt-4">
-    <button class="btn btn-secondary my-3" (click)="goBack()">Cancelar</button>
-    <button class="btn btn-primary m-3" (click)="guardarMiembros()">Guardar</button>
+  <!-- Mensaje cuando no hay resultados -->
+  <div *ngIf="usuariosFiltrados.length === 0" class="list-group-item text-muted fst-italic col-span-3">
+    No se encontraron usuarios.
   </div>
 </div>
+
+
+<!-- ===========================
+     Vista de usuarios seleccionados
+     =========================== -->
+     <br>
+    
+<div class="mt-4">
+  <h5 class="fw-bold mb-3">Miembros Seleccionados</h5>
+
+  <div class="tags-container">
+    <div *ngFor="let usuario of usuariosSeleccionados" class="tag-item">
+      <input
+        type="checkbox"
+        class="form-check-input me-1"
+        [(ngModel)]="usuario.seleccionado"
+        (change)="actualizarSeleccion(usuario)"
+      />
+      <span class="tag-text">
+        {{ usuario.nombre }} ({{ usuario.grupoUsuario.nombre }})
+      </span>
+    </div>
+  </div>
+
+  <div *ngIf="usuariosSeleccionados.length === 0" class="text-muted fst-italic mt-2">
+    No hay miembros seleccionados.
+  </div>
+</div>
+
+
+<!-- ===========================
+     Botones de acción
+     =========================== -->
+<div class="d-flex gap-3 my-4">
+  <button
+    class="btn btn-secondary"
+    (click)="goBack()"
+    [disabled]="guardandoMiembros"
+  >
+    Cancelar
+  </button>
+
+  <button
+    class="btn btn-primary"
+    (click)="guardarMiembros()"
+    [disabled]="guardandoMiembros"
+  >
+    {{ guardandoMiembros ? 'Guardando...' : 'Guardar' }}
+  </button>
+</div>
+
+<br>
+
+</div>
+
+<app-footer></app-footer>

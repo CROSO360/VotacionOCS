@@ -13,7 +13,6 @@ import { environment } from '../../environments/environment';
   providedIn: 'root',
 })
 export class PuntoService {
-
   private baseURL = environment.baseURL; // URL base del backend, definida en environment.ts
 
   constructor(private http: HttpClient) {}
@@ -71,7 +70,7 @@ export class PuntoService {
 
   // =======================
   // Métodos POST (guardar, crear, eliminar)
-// =======================
+  // =======================
 
   /**
    * Guarda o actualiza un punto
@@ -106,11 +105,17 @@ export class PuntoService {
   }
 
   reconsideracion(id: number): Observable<any> {
-    return this.http.post<any>(`${this.baseURL}/punto/reconsideracion/${id}`, {});
+    return this.http.post<any>(
+      `${this.baseURL}/punto/reconsideracion/${id}`,
+      {}
+    );
   }
 
   aprobarReconsideracion(id: number): Observable<any> {
-    return this.http.post<any>(`${this.baseURL}/punto/reconsideracion/aprobar/${id}`, {});
+    return this.http.post<any>(
+      `${this.baseURL}/punto/reconsideracion/aprobar/${id}`,
+      {}
+    );
   }
 
   // =======================
@@ -122,7 +127,10 @@ export class PuntoService {
    * @param id ID del punto
    */
   calcularResultados(idPunto: number, idUsuario: number): Observable<any> {
-    return this.http.post<any>(`${this.baseURL}/punto/calcular-resultados/${idPunto}/${idUsuario}`, {});
+    return this.http.post<any>(
+      `${this.baseURL}/punto/calcular-resultados/${idPunto}/${idUsuario}`,
+      {}
+    );
   }
 
   /**
@@ -131,6 +139,10 @@ export class PuntoService {
    */
   calcularResultadosManual(data: any): Observable<any> {
     return this.http.post<any>(`${this.baseURL}/punto/resultado-manual`, data);
+  }
+
+  calcularResultadosHibrido(idPunto: number, data: any): Observable<any> {
+    return this.http.post<any>(`${this.baseURL}/punto/resultado-hibrido/${idPunto}`, data);
   }
 
   /**

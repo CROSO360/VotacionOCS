@@ -2,12 +2,10 @@
    Contenedor general con margen
    ======================= -->
 <div class="container my-5">
-
   <!-- =======================
        Tarjeta centrada de login
        ======================= -->
   <div class="card mx-auto" style="max-width: 400px">
-
     <!-- Encabezado de la tarjeta -->
     <div class="card-header text-center">
       Sistema de de administracion de sesiones - OCS
@@ -17,10 +15,8 @@
          Cuerpo del formulario de acceso
          ======================= -->
     <div class="card-body">
-
       <!-- Formulario reactivo vinculado con FormGroup -->
       <form [formGroup]="adminLoginForm" (ngSubmit)="onSubmit()">
-
         <!-- Campo de código de usuario -->
         <div class="form-group">
           <label for="codigo">Código de usuario:</label>
@@ -49,14 +45,28 @@
         <div *ngIf="errorMessage" class="error-message">
           {{ errorMessage }}
         </div>
-        <br>
+        <br />
 
         <!-- Botón de ingreso -->
-        <div class="form-group text-center">
-          <button type="submit" class="btn btn-dark">Ingresar</button>
+        <div class="form-group text-center mt-4">
+          <button
+            type="submit"
+            class="btn btn-dark d-inline-flex align-items-center justify-content-center px-4"
+            [disabled]="iniciandoSesion || adminLoginForm.invalid"
+          >
+            <ng-container *ngIf="!iniciandoSesion; else cargandoLogin">
+              <i class="bi bi-box-arrow-in-right me-2"></i>
+              Ingresar
+            </ng-container>
+            <ng-template #cargandoLogin>
+              <span class="spinner-border spinner-border-sm me-2"></span>
+              Iniciando...
+            </ng-template>
+          </button>
         </div>
-
       </form>
     </div>
   </div>
 </div>
+
+<app-footer></app-footer>

@@ -23,7 +23,7 @@ import {
 // =======================
 // Importaciones de Componentes
 // =======================
-import { BarraSuperiorComponent } from '../barra-superior/barra-superior.component';
+import { BarraSuperiorComponent } from '../components/barra-superior/barra-superior.component';
 
 // =======================
 // Importaciones de Interfaces
@@ -38,6 +38,8 @@ import { PuntoService } from '../services/punto.service';
 import { SesionService } from '../services/sesion.service';
 import { ToastrService } from 'ngx-toastr';
 
+import { Modal } from 'bootstrap'; // asegúrate que bootstrap está instalado
+
 // =======================
 // Importaciones Drag and Drop (CDK)
 // =======================
@@ -48,6 +50,8 @@ import {
   CdkDropList,
   CdkDrag,
 } from '@angular/cdk/drag-drop';
+import { BotonAtrasComponent } from '../components/boton-atras/boton-atras.component';
+import { FooterComponent } from "../components/footer/footer.component";
 
 @Component({
   selector: 'app-sesion',
@@ -58,12 +62,13 @@ import {
     ReactiveFormsModule,
     BarraSuperiorComponent,
     DragDropModule,
-  ],
+    BotonAtrasComponent,
+    FooterComponent
+],
   templateUrl: './sesion.component.html',
   styleUrl: './sesion.component.css',
 })
 export class SesionComponent implements OnInit {
-
   // =======================
   // Propiedades públicas
   // =======================
@@ -74,6 +79,13 @@ export class SesionComponent implements OnInit {
   scrollSpeed = 0;
   scrollInterval: any;
   dragActivo = false;
+
+  crearModalRef: any;
+
+  //flag
+
+  guardandoPunto = false;
+  bloqueandoReordenamiento = false;
 
   @ViewChild(CdkDropList) dropListRef!: CdkDropList<any>;
   @ViewChild(CdkDrag) dragRef!: CdkDrag<any>;
@@ -113,6 +125,10 @@ export class SesionComponent implements OnInit {
     this.idSesion = parseInt(this.route.snapshot.paramMap.get('id')!);
     this.getPuntos();
     this.getSesion();
+
+    const crearModalEl = document.getElementById('crearPuntoModal');
+
+    if (crearModalEl) this.crearModalRef = new Modal(crearModalEl);
   }
 
   // =======================
@@ -204,7 +220,17 @@ export class SesionComponent implements OnInit {
     });
   }
 
+  abrirCrearPunto() {
+    if (this.crearModalRef) {
+      this.crearModalRef.show();
+    }
+  }
+
   crearPunto() {
+    if (this.crearPuntoForm.invalid) return;
+
+    this.guardandoPunto = true;
+
     const puntoData: any = {
       idSesion: this.idSesion,
       nombre: this.crearPuntoForm.value.nombre,
@@ -216,10 +242,14 @@ export class SesionComponent implements OnInit {
       next: () => {
         this.toastrService.success('Punto creado con éxito.');
         this.getPuntos();
+
         this.cerrarModal('crearPuntoModal', this.crearPuntoForm);
+
+        this.guardandoPunto = false;
       },
       error: (error) => {
         this.toastrService.error('Error al crear el punto.', error);
+        this.guardandoPunto = false;
       },
     });
   }
@@ -240,15 +270,21 @@ export class SesionComponent implements OnInit {
     };
 
     moveItemInArray(this.puntos, event.previousIndex, event.currentIndex);
+    this.bloqueandoReordenamiento = true;
 
     this.puntoService.reordenarPuntos(data).subscribe({
       next: () => {
         this.toastrService.success('Punto reordenado correctamente');
-        this.puntos.forEach((punto, index) => punto.orden = index + 1);
+        this.puntos.forEach((punto, index) => (punto.orden = index + 1));
+        this.bloqueandoReordenamiento = false;
       },
       error: (error) => {
         moveItemInArray(this.puntos, event.currentIndex, event.previousIndex);
-        this.toastrService.error(error?.error?.message || 'Error al reordenar', 'Error');
+        this.toastrService.error(
+          error?.error?.message || 'Error al reordenar',
+          'Error'
+        );
+        this.bloqueandoReordenamiento = false;
       },
     });
   }
@@ -258,16 +294,26 @@ export class SesionComponent implements OnInit {
   // =======================
   @HostListener('document:mousemove', ['$event'])
   onMouseMove(event: MouseEvent) {
-    const container = document.querySelector('.points-container') as HTMLElement;
+    const container = document.querySelector(
+      '.points-container'
+    ) as HTMLElement;
     if (!container || !this.dragActivo) return;
 
     const rect = container.getBoundingClientRect();
     const scrollZone = 100;
 
     if (event.clientY < rect.top + scrollZone) {
-      this.startAutoScroll(container, -1, rect.top + scrollZone - event.clientY);
+      this.startAutoScroll(
+        container,
+        -1,
+        rect.top + scrollZone - event.clientY
+      );
     } else if (event.clientY > rect.bottom - scrollZone) {
-      this.startAutoScroll(container, 1, event.clientY - (rect.bottom - scrollZone));
+      this.startAutoScroll(
+        container,
+        1,
+        event.clientY - (rect.bottom - scrollZone)
+      );
     } else {
       this.stopAutoScroll();
     }
@@ -275,7 +321,11 @@ export class SesionComponent implements OnInit {
     this.actualizarPlaceholder();
   }
 
-  startAutoScroll(container: HTMLElement, direction: number, distanceToEdge: number) {
+  startAutoScroll(
+    container: HTMLElement,
+    direction: number,
+    distanceToEdge: number
+  ) {
     const maxSpeed = 20;
     this.scrollSpeed = Math.min(maxSpeed, 2 + distanceToEdge / 10);
 
@@ -321,22 +371,8 @@ export class SesionComponent implements OnInit {
   }
 
   cerrarModal(modalId: string, form: FormGroup) {
-    const modalElement = document.getElementById(modalId);
-    if (modalElement) {
-      modalElement.classList.remove('show');
-      modalElement.style.display = 'none';
-      modalElement.setAttribute('aria-hidden', 'true');
-      modalElement.removeAttribute('aria-modal');
-      modalElement.removeAttribute('role');
-    }
-
-    document.body.classList.remove('modal-open');
-    document.body.style.overflow = '';
-    document.body.style.paddingRight = '';
-
-    const backdrops = document.getElementsByClassName('modal-backdrop');
-    while (backdrops[0]) {
-      backdrops[0].parentNode?.removeChild(backdrops[0]);
+    if (modalId === 'crearPuntoModal' && this.crearModalRef) {
+      this.crearModalRef.hide();
     }
 
     form.reset();

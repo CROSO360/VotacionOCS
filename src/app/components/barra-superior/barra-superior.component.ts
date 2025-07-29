@@ -14,25 +14,30 @@ import { CookieService } from 'ngx-cookie-service';
   standalone: true,
   imports: [CommonModule],
   templateUrl: './barra-superior.component.html',
-  styleUrl: './barra-superior.component.css'
+  styleUrl: './barra-superior.component.css',
 })
 export class BarraSuperiorComponent {
-
   // =======================
   // Constructor
   // =======================
-  constructor(
-    private cookieService: CookieService,
-    private router: Router,
-  ) {}
+  constructor(private cookieService: CookieService, private router: Router) {}
+
+  cerrandoSesion = false;
 
   // =======================
   // Cerrar sesión del usuario
   // Elimina las cookies y redirige a la pantalla de login
   // =======================
   async logout() {
-    await this.cookieService.deleteAll('token');
-    await this.router.navigate(['/', 'login']);
+    this.cerrandoSesion = true;
+    try {
+      await this.cookieService.deleteAll('token');
+      await this.router.navigate(['/', 'login']);
+    } catch (error) {
+      console.error('Error al cerrar sesión:', error);
+    } finally {
+      this.cerrandoSesion = false;
+    }
   }
 
   // =======================

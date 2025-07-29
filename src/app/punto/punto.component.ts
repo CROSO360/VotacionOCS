@@ -1,7 +1,13 @@
 import { Component } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { CommonModule, Location } from '@angular/common';
-import { FormGroup, FormControl, Validators, FormsModule, ReactiveFormsModule } from '@angular/forms';
+import {
+  FormGroup,
+  FormControl,
+  Validators,
+  FormsModule,
+  ReactiveFormsModule,
+} from '@angular/forms';
 import { jwtDecode } from 'jwt-decode';
 
 // Servicios
@@ -19,11 +25,13 @@ import { IResolucion } from '../interfaces/IResolucion';
 import { IUsuario } from '../interfaces/IUsuario';
 
 // Componentes
-import { BarraSuperiorComponent } from '../barra-superior/barra-superior.component';
+import { BarraSuperiorComponent } from '../components/barra-superior/barra-superior.component';
 
 // Librerías externas
 import { ToastrService } from 'ngx-toastr';
 import { CookieService } from 'ngx-cookie-service';
+import { BotonAtrasComponent } from '../components/boton-atras/boton-atras.component';
+import { FooterComponent } from "../components/footer/footer.component";
 
 @Component({
   selector: 'app-punto',
@@ -33,12 +41,13 @@ import { CookieService } from 'ngx-cookie-service';
     ReactiveFormsModule,
     FormsModule,
     BarraSuperiorComponent,
-  ],
+    BotonAtrasComponent,
+    FooterComponent
+],
   templateUrl: './punto.component.html',
   styleUrl: './punto.component.css',
 })
 export class PuntoComponent {
-
   // =====================
   // Propiedades principales
   // =====================
@@ -52,13 +61,18 @@ export class PuntoComponent {
 
   payload: any = jwtDecode(this.cookieService.get('token'));
 
+  //flags
+  guardandoPunto = false;
+  guardandoResolucion = false;
+  eliminandoDocumento: Map<number, boolean> = new Map();
+
   // =====================
   // Formularios reactivos
   // =====================
   modificarPuntoForm = new FormGroup({
     nombre: new FormControl('', Validators.required),
     detalle: new FormControl('', Validators.required),
-    es_administrativa: new FormControl('')
+    es_administrativa: new FormControl(''),
   });
 
   resolucionForm = new FormGroup({
@@ -79,7 +93,7 @@ export class PuntoComponent {
     private route: ActivatedRoute,
     private location: Location,
     private toastrService: ToastrService,
-    private cookieService: CookieService,
+    private cookieService: CookieService
   ) {}
 
   // =====================
@@ -130,12 +144,14 @@ export class PuntoComponent {
       this.modificarPuntoForm.patchValue({
         nombre: this.punto.nombre,
         detalle: this.punto.detalle,
-        es_administrativa: this.punto.es_administrativa
+        es_administrativa: this.punto.es_administrativa,
       });
     });
   }
 
   editarPunto() {
+    this.guardandoPunto = true;
+
     const puntoData: any = {
       id_punto: this.puntoId,
       nombre: this.modificarPuntoForm.value.nombre,
@@ -143,23 +159,28 @@ export class PuntoComponent {
       es_administrativa: this.modificarPuntoForm.value.es_administrativa,
     };
 
-    this.puntoService.saveData(puntoData).subscribe(
-      (response) => {
-        console.log(response);
+    this.puntoService.saveData(puntoData).subscribe({
+      next: (response) => {
         this.toastrService.success('Punto actualizado con éxito.');
-        this.getPunto(); // Actualizar el punto
+        this.getPunto();
       },
-      (error) => {
-        console.error(error);
-        this.toastrService.error('Error al actualizar el punto.', error);
-      }
-    );
+      error: (error) => {
+        this.toastrService.error('Error al actualizar el punto.', error.error.message);
+        this.guardandoPunto = false;
+      },
+      complete: () => {
+        this.guardandoPunto = false;
+      },
+    });
   }
 
   formularioPuntoModificado(): boolean {
-    return this.modificarPuntoForm.value.nombre !== this.punto?.nombre ||
-           this.modificarPuntoForm.value.detalle !== this.punto?.detalle ||
-           this.modificarPuntoForm.value.es_administrativa !== this.punto?.es_administrativa;
+    return (
+      this.modificarPuntoForm.value.nombre !== this.punto?.nombre ||
+      this.modificarPuntoForm.value.detalle !== this.punto?.detalle ||
+      this.modificarPuntoForm.value.es_administrativa !==
+        this.punto?.es_administrativa
+    );
   }
 
   // =====================
@@ -168,9 +189,11 @@ export class PuntoComponent {
   getPuntoDocumentos() {
     const query = `punto.id_punto=${this.puntoId}`;
     const relations = ['documento'];
-    this.puntoDocumentoService.getAllDataBy(query, relations).subscribe((data) => {
-      this.puntoDocumentos = data;
-    });
+    this.puntoDocumentoService
+      .getAllDataBy(query, relations)
+      .subscribe((data) => {
+        this.puntoDocumentos = data;
+      });
   }
 
   abrirDocumento(documento: IDocumento) {
@@ -197,10 +220,21 @@ export class PuntoComponent {
     });
   }
 
-  eliminarDocumento(id: number) {
-    this.documentoService.eliminarDocumento(id).subscribe(() => {
-      this.toastrService.success('Documento eliminado correctamente');
-      this.getPuntoDocumentos();
+  eliminarDocumento(id: number): void {
+    this.eliminandoDocumento.set(id, true);
+
+    this.documentoService.eliminarDocumento(id).subscribe({
+      next: () => {
+        this.toastrService.success('Documento eliminado correctamente');
+        this.getPuntoDocumentos();
+      },
+      error: (err) => {
+        this.toastrService.error('No se pudo eliminar el documento', err.error.message);
+        this.eliminandoDocumento.set(id, false);
+      },
+      complete: () => {
+        this.eliminandoDocumento.set(id, false);
+      },
     });
   }
 
@@ -219,6 +253,8 @@ export class PuntoComponent {
   }
 
   crearResolucion() {
+    this.guardandoResolucion = true;
+
     const resolucionData: IResolucion = {
       punto: { id_punto: this.puntoId },
       nombre: this.resolucionForm.value.nombre!,
@@ -231,14 +267,20 @@ export class PuntoComponent {
         this.toastrService.success('Resolución creada con éxito.');
         this.getResolucion();
       },
-      error: () => {
-        this.toastrService.error('Error al crear la resolución.');
-      }
+      error: (err) => {
+        this.toastrService.error('Error al crear la resolución.', err.error.message);
+        this.guardandoResolucion = false;
+      },
+      complete: () => {
+        this.guardandoResolucion = false;
+      },
     });
   }
 
   editarResolucion() {
     if (!this.usuario?.id_usuario) return;
+
+    this.guardandoResolucion = true;
 
     const updateResolucionData = {
       id_punto: this.puntoId,
@@ -252,15 +294,21 @@ export class PuntoComponent {
         this.toastrService.success('Resolución actualizada con éxito.');
         this.getResolucion();
       },
-      error: () => {
-        this.toastrService.error('Error al actualizar la resolución.');
-      }
+      error: (err) => {
+        this.toastrService.error('Error al actualizar la resolución.', err.error.message);
+        this.guardandoResolucion = false;
+      },
+      complete: () => {
+        this.guardandoResolucion = false;
+      },
     });
   }
 
   formularioResolucionModificado(): boolean {
-    return this.resolucionForm.value.nombre !== this.resolucion?.nombre ||
-           this.resolucionForm.value.descripcion !== this.resolucion?.descripcion;
+    return (
+      this.resolucionForm.value.nombre !== this.resolucion?.nombre ||
+      this.resolucionForm.value.descripcion !== this.resolucion?.descripcion
+    );
   }
 
   // =====================

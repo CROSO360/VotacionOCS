@@ -8,8 +8,10 @@
    ======================= -->
 <div class="container my-5">
 
+  <h1 class="text-center">Secretaría General</h1><br>
+
   <!-- Mensaje de bienvenida personalizado -->
-  <h2 class="text-center">Bienvenido {{ payload.nombre }}</h2>
+  <h2 class="text-center">OCS - {{ payload.nombre }}</h2>
 
   <!-- Título de sección -->
   <h3 class="mt-4">Sesiones en curso</h3>
@@ -40,3 +42,5 @@
     <button class="btn btn-secondary" (click)="irAUsuarios()">Usuarios</button>
   </div>
 </div>
+
+<app-footer></app-footer>

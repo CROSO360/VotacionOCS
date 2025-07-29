@@ -76,12 +76,12 @@ export const routes: Routes = [
     component: VotacionComponent,
     canActivate: [userGuardGuard],
   },
-  {
+  /*{
     path: 'votantes/:idSesion/:idPunto',
     title: 'Votantes',
     component: VotantesComponent,
     canActivate: [userGuardGuard],
-  },
+  },*/
 
   // Usuarios
   {

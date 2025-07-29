@@ -1,38 +1,84 @@
 /* =======================
-   Estilo para opciones con capitalización automática
-   ======================= */
-.capitalize-options {
-  text-transform: capitalize;
-}
-
-/* =======================
-   Campo de búsqueda dentro del modal
-   - Centrado
-   - Con ancho máximo limitado
-   ======================= */
-.modal-body .form-control {
-  width: 100%;
-  max-width: 400px;
-  margin: auto;
-}
-
-/* =======================
-   Estilo base para los ítems de lista
-   - Alineación horizontal y vertical
-   - Separación visual con borde
-   ======================= */
+   Ítems en 3 columnas estilo tabla
+======================= */
 .list-group-item {
+  border: 1px solid #ddd;
+  border-radius: 0.25rem;
+  padding: 10px 15px;
+  background-color: #fff;
+}
+
+/* Badge más pequeño y alineado */
+.list-group-item .badge {
+  font-size: 0.75rem;
+  padding: 4px 8px;
+  white-space: nowrap;
+}
+
+/* Ajuste general de badge */
+.list-group-item .badge {
+  font-size: 0.75rem;
+  padding: 4px 8px;
+  white-space: nowrap;
+}
+
+/* Selector consistente y compacto */
+.list-group-item select.form-select {
+  width: auto;
+  min-width: 110px;
+}
+
+/* Nombre del usuario con espacio fijo y truncamiento si es muy largo */
+/* Nombre truncado */
+.asistencia-nombre {
+  min-width: 0;
+  flex-grow: 1;
+  margin-right: 0.75rem;
+  overflow: hidden;
+}
+
+/* Selector alineado */
+.asistencia-select {
+  min-width: 110px;
+  flex-shrink: 0;
+}
+
+
+
+/* Aumenta el ancho total del grid */
+.asistencia-grid {
+  max-width: 1200px; /* Ajusta el ancho máximo según sea necesario */
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Ítem de asistencia */
+.asistencia-item {
+  min-height: 64px;
+  border: 1px solid #ddd;
+  border-left: 5px solid transparent;
+  border-radius: 4px;
+  background-color: #fff;
+  padding: 10px 15px;
   display: flex;
   align-items: center;
-  justify-content: flex-start;
-  padding: 10px;
-  border-bottom: 1px solid #ddd;
+  justify-content: space-between;
+  flex-wrap: wrap;
 }
 
-/* =======================
-   Tamaño y espaciado del badge dentro del ítem
-   ======================= */
-.list-group-item .badge {
-  font-size: 0.8rem;
-  padding: 4px 8px;
+/* Borde azul para miembros */
+.asistencia-miembro {
+  border-left-color: #0d6efd !important; /* Bootstrap primary */
+}
+
+/* Borde gris para extras */
+.asistencia-extra {
+  border-left-color: #6c757d !important; /* Bootstrap secondary */
+}
+
+.cuadro-color {
+  width: 12px;
+  height: 12px;
+  display: inline-block;
+  border-radius: 2px;
 }

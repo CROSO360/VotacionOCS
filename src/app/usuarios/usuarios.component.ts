@@ -11,13 +11,15 @@ import {
   ReactiveFormsModule,
   Validators,
 } from '@angular/forms';
-import { BarraSuperiorComponent } from '../barra-superior/barra-superior.component';
+import { BarraSuperiorComponent } from '../components/barra-superior/barra-superior.component';
 import { UsuarioService } from '../services/usuario.service';
 import { GrupoUsuarioService } from '../services/grupoUsuario.service';
 import { ActivatedRoute, Router } from '@angular/router';
 import { IUsuario } from '../interfaces/IUsuario';
 import { ToastrService } from 'ngx-toastr';
-
+import { BotonAtrasComponent } from '../components/boton-atras/boton-atras.component';
+import { Modal } from 'bootstrap';
+import { FooterComponent } from '../components/footer/footer.component';
 
 // =====================
 // DECORADOR DE COMPONENTE
@@ -30,17 +32,17 @@ import { ToastrService } from 'ngx-toastr';
     ReactiveFormsModule,
     FormsModule,
     BarraSuperiorComponent,
+    BotonAtrasComponent,
+    FooterComponent,
   ],
   templateUrl: './usuarios.component.html',
   styleUrl: './usuarios.component.css',
 })
 
-
 // =====================
 // CLASE DEL COMPONENTE
 // =====================
 export class UsuariosComponent implements OnInit {
-
   // =====================
   // VARIABLES DE ESTADO
   // =====================
@@ -57,6 +59,12 @@ export class UsuariosComponent implements OnInit {
 
   codigoOriginal: string | null = null;
 
+  crearModalRef: any;
+  editarModalRef: any;
+
+  //flags
+  guardandoUsuario: boolean = false;
+  editandoUsuario = false;
 
   // =====================
   // CONSTRUCTOR
@@ -83,11 +91,11 @@ export class UsuariosComponent implements OnInit {
   });
 
   crearUsuarioForm = new FormGroup({
-    nombrex: new FormControl('', Validators.required),
-    codigox: new FormControl('', Validators.required),
-    cedulax: new FormControl('', Validators.required),
-    grupoUsuariox: new FormControl('', Validators.required),
-    usuarioReemplazox: new FormControl(null),
+    nombre: new FormControl('', Validators.required),
+    codigo: new FormControl('', Validators.required),
+    cedula: new FormControl('', Validators.required),
+    grupoUsuario: new FormControl('', Validators.required),
+    usuarioReemplazo: new FormControl(null),
   });
 
   // =====================
@@ -97,6 +105,12 @@ export class UsuariosComponent implements OnInit {
     this.cargarGruposUsuarios();
     this.cambiarGrupo(null);
     this.cargarUsuarios();
+
+    const crearModalEl = document.getElementById('crearUsuarioModal');
+    if (crearModalEl) this.crearModalRef = new Modal(crearModalEl);
+
+    const editarModalEl = document.getElementById('modalEditarUsuario');
+    if (editarModalEl) this.editarModalRef = new Modal(editarModalEl);
   }
 
   // =====================
@@ -113,9 +127,12 @@ export class UsuariosComponent implements OnInit {
     const query = `tipo=votante`;
     const relations = [`grupoUsuario`, `usuarioReemplazo`];
 
-    this.usuarioService.getAllDataBy(query, relations).subscribe((data: any) => {
+    this.usuarioService
+      this.usuarioService
+    .getAllDataBy(query, relations)
+    .subscribe((data: any) => {
       this.usuarios = data;
-      this.usuariosFiltrados = [...this.usuarios];
+      this.filtrarUsuarios(); // Aplica orden y filtros de inmediato
     });
   }
 
@@ -130,16 +147,25 @@ export class UsuariosComponent implements OnInit {
 
   filtrarUsuarios() {
     this.usuariosFiltrados = this.usuarios
-      .filter(
-        (usuario) =>
-          (!this.grupoActual ||
-            usuario.grupoUsuario.id_grupo_usuario === this.grupoActual.id_grupo_usuario) &&
-          (usuario.nombre!.toLowerCase().includes(this.busqueda.toLowerCase()) ||
-            usuario.cedula!.includes(this.busqueda))
-      )
+      .filter((usuario) => {
+        const coincideGrupo =
+          !this.grupoActual ||
+          usuario.grupoUsuario.id_grupo_usuario ===
+            this.grupoActual.id_grupo_usuario;
+
+        const termino = this.busqueda.toLowerCase();
+        const coincideBusqueda =
+          usuario.nombre?.toLowerCase().includes(termino) ||
+          usuario.cedula?.includes(this.busqueda);
+
+        return coincideGrupo && coincideBusqueda;
+      })
       .sort((a, b) => {
-        if (a.estado === b.estado) return a.nombre.localeCompare(b.nombre);
-        return a.estado ? -1 : 1; // true antes que false
+        // Ordenar primero por estado (true antes que false), luego por nombre alfabéticamente
+        if (a.estado === b.estado) {
+          return a.nombre.localeCompare(b.nombre);
+        }
+        return a.estado ? -1 : 1;
       });
   }
 
@@ -147,57 +173,68 @@ export class UsuariosComponent implements OnInit {
   // GESTIÓN DE FORMULARIO EDITAR
   // =====================
 
-revertirCodigo(formulario: FormGroup): void {
-  if (this.codigoOriginal) {
-    formulario.get('codigo')?.setValue(this.codigoOriginal);
-    formulario.get('codigo')?.markAsDirty();
-    this.toastrService.info('Código revertido al valor original.');
+  revertirCodigo(formulario: FormGroup): void {
+    if (this.codigoOriginal) {
+      formulario.get('codigo')?.setValue(this.codigoOriginal);
+      formulario.get('codigo')?.markAsDirty();
+      this.toastrService.info('Código revertido al valor original.');
+    }
   }
-}
 
+  abrirEditar(usuario: any): void {
+    const modalEstaVisible = document
+      .getElementById('modalEditarUsuario')
+      ?.classList.contains('show');
 
-  abrirEditar(usuario: any) {
-    if (this.ultimoUsuarioEditadoId === usuario.id_usuario) return;
+    if (this.ultimoUsuarioEditadoId === usuario.id_usuario && modalEstaVisible)
+      return;
     this.ultimoUsuarioEditadoId = usuario.id_usuario;
 
-    this.usuarioService.reemplazosDispobibles(usuario.id_usuario).subscribe((data: any) => {
-      this.reemplazosDisponibles = data.disponibles || [];
-      this.mensajeReemplazo = '';
+    this.modificarUsuarioForm.reset();
 
-      if (!data.reemplazo && !data.esReemplazoDe) {
+    this.usuarioService.reemplazosDispobibles(usuario.id_usuario).subscribe({
+      next: (data: any) => {
+        this.reemplazosDisponibles = data.disponibles || [];
+        this.mensajeReemplazo = '';
         this.codigoOriginal = usuario.codigo;
-        this.modificarUsuarioForm.setValue({
+
+        const usuarioBase = {
           idUsuario: usuario.id_usuario,
           nombre: usuario.nombre,
           codigo: usuario.codigo,
           cedula: usuario.cedula,
           grupoUsuario: usuario.grupoUsuario.id_grupo_usuario,
-          usuarioReemplazo: null,
           estado: usuario.estado,
-        });
-      } else if (data.reemplazo) {
-        this.codigoOriginal = usuario.codigo;
-        this.modificarUsuarioForm.setValue({
-          idUsuario: usuario.id_usuario,
-          nombre: usuario.nombre,
-          codigo: usuario.codigo,
-          cedula: usuario.cedula,
-          grupoUsuario: usuario.grupoUsuario.id_grupo_usuario,
-          usuarioReemplazo: usuario.usuarioReemplazo.id_usuario,
-          estado: usuario.estado,
-        });
-      } else if (data.esReemplazoDe) {
-        this.mensajeReemplazo = `Reemplazo de ${data.esReemplazoDe.cedula} - ${data.esReemplazoDe.nombre}`;
-        this.modificarUsuarioForm.setValue({
-          idUsuario: usuario.id_usuario,
-          nombre: usuario.nombre,
-          codigo: usuario.codigo,
-          cedula: usuario.cedula,
-          grupoUsuario: usuario.grupoUsuario.id_grupo_usuario,
-          usuarioReemplazo: null,
-          estado: usuario.estado,
-        });
-      }
+        };
+
+        if (data.reemplazo) {
+          this.modificarUsuarioForm.setValue({
+            ...usuarioBase,
+            usuarioReemplazo: usuario.usuarioReemplazo?.id_usuario ?? null,
+          });
+        } else if (data.esReemplazoDe) {
+          this.mensajeReemplazo = `Reemplazo de ${data.esReemplazoDe.cedula} - ${data.esReemplazoDe.nombre}`;
+          this.modificarUsuarioForm.setValue({
+            ...usuarioBase,
+            usuarioReemplazo: null,
+          });
+        } else {
+          this.modificarUsuarioForm.setValue({
+            ...usuarioBase,
+            usuarioReemplazo: null,
+          });
+        }
+
+        if (this.editarModalRef) {
+          this.editarModalRef.show();
+        }
+      },
+      error: (err) => {
+        console.error('Error al cargar reemplazos:', err);
+        this.toastrService.error(
+          'No se pudo cargar la información del usuario.'
+        );
+      },
     });
   }
 
@@ -207,7 +244,11 @@ revertirCodigo(formulario: FormGroup): void {
       this.modificarUsuarioForm.value.usuarioReemplazo == '0' ||
       this.modificarUsuarioForm.value.usuarioReemplazo == null
         ? null
-        : { id_usuario: parseInt(this.modificarUsuarioForm.value.usuarioReemplazo!) };
+        : {
+            id_usuario: parseInt(
+              this.modificarUsuarioForm.value.usuarioReemplazo!
+            ),
+          };
 
     const usuarioData: any = {
       id_usuario: idUsuario,
@@ -215,7 +256,9 @@ revertirCodigo(formulario: FormGroup): void {
       codigo: this.modificarUsuarioForm.value.codigo,
       cedula: this.modificarUsuarioForm.value.cedula,
       grupoUsuario: {
-        id_grupo_usuario: parseInt(this.modificarUsuarioForm.value.grupoUsuario!),
+        id_grupo_usuario: parseInt(
+          this.modificarUsuarioForm.value.grupoUsuario!
+        ),
       },
       usuarioReemplazo: usuarioReemplazoId,
       estado: this.modificarUsuarioForm.value.estado ?? true,
@@ -230,36 +273,46 @@ revertirCodigo(formulario: FormGroup): void {
           const query = `id_usuario=${idUsuario}`;
           const relations = ['grupoUsuario', 'usuarioReemplazo'];
 
-          this.usuarioService.getDataBy(query, relations).subscribe((usuarioActualizado: any) => {
-            if (!usuarioActualizado?.id_usuario) return;
+          this.usuarioService
+            .getDataBy(query, relations)
+            .subscribe((usuarioActualizado: any) => {
+              if (!usuarioActualizado?.id_usuario) return;
 
-            this.usuarioService
-              .reemplazosDispobibles(usuarioActualizado.id_usuario)
-              .subscribe((data: any) => {
-                this.reemplazosDisponibles = data.disponibles || [];
-                this.mensajeReemplazo = data.esReemplazoDe
-                  ? `Reemplazo de ${data.esReemplazoDe.cedula} - ${data.esReemplazoDe.nombre}`
-                  : '';
+              this.usuarioService
+                .reemplazosDispobibles(usuarioActualizado.id_usuario)
+                .subscribe((data: any) => {
+                  this.reemplazosDisponibles = data.disponibles || [];
+                  this.mensajeReemplazo = data.esReemplazoDe
+                    ? `Reemplazo de ${data.esReemplazoDe.cedula} - ${data.esReemplazoDe.nombre}`
+                    : '';
+                });
+
+              this.modificarUsuarioForm.patchValue({
+                idUsuario: usuarioActualizado.id_usuario,
+                nombre: usuarioActualizado.nombre,
+                codigo: usuarioActualizado.codigo,
+                cedula: usuarioActualizado.cedula,
+                grupoUsuario: usuarioActualizado.grupoUsuario.id_grupo_usuario,
+                usuarioReemplazo: usuarioActualizado.usuarioReemplazo
+                  ? usuarioActualizado.usuarioReemplazo.id_usuario
+                  : null,
+                estado: usuarioActualizado.estado ?? true,
               });
-
-            this.modificarUsuarioForm.patchValue({
-              idUsuario: usuarioActualizado.id_usuario,
-              nombre: usuarioActualizado.nombre,
-              codigo: usuarioActualizado.codigo,
-              cedula: usuarioActualizado.cedula,
-              grupoUsuario: usuarioActualizado.grupoUsuario.id_grupo_usuario,
-              usuarioReemplazo: usuarioActualizado.usuarioReemplazo
-                ? usuarioActualizado.usuarioReemplazo.id_usuario
-                : null,
-              estado: usuarioActualizado.estado ?? true,
             });
-          });
         }
 
-        this.cerrarModal('exampleModal', this.modificarUsuarioForm);
+        if (this.editarModalRef) this.editarModalRef.hide();
+        this.modificarUsuarioForm.reset();
+        this.reemplazosDisponibles = [];
+        this.mensajeReemplazo = '';
+        this.codigoOriginal = null;
+        this.ultimoUsuarioEditadoId = null;
       },
       (error) => {
-        this.toastrService.error(error.error.message,'Error al actualizar el usuario.');
+        this.toastrService.error(
+          error.error.message,
+          'Error al actualizar el usuario.'
+        );
       }
     );
   }
@@ -270,11 +323,11 @@ revertirCodigo(formulario: FormGroup): void {
 
   crearUsuario() {
     const usuarioData: any = {
-      nombre: this.crearUsuarioForm.value.nombrex,
-      codigo: this.crearUsuarioForm.value.codigox,
-      cedula: this.crearUsuarioForm.value.cedulax,
+      nombre: this.crearUsuarioForm.value.nombre,
+      codigo: this.crearUsuarioForm.value.codigo,
+      cedula: this.crearUsuarioForm.value.cedula,
       grupoUsuario: {
-        id_grupo_usuario: parseInt(this.crearUsuarioForm.value.grupoUsuariox!),
+        id_grupo_usuario: parseInt(this.crearUsuarioForm.value.grupoUsuario!),
       },
       usuarioReemplazo: null,
       tipo: 'votante',
@@ -287,55 +340,53 @@ revertirCodigo(formulario: FormGroup): void {
         this.cerrarModal('crearUsuarioModal', this.crearUsuarioForm);
       },
       (error) => {
-        this.toastrService.error(error.error.message, 'Error al crear el usuario.');
+        this.toastrService.error(
+          error.error.message,
+          'Error al crear el usuario.'
+        );
       }
     );
   }
 
   generarCodigoUsuario(formulario: FormGroup): void {
-  this.usuarioService.generarCodigo().subscribe({
-    next: (res) => {
-      const campoCodigo = formulario.get('codigox') || formulario.get('codigo');
+    this.usuarioService.generarCodigo().subscribe({
+      next: (res) => {
+        const campoCodigo =
+          formulario.get('codigox') || formulario.get('codigo');
 
-      if (campoCodigo) {
-        campoCodigo.setValue(res.codigo);
-        campoCodigo.markAsDirty();
-      } else {
-        this.toastrService.warning('No se encontró el campo de código en el formulario.');
-      }
-    },
-    error: () => {
-      this.toastrService.error('Error al generar el código del usuario.');
-    }
-  });
-}
+        if (campoCodigo) {
+          campoCodigo.setValue(res.codigo);
+          campoCodigo.markAsDirty();
+        } else {
+          this.toastrService.warning(
+            'No se encontró el campo de código en el formulario.'
+          );
+        }
+      },
+      error: () => {
+        this.toastrService.error('Error al generar el código del usuario.');
+      },
+    });
+  }
 
   // =====================
   // UTILIDADES
   // =====================
 
   cerrarModal(modalId: string, form: FormGroup) {
-    const modalElement = document.getElementById(modalId);
-    if (modalElement) {
-      modalElement.classList.remove('show');
-      modalElement.style.display = 'none';
-      modalElement.setAttribute('aria-hidden', 'true');
-      modalElement.removeAttribute('aria-modal');
-      modalElement.removeAttribute('role');
+    if (modalId === 'crearUsuarioModal' && this.crearModalRef) {
+      this.crearModalRef.hide();
     }
 
-    document.body.classList.remove('modal-open');
-    document.body.style.overflow = '';
-    document.body.style.paddingRight = '';
-
-    const backdrops = document.getElementsByClassName('modal-backdrop');
-    while (backdrops[0]) {
-      backdrops[0].parentNode?.removeChild(backdrops[0]);
+    if (modalId === 'modalEditarUsuario' && this.editarModalRef) {
+      this.editarModalRef.hide();
     }
 
     form.reset();
     this.reemplazosDisponibles = [];
     this.mensajeReemplazo = '';
+    this.codigoOriginal = null;
+    this.ultimoUsuarioEditadoId = null;
   }
 
   goBack() {

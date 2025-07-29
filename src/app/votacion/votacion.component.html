@@ -2,10 +2,11 @@
 
 <div class="container my-5">
   <!-- Botón para regresar al dashboard -->
-  <button class="back-button" (click)="goBack()">←</button>
 
   <!-- Título de la página -->
   <h2 class="text-center">{{ sesion?.nombre }}</h2>
+
+  <app-boton-atras></app-boton-atras><br /><br />
 
   <!-- Mostrar solo si fase = pendiente -->
   <div *ngIf="sesion?.fase === 'pendiente'" class="text-center my-4">
@@ -31,15 +32,23 @@
       {{ punto.detalle }}
     </p>
     <button
-      class="btn btn-secondary mb-3"
+      class="btn btn-secondary mb-3 d-flex align-items-center"
+      [disabled]="cambiandoEstadoPunto"
       (click)="cambiarEstadoPunto(punto)"
       *ngIf="
-        punto.id_punto == puntoSeleccionado.id_punto &&
-        sesion?.estado == true &&
+        punto.id_punto === puntoSeleccionado.id_punto &&
+        sesion?.estado === true &&
         sesion?.fase === 'activa'
       "
     >
-      {{ punto.estado ? "Deshabilitar punto" : "Habilitar punto" }}
+      <ng-container *ngIf="!cambiandoEstadoPunto; else cargandoEstado">
+        <i class="bi bi-toggle-on me-2"></i>
+        {{ punto.estado ? "Deshabilitar punto" : "Habilitar punto" }}
+      </ng-container>
+      <ng-template #cargandoEstado>
+        <span class="spinner-border spinner-border-sm me-2"></span>
+        Procesando...
+      </ng-template>
     </button>
   </div>
 
@@ -84,74 +93,52 @@
 
   <!-- Contenedor con Scroll para los puntos usuarios -->
   <div class="points-container">
-    <div class="grid-container">
-      <!-- Lista de puntoUsuarios -->
-      <div class="grid-item" *ngFor="let puntoUsuario of puntoUsuarios">
-        <div
-          [id]="puntoUsuario.id_punto_usuario"
-          class="square"
-          [ngClass]="getClassForPuntoUsuario(puntoUsuario)"
-        >
-          <!-- Dropdown de opciones -->
+    <div class="grid-grupos">
+      <div *ngFor="let grupo of agrupadosPorGrupo" class="grupo-block">
+        <!-- Encabezado del grupo -->
+        <div class="grupo-titulo">
+          {{ getNombreGrupoFormateado(grupo.grupo) }}
+        </div>
+
+        <!-- Tarjetas de usuarios del grupo -->
+        <div class="grupo-grid">
           <div
-            class="custom-dropdown"
-            *ngIf="sesion?.estado === true && puntoUsuario.estado !== false"
+            class="square d-flex align-items-center justify-content-between"
+            *ngFor="let puntoUsuario of grupo.usuarios"
+            [id]="puntoUsuario.id_punto_usuario"
+            [ngClass]="getClassForPuntoUsuario(puntoUsuario)"
           >
-            <button
-              class="custom-dropdown-toggle"
-              (click)="toggleDropdownxd(puntoUsuario.id_punto_usuario, $event)"
-            >
-              &#x22EE;
-            </button>
-            <ul
-              *ngIf="activeDropdown === puntoUsuario.id_punto_usuario"
-              class="custom-dropdown-menu"
-            >
-              <li *ngIf="sesion?.fase === 'activa'">
-                <a
-                  class="custom-dropdown-item"
-                  data-bs-toggle="modal"
-                  data-bs-target="#votoManualModal"
-                  (click)="usuarioVotoManual(puntoUsuario.usuario.id_usuario)"
+            <!-- Nombre -->
+            <div class="fw-semibold">{{ getNombreUsuario(puntoUsuario) }}</div>
+            <div *ngIf="!puntoUsuario.es_principal" class="reemplazo-info">
+              Reemplazo de {{ puntoUsuario.usuario?.nombre }}
+            </div>
+
+            <!-- Botón Razonado + Dropdown -->
+            <div class="d-flex align-items-center gap-3">
+              <button
+                class="btn btn-secondary btn-sm btn-razonado"
+                [ngClass]="{
+                  noRazonado: puntoUsuario.es_razonado === false,
+                  razonado: puntoUsuario.es_razonado === true
+                }"
+              >
+                Razonado
+              </button>
+
+              <div
+                class="custom-dropdown"
+                *ngIf="sesion?.estado === true && puntoUsuario.estado !== false"
+              >
+                <button
+                  *ngIf="!puntoSeleccionado.resultado"
+                  class="custom-dropdown-toggle btn btn-outline-dark btn-sm"
+                  (click)="abrirVotoManual(puntoUsuario.usuario.id_usuario)"
                 >
-                  Voto manual
-                </a>
-              </li>
-              <!--li>
-                <a
-                  class="custom-dropdown-item"
-                  (click)="reemplazo(puntoUsuario)"
-                >
-                  {{ puntoUsuario.es_principal ? "Reemplazo" : "Principal" }}
-                </a>
-              </li -->
-            </ul>
-          </div>
-
-          <!-- Nombre del usuario o reemplazo -->
-          <div class="point-name">{{ getNombreUsuario(puntoUsuario) }}</div>
-
-          <!-- Info adicional si es reemplazo -->
-          <div *ngIf="!puntoUsuario.es_principal" class="point-name">
-            (Reemplazo de {{ puntoUsuario.usuario?.nombre }})
-          </div>
-
-          <!-- Info del grupo -->
-          <div *ngIf="puntoUsuario.es_principal" class="point-name">
-            Representante {{ puntoUsuario.usuario?.grupoUsuario?.nombre }}
-          </div>
-
-          <!-- Botón Razonado -->
-          <div class="btn-container">
-            <button
-              class="btn btn-secondary"
-              [ngClass]="{
-                noRazonado: puntoUsuario.es_razonado === false,
-                razonado: puntoUsuario.es_razonado === true
-              }"
-            >
-              Razonado
-            </button>
+                  &#x22EE;
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -165,8 +152,7 @@
   >
     <button
       class="btn btn-primary"
-      data-bs-toggle="modal"
-      data-bs-target="#modalResultados"
+      (click)="abrirModalResultados('normal')"
       *ngIf="resolucionActual && !puntoSeleccionado.resultado"
     >
       Calcular resultado
@@ -174,9 +160,8 @@
 
     <button
       class="btn btn-primary"
-      data-bs-toggle="modal"
-      data-bs-target="#modalResultados"
-      *ngIf="resolucionActual && puntoSeleccionado.resultado==='empate'"
+      (click)="abrirModalResultados('dirimente')"
+      *ngIf="resolucionActual && puntoSeleccionado.resultado === 'empate'"
     >
       Calcular resultado dirimente
     </button>
@@ -184,19 +169,37 @@
     <!-- Botón para solicitar reconsideración -->
     <button
       *ngIf="mostrarBotonSolicitarReconsideracion(puntoSeleccionado)"
-      class="btn btn-warning me-2"
+      class="btn btn-warning me-2 d-flex align-items-center"
+      [disabled]="solicitandoReconsideracion"
       (click)="solicitarReconsideracion()"
     >
-      Solicitar reconsideración
+      <ng-container
+        *ngIf="!solicitandoReconsideracion; else cargandoReconsideracion"
+      >
+        <i class="bi bi-arrow-counterclockwise me-2"></i>
+        Solicitar reconsideración
+      </ng-container>
+      <ng-template #cargandoReconsideracion>
+        <span class="spinner-border spinner-border-sm me-2"></span>
+        Enviando...
+      </ng-template>
     </button>
 
     <!-- Botón para aprobar reconsideración (crear copia del punto original) -->
     <button
-      *ngIf="mostrarBotonAprobarReconsideracion(puntoSeleccionado)"
-      class="btn btn-success"
+      class="btn btn-success d-flex align-items-center"
+      [disabled]="cargandoReconsideracion"
       (click)="aprobarReconsideracion()"
+      *ngIf="mostrarBotonAprobarReconsideracion(puntoSeleccionado)"
     >
-      Crear nueva votación (reconsiderado)
+      <ng-container *ngIf="!cargandoReconsideracion; else cargando">
+        <i class="bi bi-arrow-repeat me-2"></i>
+        Crear nueva votación (reconsiderado)
+      </ng-container>
+      <ng-template #cargando>
+        <span class="spinner-border spinner-border-sm me-2"></span>
+        Procesando...
+      </ng-template>
     </button>
 
     <!-- Mensaje de advertencia -->
@@ -299,18 +302,30 @@
         </button>
         <button
           type="button"
-          class="btn btn-secondary"
+          class="btn btn-secondary d-flex align-items-center"
           data-bs-dismiss="modal"
           (click)="finalizarSesion(sesion!)"
+          [disabled]="guardandoFinalizacion"
         >
-          Finalizar sesión
+          <ng-container
+            *ngIf="!guardandoFinalizacion; else cargandoFinalizacion"
+          >
+            <i class="bi bi-x-circle me-2"></i>
+            Finalizar sesión
+          </ng-container>
+          <ng-template #cargandoFinalizacion>
+            <span class="spinner-border spinner-border-sm me-2"></span>
+            Procesando...
+          </ng-template>
         </button>
       </div>
     </div>
   </div>
 </div>
 
-<!-- Modal para Voto manual -->
+<!-- =============================== -->
+<!-- Modal: Voto Manual -->
+<!-- =============================== -->
 <div
   #votoManualModal
   class="modal fade"
@@ -321,6 +336,7 @@
 >
   <div class="modal-dialog">
     <div class="modal-content">
+      <!-- Encabezado -->
       <div class="modal-header">
         <h1 class="modal-title fs-5" id="votoManualModalLabel">
           Voto manual para {{ usuarioActual?.nombre }}
@@ -329,167 +345,98 @@
           type="button"
           class="btn-close"
           data-bs-dismiss="modal"
-          aria-label="Close"
+          aria-label="Cerrar"
         ></button>
       </div>
-      <div class="modal-body">
-        <form [formGroup]="votoManualForm" (ngSubmit)="votoManual()">
-          <div class="form-group">
-            <div class="my-3">
-              <label class="form-label">Opción:</label>
-              <div class="form-check">
-                <input
-                  class="form-check-input"
-                  formControlName="opcion"
-                  type="radio"
-                  value="afavor"
-                  id="afavor"
-                />
-                <label class="form-check-label" for="afavor">A Favor</label>
-              </div>
-              <div class="form-check">
-                <input
-                  class="form-check-input"
-                  formControlName="opcion"
-                  type="radio"
-                  value="encontra"
-                  id="encontra"
-                />
-                <label class="form-check-label" for="encontra">En Contra</label>
-              </div>
-              <div class="form-check">
-                <input
-                  class="form-check-input"
-                  formControlName="opcion"
-                  type="radio"
-                  value="abstencion"
-                  id="abstencion"
-                />
-                <label class="form-check-label" for="abstencion"
-                  >Abstención</label
-                >
-              </div>
-            </div>
 
-            <div class="mb-3 form-check">
+      <!-- Cuerpo -->
+      <div class="modal-body">
+        <form
+          [formGroup]="votoManualForm"
+          (ngSubmit)="votoManual(usuarioActual.id_usuario)"
+        >
+          <!-- Opciones de voto -->
+          <div class="form-group my-3">
+            <label class="form-label">Opción:</label>
+            <div class="form-check">
               <input
-                type="checkbox"
-                formControlName="razonado"
                 class="form-check-input"
-                id="votoRazonado"
+                formControlName="opcion"
+                type="radio"
+                value="afavor"
+                id="afavor"
               />
-              <label class="form-check-label" for="votoRazonado"
-                >Voto Razonado</label
+              <label class="form-check-label" for="afavor">A Favor</label>
+            </div>
+            <div class="form-check">
+              <input
+                class="form-check-input"
+                formControlName="opcion"
+                type="radio"
+                value="encontra"
+                id="encontra"
+              />
+              <label class="form-check-label" for="encontra">En Contra</label>
+            </div>
+            <div class="form-check">
+              <input
+                class="form-check-input"
+                formControlName="opcion"
+                type="radio"
+                value="abstencion"
+                id="abstencion"
+              />
+              <label class="form-check-label" for="abstencion"
+                >Abstención</label
               >
             </div>
-
-            <!--div class="my-3">
-              <label for="selectPunto" class="form-label">Punto:</label>
-              <div class="custom-select">
-                <div class="selected-items">
-                  <span
-                    *ngFor="let puntoSeleccionado of puntosSeleccionados"
-                    class="selected-item"
-                  >
-                    {{ puntoSeleccionado.nombre }}
-                    <span
-                      class="close"
-                      (click)="removeSelectedOption(puntoSeleccionado, $event)"
-                      >x</span
-                    >
-                  </span>
-                </div>
-                <div class="select-arrow" (click)="showOptions = !showOptions">
-                  <span class="arrow-icon">{{ showOptions ? "▲" : "▼" }}</span>
-                </div>
-                <div class="options" *ngIf="showOptions">
-                  
-                  <div class="option" (click)="toggleSelectAllPuntos()">
-                    Seleccionar todos
-                    <span class="checkmark" *ngIf="allPuntosSelected">✔</span>
-                  </div>
-
-                  <div
-                    *ngFor="let option of puntos"
-                    (click)="toggleOption(option)"
-                    class="option"
-                  >
-                    {{ option.nombre }}
-
-                    <span
-                      class="checkmark"
-                      *ngIf="puntosSeleccionados.includes(option)"
-                      >✔</span
-                    >
-                  </div>
-                </div>
-              </div>
-            </div -->
           </div>
-          <button
-            type="submit"
-            class="btn btn-primary"
-            [disabled]="votoManualForm.invalid"
-          >
-            Guardar voto
-          </button>
+
+          <!-- Checkbox razonado -->
+          <div class="mb-3 form-check">
+            <input
+              type="checkbox"
+              formControlName="razonado"
+              class="form-check-input"
+              id="votoRazonado"
+            />
+            <label class="form-check-label" for="votoRazonado"
+              >Voto Razonado</label
+            >
+          </div>
+
+          <!-- Footer -->
+          <div class="modal-footer px-0 mt-4">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              (click)="resetForm()"
+              data-bs-dismiss="modal"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              class="btn btn-primary d-flex align-items-center"
+              [disabled]="votoManualForm.invalid || guardandoVotoManual"
+            >
+              <ng-container
+                *ngIf="!guardandoVotoManual; else cargandoVotoManual"
+              >
+                <i class="bi bi-check-circle me-2"></i>
+                Guardar voto
+              </ng-container>
+              <ng-template #cargandoVotoManual>
+                <span class="spinner-border spinner-border-sm me-2"></span>
+                Guardando...
+              </ng-template>
+            </button>
+          </div>
         </form>
-      </div>
-      <div class="modal-footer">
-        <button
-          type="button"
-          class="btn btn-secondary"
-          (click)="resetForm()"
-          data-bs-dismiss="modal"
-        >
-          Cancelar
-        </button>
       </div>
     </div>
   </div>
 </div>
-
-<!-- Modal de confirmación para generar votos -->
-<!--div
-  class="modal fade"
-  id="modalConfirmarGenerar"
-  tabindex="-1"
-  aria-labelledby="modalConfirmarGenerarLabel"
-  aria-hidden="true"
->
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h1 class="modal-title fs-5" id="modalConfirmarGenerarLabel">
-          Confirmación
-        </h1>
-        <button
-          type="button"
-          class="btn-close"
-          data-bs-dismiss="modal"
-          aria-label="Close"
-        ></button>
-      </div>
-      <div class="modal-body">
-        ¿Desea generar los votos para esta sesión? Si ya se han generado
-        previamente, serán eliminados y reemplazados.
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-          Cancelar
-        </button>
-        <button
-          type="button"
-          class="btn btn-primary"
-          (click)="generarVotos()"
-          data-bs-dismiss="modal"
-        >
-          Confirmar
-        </button>
-      </div>
-    </div>
-  </div>
-</div-->
 
 <!-- Modal de confirmación para iniciar la sesion -->
 <div
@@ -519,11 +466,18 @@
         </button>
         <button
           type="button"
-          class="btn btn-primary"
-          data-bs-dismiss="modal"
+          class="btn btn-primary d-flex align-items-center"
           (click)="iniciarSesion(sesion)"
+          [disabled]="iniciandoSesion"
         >
-          Confirmar
+          <ng-container *ngIf="!iniciandoSesion; else cargandoInicio">
+            <i class="bi bi-play-circle me-2"></i>
+            Confirmar
+          </ng-container>
+          <ng-template #cargandoInicio>
+            <span class="spinner-border spinner-border-sm me-2"></span>
+            Iniciando...
+          </ng-template>
         </button>
       </div>
     </div>
@@ -538,7 +492,7 @@
   aria-labelledby="modalNominaLabel"
   aria-hidden="true"
 >
-  <div class="modal-dialog modal-lg">
+  <div class="modal-dialog modal-xl">
     <div class="modal-content">
       <div class="modal-header">
         <h1 class="modal-title fs-5" id="modalNominaLabel">
@@ -553,58 +507,156 @@
       </div>
       <div class="modal-body">
         <div *ngIf="nomina.length > 0">
-          <ul class="list-group mb-4">
-            <li
-              *ngFor="let asistencia of nomina"
-              class="list-group-item d-flex justify-content-between align-items-center flex-wrap"
-            >
-              <div class="d-flex align-items-center flex-wrap gap-2">
-                <span class="fw-semibold me-3">{{
-                  asistencia.usuario?.nombre
-                }}</span>
-                <select
-                  class="form-select form-select-sm custom-select-width"
-                  [(ngModel)]="asistencia.tipo_asistencia"
-                  [ngModelOptions]="{ standalone: true }"
-                  [disabled]="sesion?.estado === false"
-                >
-                  <option [ngValue]="null">Ninguno</option>
-                  <option value="presencial">Presencial</option>
-                  <option value="remoto">Remoto</option>
-                  <option value="ausente">Ausente</option>
-                </select>
+          <!-- Leyenda de colores -->
+          <div class="d-flex align-items-center gap-3 mb-3 flex-wrap">
+            <div class="d-flex align-items-center gap-1">
+              <span class="cuadro-color bg-primary"></span>
+              <small class="text-muted">Miembros</small>
+            </div>
+            <div class="d-flex align-items-center gap-1">
+              <span class="cuadro-color bg-secondary"></span>
+              <small class="text-muted">Extras</small>
+            </div>
+          </div>
 
-                <!-- Botón de cambio de rol -->
-                <button
-                  class="btn btn-outline-secondary btn-sm"
-                  *ngIf="
-                    esMiembroOCS(asistencia.usuario.id_usuario) &&
-                    sesion?.estado === true &&
-                    sesion?.fase === 'activa'
-                  "
-                  (click)="
-                    cambiarPrincipalAlternoNomina(asistencia.usuario.id_usuario)
-                  "
-                >
-                  Cambiar Principal/Alterno
-                </button>
-              </div>
+          <!--div class="input-group w-50 mb-3">
+            <input
+              class="form-control w-50 mx-auto my-3 shadow-sm"
+              type="text"
+              placeholder="Buscar por nombre o cédula"
+              [(ngModel)]="busqueda"
+              (input)="filtrarAsistencias()"
+            />
+          </div-->
 
-              <span
-                class="badge"
-                [ngClass]="{
-                  'bg-primary': esMiembroOCS(asistencia.usuario.id_usuario),
-                  'bg-secondary': !esMiembroOCS(asistencia.usuario.id_usuario)
-                }"
+          <!-- Barra de búsqueda -->
+          <div class="input-group w-100 mb-3">
+            <input
+              type="text"
+              class="form-control shadow-sm"
+              placeholder="Buscar por nombre"
+              [(ngModel)]="busquedaNomina"
+              (input)="filtrarAsistenciasNomina()"
+            />
+          </div>
+
+          <!-- Filtro por tipo de asistencia -->
+          <ul class="nav nav-pills mb-3">
+            <li class="nav-item">
+              <a
+                class="nav-link"
+                [class.active]="filtroAsistencia === 'todos'"
+                (click)="cambiarFiltro('todos')"
               >
-                {{
-                  esMiembroOCS(asistencia.usuario.id_usuario)
-                    ? "Miembro"
-                    : "Extra"
-                }}
-              </span>
+                Todos
+              </a>
+            </li>
+            <li class="nav-item">
+              <a
+                class="nav-link"
+                [class.active]="filtroAsistencia === 'presente'"
+                (click)="cambiarFiltro('presente')"
+              >
+                Presentes
+              </a>
+            </li>
+            <li class="nav-item">
+              <a
+                class="nav-link"
+                [class.active]="filtroAsistencia === 'ausente'"
+                (click)="cambiarFiltro('ausente')"
+              >
+                Ausentes
+              </a>
             </li>
           </ul>
+
+          <!-- Grid de 3 columnas -->
+          <div class="row gy-4">
+            <div
+              class="col-12 col-md-6 col-lg-4"
+              *ngFor="let grupo of agrupadosPorGrupoNomina"
+            >
+              <!-- Panel del grupo -->
+              <div class="p-2 border rounded shadow-sm h-100">
+                <!-- Título del grupo -->
+                <h6 class="mb-3 border-start border-3 ps-2 text-primary">
+                  {{ getNombreGrupoFormateado(grupo.grupo) }}
+                </h6>
+
+                <!-- Lista de asistencias -->
+                <div
+                  *ngFor="let asistencia of grupo.asistencias"
+                  class="asistencia-item mb-2"
+                  [ngClass]="{
+                    'asistencia-miembro': esMiembroOCS(
+                      asistencia.usuario.id_usuario
+                    ),
+                    'asistencia-extra': !esMiembroOCS(
+                      asistencia.usuario.id_usuario
+                    )
+                  }"
+                >
+                  <!-- Izquierda: Nombre y selector -->
+                  <div class="d-flex flex-column flex-grow-1 me-3">
+                    <span class="fw-semibold">{{
+                      asistencia.usuario?.nombre
+                    }}</span>
+                    <select
+                      class="form-select form-select-sm mt-1"
+                      [(ngModel)]="asistencia.tipo_asistencia"
+                      [ngModelOptions]="{ standalone: true }"
+                      [disabled]="sesion?.estado === false"
+                    >
+                      <option [ngValue]="null" disabled selected hidden>
+                        Ninguno
+                      </option>
+                      <option value="presente">Presente</option>
+                      <option value="ausente">Ausente</option>
+                    </select>
+                  </div>
+
+                  <!-- Derecha: Botón "Cambiar" -->
+                  <div
+                    *ngIf="
+                      esMiembroOCS(asistencia.usuario.id_usuario) &&
+                      sesion?.estado &&
+                      sesion?.fase === 'activa'
+                    "
+                    class="d-flex align-items-center justify-content-end"
+                  >
+                    <button
+                      class="btn btn-outline-secondary btn-sm"
+                      [disabled]="
+                        estadoCambioRol.get(asistencia.usuario.id_usuario)
+                      "
+                      (click)="
+                        cambiarPrincipalAlternoNomina(
+                          asistencia.usuario.id_usuario
+                        )
+                      "
+                    >
+                      <ng-container
+                        *ngIf="
+                          !estadoCambioRol.get(asistencia.usuario.id_usuario);
+                          else cargando
+                        "
+                      >
+                        <i class="bi bi-arrow-repeat me-1"></i>
+                        Cambiar
+                      </ng-container>
+                      <ng-template #cargando>
+                        <span
+                          class="spinner-border spinner-border-sm me-1"
+                        ></span>
+                        ...
+                      </ng-template>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
         <div *ngIf="nomina.length === 0">
           <p>No hay asistencias registradas.</p>
@@ -616,18 +668,31 @@
         </button>
         <button
           type="button"
-          class="btn btn-success"
+          class="btn btn-success d-flex align-items-center"
           (click)="confirmarAsistencia()"
-          [disabled]="sesion?.estado === false || nomina.length === 0"
+          [disabled]="
+            sesion?.estado === false ||
+            nomina.length === 0 ||
+            confirmandoAsistencia
+          "
         >
-          Confirmar asistencia
+          <ng-container *ngIf="!confirmandoAsistencia; else cargandoAsistencia">
+            <i class="bi bi-person-check me-2"></i>
+            Confirmar asistencia
+          </ng-container>
+          <ng-template #cargandoAsistencia>
+            <span class="spinner-border spinner-border-sm me-2"></span>
+            Procesando...
+          </ng-template>
         </button>
       </div>
     </div>
   </div>
 </div>
 
-<!-- Modal Resultados -->
+<!-- =============================== -->
+<!-- Modal: Resultados del punto -->
+<!-- =============================== -->
 <div
   class="modal fade"
   id="modalResultados"
@@ -635,8 +700,12 @@
   aria-labelledby="modalResultadosLabel"
   aria-hidden="true"
 >
-  <div class="modal-dialog modal-dialog-centered">
+  <div
+    class="modal-dialog modal-dialog-centered"
+    [ngClass]="{ 'modal-xl': pasoModalResultados === 5 }"
+  >
     <div class="modal-content">
+      <!-- Encabezado -->
       <div class="modal-header">
         <h5 class="modal-title" id="modalResultadosLabel">
           Resultado del punto
@@ -649,6 +718,7 @@
         ></button>
       </div>
 
+      <!-- Cuerpo -->
       <div class="modal-body">
         <ng-container [ngSwitch]="pasoModalResultados">
           <!-- Paso 1: Selección -->
@@ -657,7 +727,7 @@
             <div class="d-grid gap-2">
               <button
                 class="btn btn-outline-primary"
-                (click)="calcularResultadoAutomatico()"
+                (click)="irAPasoConfirmarAutomatico()"
               >
                 Calcular automáticamente
               </button>
@@ -667,11 +737,47 @@
               >
                 Asignar resultado manualmente
               </button>
+
+              <button
+                class="btn btn-outline-success"
+                (click)="irAPasoHibrido()"
+              >
+                Asignar votos rápido y calcular ponderado
+              </button>
             </div>
           </div>
 
-          <!-- Paso 2: Selección manual -->
+          <!-- Paso 2: Confirmar cálculo automático -->
           <div *ngSwitchCase="2">
+            <p>
+              El sistema calculará automáticamente el resultado del punto según
+              los votos emitidos. ¿Desea continuar?
+            </p>
+            <div class="d-flex justify-content-between">
+              <button class="btn btn-secondary" (click)="volverAlPasoInicial()">
+                Atrás
+              </button>
+              <button
+                class="btn btn-success d-flex align-items-center"
+                (click)="calcularResultadoAutomatico()"
+                [disabled]="guardandoResultadoAutomatico"
+              >
+                <ng-container
+                  *ngIf="!guardandoResultadoAutomatico; else cargandoAuto"
+                >
+                  <i class="bi bi-calculator me-2"></i>
+                  Confirmar
+                </ng-container>
+                <ng-template #cargandoAuto>
+                  <span class="spinner-border spinner-border-sm me-2"></span>
+                  Calculando...
+                </ng-template>
+              </button>
+            </div>
+          </div>
+
+          <!-- Paso 3: Selección manual -->
+          <div *ngSwitchCase="3">
             <label for="resultadoManual">Seleccione el resultado manual:</label>
             <select
               id="resultadoManual"
@@ -692,8 +798,8 @@
             </div>
           </div>
 
-          <!-- Paso 3: Confirmación -->
-          <div *ngSwitchCase="3">
+          <!-- Paso 4: Confirmar resultado manual -->
+          <div *ngSwitchCase="4">
             <p>
               Se asignará el resultado manual:
               <strong>{{ resultadoManualSeleccionado | titlecase }}</strong
@@ -705,11 +811,175 @@
                 Atrás
               </button>
               <button
-                class="btn btn-success"
+                class="btn btn-success d-flex align-items-center"
                 (click)="calcularResultadoManual()"
-                data-bs-dismiss="modal"
+                [disabled]="guardandoResultadoManual"
               >
-                Confirmar
+                <ng-container
+                  *ngIf="!guardandoResultadoManual; else cargandoManual"
+                >
+                  <i class="bi bi-check2-circle me-2"></i>
+                  Confirmar
+                </ng-container>
+                <ng-template #cargandoManual>
+                  <span class="spinner-border spinner-border-sm me-2"></span>
+                  Guardando...
+                </ng-template>
+              </button>
+            </div>
+          </div>
+
+          <!-- Paso 5: Votación híbrida -->
+          <div *ngSwitchCase="5" class="paso-hibrido-expandido">
+            <p>Revise o modifique los votos antes de calcular el resultado:</p>
+
+            <!-- Barra de búsqueda -->
+            <input
+              type="text"
+              class="form-control mb-3"
+              placeholder="Buscar por nombre..."
+              [(ngModel)]="busquedaVotoHibrido"
+              (ngModelChange)="actualizarBusquedaVotoHibrido($event)"
+            />
+
+            <!-- Filtro por tipo de voto -->
+            <ul class="nav nav-tabs mb-3">
+              <li class="nav-item">
+                <a
+                  class="nav-link"
+                  [class.active]="filtroVotoHibrido === 'todos'"
+                  (click)="
+                    filtroVotoHibrido = 'todos'; agruparYFiltrarVotosHibridos()
+                  "
+                >
+                  Todos
+                </a>
+              </li>
+              <li class="nav-item">
+                <a
+                  class="nav-link"
+                  [class.active]="filtroVotoHibrido === 'afavor'"
+                  (click)="
+                    filtroVotoHibrido = 'afavor'; agruparYFiltrarVotosHibridos()
+                  "
+                >
+                  A favor
+                </a>
+              </li>
+              <li class="nav-item">
+                <a
+                  class="nav-link"
+                  [class.active]="filtroVotoHibrido === 'encontra'"
+                  (click)="
+                    filtroVotoHibrido = 'encontra';
+                    agruparYFiltrarVotosHibridos()
+                  "
+                >
+                  En contra
+                </a>
+              </li>
+              <li class="nav-item">
+                <a
+                  class="nav-link"
+                  [class.active]="filtroVotoHibrido === 'abstencion'"
+                  (click)="
+                    filtroVotoHibrido = 'abstencion';
+                    agruparYFiltrarVotosHibridos()
+                  "
+                >
+                  Abstención
+                </a>
+              </li>
+              <li class="nav-item">
+                <a
+                  class="nav-link"
+                  [class.active]="filtroVotoHibrido === 'sinvoto'"
+                  (click)="
+                    filtroVotoHibrido = 'sinvoto';
+                    agruparYFiltrarVotosHibridos()
+                  "
+                >
+                  Sin votar
+                </a>
+              </li>
+            </ul>
+
+            <!-- Lista agrupada por grupo -->
+            <div class="row gy-3">
+              <div
+                class="col-12 col-md-6 col-lg-4"
+                *ngFor="let grupo of agrupadosVotosHibridos"
+              >
+                <div class="p-2 border rounded shadow-sm h-100">
+                  <h6 class="mb-3 border-start border-3 ps-2 text-primary">
+                    {{ getNombreGrupoFormateado(grupo.grupo) }}
+                  </h6>
+
+                  <div
+                    *ngFor="let voto of grupo.usuarios"
+                    class="voto-hibrido-item mb-2"
+                    [ngClass]="{
+                      'voto-afavor': voto.opcion === 'afavor',
+                      'voto-encontra': voto.opcion === 'encontra',
+                      'voto-abstencion': voto.opcion === 'abstencion',
+                      'voto-sinvoto': !voto.opcion
+                    }"
+                  >
+                    <span>{{ voto.usuario.nombre }}</span>
+                    <select
+                      class="form-select form-select-sm"
+                      [(ngModel)]="voto.opcion"
+                    >
+                      <option value="afavor">A favor</option>
+                      <option value="encontra">En contra</option>
+                      <option value="abstencion">Abstención</option>
+                      <option [ngValue]="null">Sin votar</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Botones de navegación -->
+            <div class="d-flex justify-content-between mt-4">
+              <button class="btn btn-secondary" (click)="volverAlPasoInicial()">
+                Atrás
+              </button>
+              <button
+                class="btn btn-primary"
+                (click)="irAPasoConfirmarHibrido()"
+              >
+                Continuar
+              </button>
+            </div>
+          </div>
+
+          <!-- Paso 6: Confirmar cálculo híbrido -->
+          <div *ngSwitchCase="6">
+            <p>
+              Se enviarán los votos seleccionados y el sistema calculará el
+              resultado de forma automática.
+            </p>
+
+            <div class="d-flex justify-content-between">
+              <button class="btn btn-secondary" (click)="volverAPasoHibrido()">
+                Atrás
+              </button>
+              <button
+                class="btn btn-success d-flex align-items-center"
+                (click)="calcularResultadoHibrido()"
+                [disabled]="guardandoResultadoHibrido"
+              >
+                <ng-container
+                  *ngIf="!guardandoResultadoHibrido; else cargandoHibrido"
+                >
+                  <i class="bi bi-gear-fill me-2"></i>
+                  Confirmar
+                </ng-container>
+                <ng-template #cargandoHibrido>
+                  <span class="spinner-border spinner-border-sm me-2"></span>
+                  Procesando...
+                </ng-template>
               </button>
             </div>
           </div>
@@ -719,7 +989,9 @@
   </div>
 </div>
 
-<!-- Modal Resolución -->
+<!-- =============================== -->
+<!-- Modal: Resolución del punto -->
+<!-- =============================== -->
 <div
   class="modal fade"
   id="modalResolucion"
@@ -729,6 +1001,7 @@
 >
   <div class="modal-dialog modal-lg">
     <div class="modal-content">
+      <!-- Encabezado -->
       <div class="modal-header">
         <h1 class="modal-title fs-5" id="modalResolucionLabel">
           Resolución del punto
@@ -740,8 +1013,10 @@
           aria-label="Cerrar"
         ></button>
       </div>
+
+      <!-- Cuerpo -->
       <div class="modal-body">
-        <!-- Si no hay resolución aún -->
+        <!-- Estado inicial sin resolución -->
         <div *ngIf="!resolucionActual && !modoCreacionResolucion">
           <button
             class="btn btn-secondary"
@@ -751,12 +1026,13 @@
           </button>
         </div>
 
-        <!-- Formulario si ya existe o se está creando -->
+        <!-- Formulario -->
         <form
           *ngIf="modoCreacionResolucion || resolucionActual"
           [formGroup]="resolucionForm"
           (ngSubmit)="resolucionActual ? editarResolucion() : crearResolucion()"
         >
+          <!-- Campo: Nombre -->
           <div class="form-group mt-3">
             <label for="nombre">Nombre:</label>
             <input
@@ -769,6 +1045,7 @@
             />
           </div>
 
+          <!-- Campo: Descripción -->
           <div class="form-group mt-2">
             <label for="descripcion">Descripción:</label>
             <textarea
@@ -781,7 +1058,7 @@
             ></textarea>
           </div>
 
-          <!-- Fuente del resultado (solo si aplica) -->
+          <!-- Fuente del resultado -->
           <p
             class="text-muted fst-italic mt-3"
             *ngIf="resolucionActual?.voto_manual != null"
@@ -794,22 +1071,37 @@
             }}
           </p>
 
-          <button
-            class="btn btn-primary mt-3"
-            type="submit"
-            [disabled]="
-              !formularioResolucionModificado() || resolucionForm.invalid
-            "
-          >
-            Confirmar cambios
-          </button>
+          <!-- Footer del formulario -->
+          <div class="modal-footer px-0 mt-4">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              (click)="cerrarModal('modalResolucion', resolucionForm)"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              class="btn btn-primary d-flex align-items-center"
+              [disabled]="
+                guardandoResolucion ||
+                !formularioResolucionModificado() ||
+                resolucionForm.invalid
+              "
+            >
+              <ng-container
+                *ngIf="!guardandoResolucion; else cargandoResolucion"
+              >
+                <i class="bi bi-check-circle me-2"></i>
+                Confirmar cambios
+              </ng-container>
+              <ng-template #cargandoResolucion>
+                <span class="spinner-border spinner-border-sm me-2"></span>
+                Procesando...
+              </ng-template>
+            </button>
+          </div>
         </form>
-      </div>
-
-      <div class="modal-footer">
-        <button class="btn btn-secondary" data-bs-dismiss="modal">
-          Cerrar
-        </button>
       </div>
     </div>
   </div>
@@ -854,10 +1146,24 @@
             <div class="d-flex justify-content-between align-items-center">
               <strong>{{ grupo.nombre }}</strong>
               <button
-                class="btn btn-sm btn-outline-primary"
+                *ngIf="sesion?.estado === true && sesion?.fase === 'activa'"
+                class="btn btn-sm btn-outline-primary d-flex align-items-center"
+                [disabled]="estadoCargaGrupo.get(grupo.id_grupo!)"
                 (click)="cambiarEstadoGrupo(grupo)"
               >
-                {{ grupo.estado ? "Deshabilitar" : "Habilitar" }}
+                <ng-container
+                  *ngIf="
+                    !estadoCargaGrupo.get(grupo.id_grupo!);
+                    else cargandoGrupo
+                  "
+                >
+                  <i class="bi bi-toggle-on me-2"></i>
+                  {{ grupo.estado ? "Deshabilitar" : "Habilitar" }}
+                </ng-container>
+                <ng-template #cargandoGrupo>
+                  <span class="spinner-border spinner-border-sm me-2"></span>
+                  Procesando...
+                </ng-template>
               </button>
             </div>
 
@@ -921,10 +1227,18 @@
               </button>
               <button
                 type="submit"
-                class="btn btn-success"
-                [disabled]="grupoForm.value.puntos?.length < 2"
+                class="btn btn-success d-flex align-items-center"
+                [disabled]="grupoForm.value.puntos?.length < 2 || creandoGrupo"
+                (click)="crearGrupoDesdeFormulario()"
               >
-                Crear grupo
+                <ng-container *ngIf="!creandoGrupo; else cargandoGrupo">
+                  <i class="bi bi-plus-circle me-2"></i>
+                  Crear grupo
+                </ng-container>
+                <ng-template #cargandoGrupo>
+                  <span class="spinner-border spinner-border-sm me-2"></span>
+                  Procesando...
+                </ng-template>
               </button>
             </div>
           </form>
@@ -947,3 +1261,5 @@
     </div>
   </div>
 </div>
+
+<app-footer></app-footer>

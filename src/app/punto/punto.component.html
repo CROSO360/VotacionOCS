@@ -3,16 +3,15 @@
 
 <!-- Contenedor general -->
 <div class="container my-4">
-
   <!-- Botón de retroceso -->
-  <button class="back-button mb-3" (click)="goBack()">&#8592;</button>
 
   <!-- Título principal -->
   <h2 class="text-center">Gestión del Punto</h2>
 
+  <app-boton-atras></app-boton-atras><br /><br />
+
   <!-- Sección dividida: Punto (izquierda) y Resolución (derecha) -->
   <div class="row">
-
     <!-- === Formulario para editar datos del punto === -->
     <div class="col-md-6">
       <h5>Editar Punto</h5>
@@ -24,20 +23,41 @@
 
         <div class="form-group">
           <label>Detalle:</label>
-          <textarea formControlName="detalle" rows="3" class="form-control"></textarea>
+          <textarea
+            formControlName="detalle"
+            rows="3"
+            class="form-control"
+          ></textarea>
         </div>
 
         <div class="form-group">
-          <label for="es_administrativa" class="form-label">Tema administrativo</label>
-          <input type="checkbox" formControlName="es_administrativa" id="es_administrativa" />
+          <label for="es_administrativa" class="form-label"
+            >Tema administrativo</label
+          >
+          <input
+            type="checkbox"
+            formControlName="es_administrativa"
+            id="es_administrativa"
+          />
         </div>
 
         <button
-          class="btn btn-primary mt-2"
+          class="btn btn-primary mt-2 d-flex align-items-center"
           type="submit"
-          [disabled]="!formularioPuntoModificado() || modificarPuntoForm.invalid"
+          [disabled]="
+            !formularioPuntoModificado() ||
+            modificarPuntoForm.invalid ||
+            guardandoPunto
+          "
         >
-          Confirmar cambios
+          <ng-container *ngIf="!guardandoPunto; else cargandoPunto">
+            <i class="bi bi-save me-2"></i>
+            Confirmar cambios
+          </ng-container>
+          <ng-template #cargandoPunto>
+            <span class="spinner-border spinner-border-sm me-2"></span>
+            Guardando...
+          </ng-template>
         </button>
       </form>
     </div>
@@ -48,7 +68,7 @@
 
       <!-- Si no existe resolución, permitir crear una nueva -->
       <div *ngIf="!resolucion">
-        <button class="btn btn-secondary" (click)="resolucion = {};">
+        <button class="btn btn-secondary" (click)="resolucion = {}">
           Nueva resolución
         </button>
       </div>
@@ -66,11 +86,18 @@
 
         <div class="form-group">
           <label>Descripción:</label>
-          <textarea formControlName="descripcion" rows="3" class="form-control"></textarea>
+          <textarea
+            formControlName="descripcion"
+            rows="3"
+            class="form-control"
+          ></textarea>
         </div>
 
         <!-- Mostrar tipo de resolución (manual o automática) -->
-        <p class="text-muted fst-italic mt-3" *ngIf="resolucion?.voto_manual != null">
+        <p
+          class="text-muted fst-italic mt-3"
+          *ngIf="resolucion?.voto_manual != null"
+        >
           Resuelto mediante:
           {{
             resolucion?.voto_manual
@@ -80,11 +107,22 @@
         </p>
 
         <button
-          class="btn btn-primary mt-2"
+          class="btn btn-primary mt-2 d-flex align-items-center"
           type="submit"
-          [disabled]="!formularioResolucionModificado() || resolucionForm.invalid"
+          [disabled]="
+            !formularioResolucionModificado() ||
+            resolucionForm.invalid ||
+            guardandoResolucion
+          "
         >
-          Confirmar cambios
+          <ng-container *ngIf="!guardandoResolucion; else cargandoResolucion">
+            <i class="bi bi-save me-2"></i>
+            Confirmar cambios
+          </ng-container>
+          <ng-template #cargandoResolucion>
+            <span class="spinner-border spinner-border-sm me-2"></span>
+            Guardando...
+          </ng-template>
         </button>
       </form>
     </div>
@@ -99,7 +137,11 @@
       <tr>
         <td colspan="3" class="upload-container">
           <label class="upload-label">
-            <input type="file" (change)="onFileSelected($event)" class="file-input" />
+            <input
+              type="file"
+              (change)="onFileSelected($event)"
+              class="file-input"
+            />
             <span>Seleccionar archivo</span>
           </label>
         </td>
@@ -109,16 +151,40 @@
       <tr *ngFor="let documento of puntoDocumentos">
         <td class="document-name">{{ documento.documento.nombre }}</td>
         <td class="btn-container">
-          <button class="btn btn-secondary" (click)="abrirDocumento(documento.documento)">
+          <button
+            class="btn btn-secondary"
+            (click)="abrirDocumento(documento.documento)"
+          >
             Ver
           </button>
         </td>
-        <td class="btn-container">
-          <button class="btn btn-danger" (click)="eliminarDocumento(documento.documento.id_documento)">
-            Eliminar
+        <td class="text-center">
+          <button
+            class="btn btn-danger d-block mx-auto"
+            (click)="eliminarDocumento(documento.documento.id_documento)"
+            [disabled]="
+              eliminandoDocumento.get(documento.documento.id_documento)
+            "
+          >
+            <ng-container
+              *ngIf="
+                !eliminandoDocumento.get(documento.documento.id_documento);
+                else cargandoEliminar
+              "
+            >
+              <i class="bi bi-trash me-2"></i>
+              Eliminar
+            </ng-container>
+            <ng-template #cargandoEliminar>
+              <span class="spinner-border spinner-border-sm me-2"></span>
+              Eliminando...
+            </ng-template>
           </button>
         </td>
       </tr>
-    </table><br><br>
+    </table>
+    <br /><br />
   </div>
 </div>
+
+<app-footer></app-footer>

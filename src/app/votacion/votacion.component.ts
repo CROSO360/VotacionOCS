@@ -17,14 +17,14 @@ import {
   ReactiveFormsModule,
   Validators,
 } from '@angular/forms';
-import { BarraSuperiorComponent } from '../barra-superior/barra-superior.component';
+import { BarraSuperiorComponent } from '../components/barra-superior/barra-superior.component';
 import { Location } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { forkJoin, Observable } from 'rxjs';
 import { jwtDecode } from 'jwt-decode';
 
 //servicios
-import { PuntoService } from '../services/punto.service'; 
+import { PuntoService } from '../services/punto.service';
 import { SesionService } from '../services/sesion.service';
 import { PuntoUsuarioService } from '../services/puntoUsuario.service';
 import { ResolucionService } from '../services/resolucion.service';
@@ -35,6 +35,8 @@ import { WebSocketService } from '../services/websocket.service';
 import { ToastrService } from 'ngx-toastr';
 import { CookieService } from 'ngx-cookie-service';
 
+import { Modal } from 'bootstrap'; // asegúrate que bootstrap está instalado
+
 //interfaces
 import { IPunto } from '../interfaces/IPunto';
 import { ISesion } from '../interfaces/ISesion';
@@ -44,6 +46,8 @@ import { IAsistencia } from '../interfaces/IAsistencia';
 import { IResolucion } from '../interfaces/IResolucion';
 import { IGrupo } from '../interfaces/IGrupo';
 import { GrupoService } from '../services/grupo.service';
+import { BotonAtrasComponent } from '../components/boton-atras/boton-atras.component';
+import { FooterComponent } from "../components/footer/footer.component";
 
 @Component({
   selector: 'app-votacion',
@@ -53,15 +57,16 @@ import { GrupoService } from '../services/grupo.service';
     FormsModule,
     ReactiveFormsModule,
     BarraSuperiorComponent,
-  ],
+    BotonAtrasComponent,
+    FooterComponent
+],
   templateUrl: './votacion.component.html',
   styleUrl: './votacion.component.css',
 })
 export class VotacionComponent implements OnInit {
-
-// =======================================
-// CONSTRUCTOR E INYECCIÓN DE DEPENDENCIAS
-// =======================================
+  // =======================================
+  // CONSTRUCTOR E INYECCIÓN DE DEPENDENCIAS
+  // =======================================
   constructor(
     private puntoService: PuntoService,
     private sesionService: SesionService,
@@ -79,12 +84,12 @@ export class VotacionComponent implements OnInit {
     private miembroService: MiembroService,
     private resolucionService: ResolucionService,
     private cookieService: CookieService,
-    private grupoService: GrupoService,
+    private grupoService: GrupoService
   ) {}
 
-// =======================================
-// PROPIEDADES Y VARIABLES
-// =======================================
+  // =======================================
+  // PROPIEDADES Y VARIABLES
+  // =======================================
 
   payload: any = jwtDecode(this.cookieService.get('token'));
 
@@ -99,6 +104,8 @@ export class VotacionComponent implements OnInit {
   sesion: ISesion | undefined;
 
   puntoUsuarios: any[] = [];
+
+  votosHibridos: any[] = [];
 
   puntosSeleccionados: IPunto[] = [];
 
@@ -131,9 +138,48 @@ export class VotacionComponent implements OnInit {
 
   pantallaGrupo: number = 1; // 1 = gestión, 2 = crear grupo
 
-// =====================
-// Formularios reactivos
-// =====================
+  votoManualModalRef: any;
+  modalResultadosRef: Modal | null = null;
+
+  //filtros de nomina
+  busquedaNomina: string = '';
+  agrupadosPorGrupoNomina: any[] = [];
+  asistenciasOriginales: IAsistencia[] = [];
+
+  filtroAsistencia: 'todos' | 'presente' | 'ausente' = 'todos';
+
+  // Agrupación y filtrado de votos híbridos
+  agrupadosVotosHibridos: { grupo: string; usuarios: any[] }[] = [];
+  busquedaVotoHibrido: string = '';
+  filtroVotoHibrido:
+    | 'todos'
+    | 'afavor'
+    | 'encontra'
+    | 'abstencion'
+    | 'sinvoto' = 'todos';
+
+  //flags
+  cambiandoEstadoPunto: boolean = false;
+  cambiandoEstadoGrupo: boolean = false;
+  estadoCargaGrupo: Map<number, boolean> = new Map();
+  creandoGrupo: boolean = false;
+  guardandoResolucion: boolean = false;
+  estadoCambioRol: Map<number, boolean> = new Map();
+  confirmandoAsistencia: boolean = false;
+  solicitandoReconsideracion: boolean = false;
+  guardandoResultadoAutomatico = false;
+  guardandoResultadoManual: boolean = false;
+  guardandoFinalizacion: boolean = false;
+  iniciandoSesion: boolean = false;
+  guardandoVotoManual = false;
+  guardandoResultadoHibrido = false;
+  cargandoReconsideracion: boolean = false;
+
+  agrupadosPorGrupo: { grupo: string; usuarios: IPuntoUsuario[] }[] = [];
+
+  // =====================
+  // Formularios reactivos
+  // =====================
   votoManualForm = new FormGroup({
     opcion: new FormControl('', Validators.required),
     razonado: new FormControl(''),
@@ -149,9 +195,9 @@ export class VotacionComponent implements OnInit {
     puntos: new FormControl([], Validators.required),
   });
 
-// =====================
-// Inicialización de datos
-// =====================
+  // =====================
+  // Inicialización de datos
+  // =====================
   ngOnInit(): void {
     this.idSesion = parseInt(this.route.snapshot.paramMap.get('id')!);
 
@@ -160,8 +206,8 @@ export class VotacionComponent implements OnInit {
     const queryUsuario = `codigo=${this.payload.codigo}`;
     const queryAsistencia = `sesion.id_sesion=${this.idSesion}`;
     const queryGrupo = `sesion.id_sesion=${this.idSesion}`;
-    const relationsAsistencia = ['usuario'];
-    const relationsPuntos = ['sesion'];
+    const relationsAsistencia = ['usuario', 'usuario.grupoUsuario'];
+    const relationsPuntos = ['sesion', 'puntoReconsiderado'];
     const relationsMiembros = ['usuario'];
     const relationsGrupos = ['puntoGrupos', 'puntoGrupos.punto'];
 
@@ -181,12 +227,22 @@ export class VotacionComponent implements OnInit {
         this.puntos = puntos;
         this.usuario = usuario;
         this.nomina = asistencia;
+        this.asistenciasOriginales = asistencia; // ✅ Esta línea es la clave
         this.miembrosOCS = miembrosOCS.map((m: any) => m.usuario);
         this.grupos = grupos;
 
+        // Agrupar después de asignar nomina
+        this.agruparNominaPorGrupo();
+        this.agruparYFiltrarVotosHibridos();
+
         if (this.puntos.length > 0) {
-          this.puntoSeleccionado = this.puntos[0];
-          this.onPuntoChange(); // ✅ Cargar datos iniciales del primer punto
+          const idGuardado = localStorage.getItem('puntoSeleccionadoId');
+          const puntoRecuperado = this.puntos.find(
+            (p) => p.id_punto.toString() === idGuardado
+          );
+
+          this.puntoSeleccionado = puntoRecuperado ?? this.puntos[0];
+          this.onPuntoChange();
         }
       },
       error: () => {
@@ -197,12 +253,21 @@ export class VotacionComponent implements OnInit {
     this.webSocketService.onChange().subscribe((sape: any) => {
       this.actualizarPuntoUsuario(sape.puntoUsuarioId);
     });
+
+    const votoManualEl = document.getElementById('votoManualModal');
+    if (votoManualEl) {
+      this.votoManualModalRef = new Modal(votoManualEl);
+    }
+
+    const modalResultadosEl = document.getElementById('modalResultados');
+    if (modalResultadosEl) {
+      this.modalResultadosRef = new Modal(modalResultadosEl);
+    }
   }
 
-
-// =====================
-// Métodos de carga de datos
-// =====================
+  // =====================
+  // Métodos de carga de datos
+  // =====================
   getUsuario() {
     const query = `codigo=${this.payload.codigo}`;
     this.usuarioService.getDataBy(query).subscribe((data) => {
@@ -211,17 +276,20 @@ export class VotacionComponent implements OnInit {
     });
   }
 
-  getPuntos() {
+  getPuntos(): void {
     const query = `sesion.id_sesion=${this.idSesion}`;
-    const relations = ['sesion'];
+    const relations = ['sesion', 'puntoReconsiderado'];
 
     this.puntoService.getAllDataBy(query, relations).subscribe((data) => {
       this.puntos = data;
 
-      if (this.puntos.length > 0) {
-        this.puntoSeleccionado = this.puntos[0];
-        this.onPuntoChange(); // ⚡ Cargamos los nuevos puntoUsuarios del primer punto
-      }
+      const idGuardado = localStorage.getItem('puntoSeleccionadoId');
+      const puntoRecuperado = this.puntos.find(
+        (p) => p.id_punto.toString() === idGuardado
+      );
+
+      this.puntoSeleccionado = puntoRecuperado ?? this.puntos[0];
+      this.onPuntoChange(); // Se encarga de cargar puntoUsuarios y resolución
     });
   }
 
@@ -239,13 +307,19 @@ export class VotacionComponent implements OnInit {
       `usuario.usuarioReemplazo`,
       `usuario.grupoUsuario`,
     ];
+
     await this.puntoUsuarioService
       .getAllDataBy(query, relations)
       .subscribe((data) => {
+        // Ordenar primero por estado (activos arriba)
         this.puntoUsuarios = data.sort((a, b) => {
           return a.estado === b.estado ? 0 : a.estado ? -1 : 1;
         });
+
+        // Agrupar por grupoUsuario
+        this.agrupadosPorGrupo = this.agruparPorGrupo(this.puntoUsuarios);
       });
+
     console.log('puntosUsuarios cargados');
   }
 
@@ -280,217 +354,286 @@ export class VotacionComponent implements OnInit {
   }
 
   getGruposDeSesion() {
-  const query = `sesion.id_sesion=${this.idSesion}`;
-  const relations = ['puntoGrupos', 'puntoGrupos.punto'];
+    const query = `sesion.id_sesion=${this.idSesion}`;
+    const relations = ['puntoGrupos', 'puntoGrupos.punto'];
 
-  this.grupoService.getAllDataBy(query, relations).subscribe({
-    next: (data) => {
-      this.grupos = data;
-    },
-    error: () => {
-      this.toastr.error('Error al cargar los grupos', 'Error');
-    },
-  });
-}
+    this.grupoService.getAllDataBy(query, relations).subscribe({
+      next: (data) => {
+        this.grupos = data;
+      },
+      error: () => {
+        this.toastr.error('Error al cargar los grupos', 'Error');
+      },
+    });
+  }
 
+  // =====================
+  // Métodos de administración de puntos
+  // =====================
+  onPuntoChange(): void {
+    if (this.puntoSeleccionado?.id_punto) {
+      localStorage.setItem(
+        'puntoSeleccionadoId',
+        this.puntoSeleccionado.id_punto.toString()
+      );
 
-// =====================
-// Métodos de administración de puntos
-// =====================
-  onPuntoChange() {
-    if (this.puntoSeleccionado) {
       this.getPuntoUsuarios(this.puntoSeleccionado.id_punto);
       this.getResolucion(this.puntoSeleccionado.id_punto);
     }
   }
 
   cambiarEstadoPunto(punto: IPunto) {
+    this.cambiandoEstadoPunto = true;
+
     const nuevoEstado = !punto.estado;
     const puntoData = {
       id_punto: punto.id_punto,
       estado: nuevoEstado,
     };
 
-    this.puntoService.saveData(puntoData).subscribe((r) => {
-      const puntoIndex = this.puntos.findIndex(
-        (p) => p.id_punto === punto.id_punto
-      );
-      if (puntoIndex !== -1) {
-        this.puntos[puntoIndex].estado = nuevoEstado;
-      }
+    this.puntoService.saveData(puntoData).subscribe({
+      next: () => {
+        const puntoIndex = this.puntos.findIndex(
+          (p) => p.id_punto === punto.id_punto
+        );
+        if (puntoIndex !== -1) {
+          this.puntos[puntoIndex].estado = nuevoEstado;
+        }
+        this.toastr.success(
+          `Punto ${nuevoEstado ? 'habilitado' : 'deshabilitado'}`,
+          'Estado actualizado'
+        );
+        this.cambiandoEstadoPunto = false;
+      },
+      error: () => {
+        this.cambiandoEstadoPunto = false;
+        this.toastr.error('Error al actualizar el estado del punto', 'Error');
+        // Opcional: mostrar notificación de error
+      },
     });
   }
 
   cambiarEstadoGrupo(grupo: IGrupo) {
-  const grupoData = {
-    id_grupo: grupo.id_grupo,
-    estado: !grupo.estado,
-  };
+    if (!grupo.id_grupo) return;
 
-  this.grupoService.saveData(grupoData).subscribe({
-    next: () => {
-      grupo.estado = !grupo.estado;
-      this.toastr.success(
-        `Grupo ${grupo.nombre} ${grupo.estado ? 'habilitado' : 'deshabilitado'}`,
-        'Estado actualizado'
-      );
-    },
-    error: () => {
-      this.toastr.error('Error al actualizar el grupo', 'Error');
-    },
-  });
-}
+    this.estadoCargaGrupo.set(grupo.id_grupo, true);
 
-crearGrupoDesdeFormulario() {
-  const puntosSeleccionados = this.grupoForm.value.puntos;
-  if (!puntosSeleccionados || puntosSeleccionados.length < 2) {
-    this.toastr.warning('Debe seleccionar al menos 2 puntos');
-    return;
-  }
+    const grupoData = {
+      id_grupo: grupo.id_grupo,
+      estado: !grupo.estado,
+    };
 
-  const grupoData = {
-    idSesion: this.idSesion!,
-    nombre: this.grupoForm.value.nombre || `Grupo ${Date.now()}`, // Nombre opcional
-    puntos: puntosSeleccionados.map((p: IPunto) => p.id_punto),
-  };
-
-  this.grupoService.agruparPuntos(grupoData).subscribe({
-    next: (nuevoGrupo) => {
-      this.toastr.success('Grupo creado correctamente');
-      this.getGruposDeSesion(); // Recargar la lista de grupos
-      this.pantallaGrupo = 1;
-      this.grupoForm.reset();
-    },
-    error: () => {
-      this.toastr.error('Error al crear el grupo');
-    },
-  });
-}
-
-onSeleccionPuntoGrupo(punto: IPunto, event: Event) {
-  const seleccionados: IPunto[] = this.grupoForm.value.puntos || [];
-  const checked = (event.target as HTMLInputElement).checked;
-
-  if (checked) {
-    this.grupoForm.patchValue({ puntos: [...seleccionados, punto] });
-  } else {
-    this.grupoForm.patchValue({
-      puntos: seleccionados.filter((p) => p.id_punto !== punto.id_punto),
+    this.grupoService.saveData(grupoData).subscribe({
+      next: () => {
+        grupo.estado = !grupo.estado;
+        this.estadoCargaGrupo.set(grupo.id_grupo!, false);
+        this.toastr.success(
+          `Grupo ${grupo.nombre} ${
+            grupo.estado ? 'habilitado' : 'deshabilitado'
+          }`,
+          'Estado actualizado'
+        );
+      },
+      error: () => {
+        this.estadoCargaGrupo.set(grupo.id_grupo!, false);
+        this.toastr.error('Error al actualizar el grupo', 'Error');
+      },
     });
   }
-}
 
-solicitarReconsideracion(): void {
-  if (!this.puntoSeleccionado) return;
+  crearGrupoDesdeFormulario() {
+    const puntosSeleccionados = this.grupoForm.value.puntos;
+    if (!puntosSeleccionados || puntosSeleccionados.length < 2) {
+      this.toastr.warning('Debe seleccionar al menos 2 puntos');
+      return;
+    }
 
-  this.puntoService.reconsideracion(this.puntoSeleccionado.id_punto).subscribe({
-    next: () => {
-      this.toastr.success('Se ha solicitado la reconsideración correctamente.', 'Reconsideración creada');
-      this.getPuntos(); // recargar puntos actualizados
-    },
-    error: (error) => {
-      console.error(error);
-      this.toastr.error(error.error.message, 'No se pudo solicitar la reconsideración.');
-    },
-  });
-}
+    this.creandoGrupo = true;
 
-aprobarReconsideracion(): void {
-  if (!this.puntoSeleccionado) return;
+    const grupoData = {
+      idSesion: this.idSesion!,
+      nombre: this.grupoForm.value.nombre || `Grupo ${Date.now()}`,
+      puntos: puntosSeleccionados.map((p: IPunto) => p.id_punto),
+    };
 
-  this.puntoService.aprobarReconsideracion(this.puntoSeleccionado.id_punto).subscribe({
-    next: () => {
-      this.toastr.success('Se ha creado una nueva votación basada en la reconsideración.', 'Punto repetido creado');
-      this.getPuntos(); // recargar puntos actualizados
-    },
-    error: (error) => {
-      console.error(error);
-      this.toastr.error(error.error.message, 'No se pudo crear el punto reconsiderado.');
-    },
-  });
-}
+    this.grupoService.agruparPuntos(grupoData).subscribe({
+      next: (nuevoGrupo) => {
+        this.toastr.success('Grupo creado correctamente');
+        this.getGruposDeSesion();
+        this.pantallaGrupo = 1;
+        this.grupoForm.reset();
+        this.creandoGrupo = false;
+      },
+      error: () => {
+        this.toastr.error('Error al crear el grupo');
+        this.creandoGrupo = false;
+      },
+    });
+  }
 
+  onSeleccionPuntoGrupo(punto: IPunto, event: Event) {
+    const seleccionados: IPunto[] = this.grupoForm.value.puntos || [];
+    const checked = (event.target as HTMLInputElement).checked;
 
-mostrarBotonSolicitarReconsideracion(punto: IPunto): boolean {
-  return (
-    punto.tipo === 'normal' &&
-    punto.resultado !== null &&
-    punto.resultado !== 'empate' &&
-    this.sesion?.fase === 'activa' &&
-    !this.existeReconsideracionPara(punto.id_punto)
-  );
-}
+    if (checked) {
+      this.grupoForm.patchValue({ puntos: [...seleccionados, punto] });
+    } else {
+      this.grupoForm.patchValue({
+        puntos: seleccionados.filter((p) => p.id_punto !== punto.id_punto),
+      });
+    }
+  }
 
-mostrarBotonAprobarReconsideracion(punto: IPunto): boolean {
-  return (
-    punto.tipo === 'reconsideracion' &&
-    punto.resultado === 'aprobada' &&
-    this.sesion?.fase === 'activa' &&
-    !this.existeRepetidoPara(punto.puntoReconsiderado?.id_punto)
-  );
-}
+  solicitarReconsideracion(): void {
+    if (!this.puntoSeleccionado) return;
 
-existeReconsideracionPara(idPuntoOriginal: number): boolean {
-  return this.puntos.some(
-    p => p.tipo === 'reconsideracion' && p.puntoReconsiderado?.id_punto === idPuntoOriginal
-  );
-}
+    this.solicitandoReconsideracion = true;
 
-existeRepetidoPara(idPuntoOriginal: number): boolean {
-  return this.puntos.some(
-    p => p.tipo === 'repetido' && p.puntoReconsiderado?.id_punto === idPuntoOriginal
-  );
-}
+    this.puntoService
+      .reconsideracion(this.puntoSeleccionado.id_punto)
+      .subscribe({
+        next: () => {
+          this.toastr.success(
+            'Se ha solicitado la reconsideración correctamente.',
+            'Reconsideración creada'
+          );
+          this.getPuntos(); // recargar puntos actualizados
+          this.solicitandoReconsideracion = false;
+        },
+        error: (error) => {
+          console.error(error);
+          this.toastr.error(
+            error.error.message,
+            'No se pudo solicitar la reconsideración.'
+          );
+          this.solicitandoReconsideracion = false;
+        },
+      });
+  }
 
+  aprobarReconsideracion(): void {
+    if (!this.puntoSeleccionado) return;
 
+    this.cargandoReconsideracion = true;
 
-// =====================
-// Métodos de administración de sesion
-// =====================
+    this.puntoService
+      .aprobarReconsideracion(this.puntoSeleccionado.id_punto)
+      .subscribe({
+        next: () => {
+          this.toastr.success(
+            'Se ha creado una nueva votación basada en la reconsideración.',
+            'Punto repetido creado'
+          );
+          this.getPuntos(); // recargar puntos actualizados
+        },
+        error: (error) => {
+          console.error(error);
+          this.toastr.error(
+            error.error.message,
+            'No se pudo crear el punto reconsiderado.'
+          );
+          this.cargandoReconsideracion = false;
+        },
+        complete: () => {
+          this.cargandoReconsideracion = false;
+        },
+      });
+  }
+
+  mostrarBotonSolicitarReconsideracion(punto: IPunto): boolean {
+    return (
+      punto.tipo === 'normal' &&
+      punto.resultado !== null &&
+      punto.resultado !== 'empate' &&
+      this.sesion?.fase === 'activa' &&
+      !this.existeReconsideracionPara(punto.id_punto)
+    );
+  }
+
+  mostrarBotonAprobarReconsideracion(punto: IPunto): boolean {
+    return (
+      punto.tipo === 'reconsideracion' &&
+      punto.resultado === 'aprobada' &&
+      this.sesion?.fase === 'activa' &&
+      !this.existeRepetidoPara(punto.puntoReconsiderado?.id_punto)
+    );
+  }
+
+  existeReconsideracionPara(idPuntoOriginal: number): boolean {
+    return this.puntos.some(
+      (p) =>
+        p.tipo === 'reconsideracion' &&
+        p.puntoReconsiderado?.id_punto === idPuntoOriginal
+    );
+  }
+
+  existeRepetidoPara(idPuntoOriginal: number): boolean {
+    const existe = this.puntos.some(
+      (p) =>
+        p.tipo === 'repetido' &&
+        p.puntoReconsiderado?.id_punto === idPuntoOriginal &&
+        p.id_punto !== this.puntoSeleccionado?.id_punto
+    );
+    console.log('→ existeRepetidoPara(', idPuntoOriginal, ') =', existe);
+    return existe;
+  }
+
+  // =====================
+  // Métodos de administración de sesion
+  // =====================
 
   iniciarSesion(sesion: ISesion) {
+    if (!sesion?.id_sesion) return;
+
+    this.iniciandoSesion = true;
+
     const sesionData = {
       id_sesion: sesion.id_sesion,
       fase: 'activa',
     };
 
-    this.sesionService.saveData(sesionData).subscribe(
-      () => {
-        window.location.reload();
+    this.sesionService.saveData(sesionData).subscribe({
+      next: () => {
+        window.location.reload(); // No se limpia el flag porque el reload reemplaza el contexto
       },
-      (error) => {
+      error: (error) => {
         console.error('Error al iniciar la sesión:', error);
-      }
-    );
+        this.toastr.error('Error al iniciar la sesión', 'Error');
+        this.iniciandoSesion = false;
+      },
+    });
   }
 
   finalizarSesion(sesion: ISesion) {
-    /*const observables = this.puntos.map((punto: IPunto) => {
-      return this.puntoService.registerResultados({ idPunto: punto.id_punto });
-    });*/
-        const sesionData = {
-          id_sesion: sesion.id_sesion,
-          fase: 'finalizada',
-          fecha_fin: new Date(),
-          estado: false,
-        };
+    if (!sesion?.id_sesion) return;
 
-        this.sesionService.saveData(sesionData).subscribe(
-          () => {
-            console.log('Sesión finalizada correctamente');
-            const idString = sesion.id_sesion!.toString();
-            this.router.navigate(['/resultados', idString]);
-          },
-          (error) => {
-            console.error('Error al finalizar la sesión:', error);
-          }
-        );
+    this.guardandoFinalizacion = true;
+
+    const sesionData = {
+      id_sesion: sesion.id_sesion,
+      fase: 'finalizada',
+      fecha_fin: new Date(),
+      estado: false,
+    };
+
+    this.sesionService.saveData(sesionData).subscribe({
+      next: () => {
+        console.log('Sesión finalizada correctamente');
+        const idString = sesion.id_sesion!.toString();
+        this.router.navigate(['/resultados', idString]);
+        this.guardandoFinalizacion = false;
+      },
+      error: (error) => {
+        console.error('Error al finalizar la sesión:', error);
+        this.toastr.error('Error al finalizar la sesión', 'Error');
+        this.guardandoFinalizacion = false;
+      },
+    });
   }
 
-  
-// =====================
-// Métodos de administración de nomina
-// =====================
+  // =====================
+  // Métodos de administración de nomina
+  // =====================
 
   // Determina si el usuario pertenece al OCS (según tu lógica de miembros)
   esMiembroOCS(idUsuario: number): boolean {
@@ -499,48 +642,65 @@ existeRepetidoPara(idPuntoOriginal: number): boolean {
 
   // Guarda los cambios realizados en el tipo de asistencia
   confirmarAsistencia() {
-    const actualizaciones = this.nomina.map((asistencia) => {
-      return {
-        id_asistencia: asistencia.id_asistencia,
-        tipo_asistencia: asistencia.tipo_asistencia,
-      };
-    });
+    if (this.nomina.length === 0) return;
+
+    this.confirmandoAsistencia = true;
+
+    const actualizaciones = this.nomina.map((asistencia) => ({
+      id_asistencia: asistencia.id_asistencia,
+      tipo_asistencia: asistencia.tipo_asistencia,
+    }));
 
     this.asistenciaService.saveManyData(actualizaciones).subscribe({
       next: () => {
         this.toastr.success('Asistencia actualizada correctamente', 'Éxito');
+        this.confirmandoAsistencia = false;
       },
       error: () => {
         this.toastr.error('Error al actualizar la asistencia', 'Error');
+        this.confirmandoAsistencia = false;
       },
     });
   }
-
   cambiarPrincipalAlternoNomina(idUsuario: number) {
-  if (!this.idSesion || !idUsuario) return;
+    if (!this.idSesion || !idUsuario) return;
 
-  this.puntoUsuarioService
-    .cambiarPrincipalAlterno(this.idSesion, idUsuario)
-    .subscribe({
-      next: () => {
-        this.toastr.success('Cambio realizado correctamente', 'Éxito');
+    this.estadoCambioRol.set(idUsuario, true);
 
-        // Recarga forzada de votos con referencia nueva
-        this.puntoUsuarioService
-          .getAllDataBy(
-            `punto.id_punto=${this.puntoSeleccionado.id_punto}`,
-            ['usuario', 'usuario.usuarioReemplazo', 'usuario.grupoUsuario']
-          )
-          .subscribe((data) => {
-            this.puntoUsuarios = [...data.sort((a, b) => a.estado === b.estado ? 0 : a.estado ? -1 : 1)];
-            this.cdr.detectChanges(); // 🔁 Reforzar actualización visual
-          });
-      },
-      error: (err) => {
-        console.error('Error HTTP:', err);
-        this.toastr.error('Error al cambiar el estado', 'Error');
-      },
-    });
+    this.puntoUsuarioService
+      .cambiarPrincipalAlterno(this.idSesion, idUsuario)
+      .subscribe({
+        next: () => {
+          this.toastr.success('Cambio realizado correctamente', 'Éxito');
+
+          this.puntoUsuarioService
+            .getAllDataBy(`punto.id_punto=${this.puntoSeleccionado.id_punto}`, [
+              'usuario',
+              'usuario.usuarioReemplazo',
+              'usuario.grupoUsuario',
+            ])
+            .subscribe((data) => {
+              this.puntoUsuarios = [
+                ...data.sort((a, b) =>
+                  a.estado === b.estado ? 0 : a.estado ? -1 : 1
+                ),
+              ];
+
+              this.agrupadosPorGrupo = this.agruparPorGrupo(this.puntoUsuarios);
+              this.estadoCambioRol.set(idUsuario, false);
+              this.cdr.detectChanges();
+            });
+        },
+        error: (err) => {
+          console.error('Error HTTP:', err);
+          this.estadoCambioRol.set(idUsuario, false);
+
+          const mensaje =
+            err?.error?.message || 'Error al cambiar el estado del usuario.';
+
+          this.toastr.error(mensaje, 'Error');
+        },
+      });
   }
 
   reemplazo(puntoUsuario: any) {
@@ -575,10 +735,122 @@ existeRepetidoPara(idPuntoOriginal: number): boolean {
     this.activeDropdown = null; // Cerrar el dropdown
   }
 
+  getNombreGrupoFormateado(nombre: string): string {
+    const nombresMapeados: Record<string, string> = {
+      decano: 'Decanos',
+      estudiante: 'Estudiantes',
+      profesor: 'Profesores',
+      trabajador: 'Trabajadores',
+      rector: 'Rector',
+      vicerrector: 'Vicerrector',
+    };
 
-// =====================
-// Métodos de administración de votos (PuntoUsuario)
-// =====================
+    return nombresMapeados[nombre.toLowerCase()] || nombre;
+  }
+
+  agruparPorGrupo(puntoUsuarios: IPuntoUsuario[]) {
+    const grupos: { [grupo: string]: IPuntoUsuario[] } = {};
+
+    for (const pu of puntoUsuarios) {
+      const grupo = pu.usuario?.grupoUsuario?.nombre || 'Sin grupo';
+
+      if (!grupos[grupo]) {
+        grupos[grupo] = [];
+      }
+
+      grupos[grupo].push(pu);
+    }
+
+    // Convertir en array ordenado por nombre del grupo y por nombre del usuario dentro de cada grupo
+    return Object.entries(grupos)
+      .sort(([a], [b]) => a.localeCompare(b)) // ordena grupos
+      .map(([grupo, usuarios]) => ({
+        grupo,
+        usuarios: usuarios.sort((a, b) =>
+          (a.usuario?.nombre ?? '').localeCompare(b.usuario?.nombre ?? '')
+        ),
+      }));
+  }
+
+  agruparNominaPorGrupo(): void {
+    const grupos: { [grupo: string]: IAsistencia[] } = {};
+
+    for (const asistencia of this.nomina) {
+      const grupo = asistencia.usuario?.grupoUsuario?.nombre || 'Sin grupo';
+
+      if (!grupos[grupo]) {
+        grupos[grupo] = [];
+      }
+
+      grupos[grupo].push(asistencia);
+    }
+
+    this.agrupadosPorGrupoNomina = Object.entries(grupos)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([grupo, asistencias]) => ({
+        grupo,
+        asistencias: asistencias.sort((a, b) =>
+          a.usuario.nombre.localeCompare(b.usuario.nombre)
+        ),
+      }));
+  }
+
+  filtrarAsistenciasNomina(): void {
+    const texto = this.busquedaNomina.toLowerCase().trim();
+
+    let filtradas = this.asistenciasOriginales;
+
+    if (texto) {
+      filtradas = filtradas.filter((a) => {
+        const nombre = a.usuario?.nombre?.toLowerCase() || '';
+        const cedula = a.usuario?.cedula?.toLowerCase() || '';
+        return nombre.includes(texto) || cedula.includes(texto);
+      });
+    }
+
+    if (this.filtroAsistencia !== 'todos') {
+      filtradas = filtradas.filter(
+        (a) => a.tipo_asistencia === this.filtroAsistencia
+      );
+    }
+
+    this.nomina = filtradas;
+    this.agruparNominaPorGrupo();
+  }
+
+  agruparAsistenciasPorGrupo(
+    asistencias: IAsistencia[]
+  ): { grupo: string; asistencias: IAsistencia[] }[] {
+    const gruposMap = new Map<string, IAsistencia[]>();
+
+    asistencias.forEach((a) => {
+      const nombreGrupo = a.usuario?.grupoUsuario?.nombre || 'Sin grupo';
+      if (!gruposMap.has(nombreGrupo)) {
+        gruposMap.set(nombreGrupo, []);
+      }
+      gruposMap.get(nombreGrupo)?.push(a);
+    });
+
+    // Ordenar los grupos y los nombres dentro de cada grupo
+    return Array.from(gruposMap.entries())
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([grupo, asistencias]) => ({
+        grupo,
+        asistencias: asistencias.sort(
+          (a, b) =>
+            a.usuario?.nombre?.localeCompare(b.usuario?.nombre || '') || 0
+        ),
+      }));
+  }
+
+  cambiarFiltro(valor: 'todos' | 'presente' | 'ausente') {
+    this.filtroAsistencia = valor;
+    this.filtrarAsistenciasNomina();
+  }
+
+  // =====================
+  // Métodos de administración de votos (PuntoUsuario)
+  // =====================
 
   generarVotos() {
     const eliminar = this.puntoUsuarioService.eliminarPuntosUsuario(
@@ -610,6 +882,25 @@ existeRepetidoPara(idPuntoOriginal: number): boolean {
     });
   }
 
+  abrirVotoManual(idUsuario: number) {
+    this.usuarioActual = undefined;
+    const query = `id_usuario=${idUsuario}`;
+
+    this.usuarioService.getDataBy(query).subscribe({
+      next: (data) => {
+        this.usuarioActual = data;
+        setTimeout(() => {
+          this.votoManualModalRef?.show();
+        }, 0);
+      },
+      error: (error) => {
+        console.error('Error al cargar usuario para voto manual', error);
+        this.toastr.error('Error al cargar usuario', 'Error');
+      },
+    });
+  }
+
+  //abre el modal de voto manual
   usuarioVotoManual(idUsuario: number) {
     console.log('usuarioVotoManual', this.puntoSeleccionado.id_punto);
     if (!idUsuario) return;
@@ -628,27 +919,39 @@ existeRepetidoPara(idPuntoOriginal: number): boolean {
     });
   }
 
-  votoManual() {
-    if (this.puntoSeleccionado === undefined) {
-      console.log('No hay punto seleccionado');
-      return;
-    } else {
-      let votoData = {
-        id_usuario: this.usuarioActual?.id_usuario,
-        codigo: this.sesion?.codigo,
-        punto: this.puntoSeleccionado.id_punto,
-        opcion: this.votoManualForm.value.opcion,
-        es_razonado: this.votoManualForm.value.razonado,
-        votante: this.usuario.id_usuario,
-      };
+  // Registra el voto manual del usuario seleccionado
+  votoManual(idUsuario: number) {
+    if (!this.puntoSeleccionado) return;
 
-      this.puntoUsuarioService.saveVote(votoData).subscribe(() => {
-        console.log(`solicitud realizada`);
-        this.resetForm();
+    const votoData = {
+      idUsuario: idUsuario,
+      codigo: this.sesion?.codigo,
+      punto: this.puntoSeleccionado.id_punto,
+      opcion: this.votoManualForm.value.opcion,
+      es_razonado: this.votoManualForm.value.razonado,
+      votante: this.usuario.id_usuario,
+    };
+
+    this.guardandoVotoManual = true;
+
+    this.puntoUsuarioService.saveVote(votoData).subscribe({
+      next: () => {
         this.toastr.success('Voto manual registrado correctamente', 'Éxito');
-        this.cerrarModal('votoManualModal', this.votoManualForm);
-      });
-    }
+        this.cerrarModal(
+          'votoManualModal',
+          this.votoManualForm,
+          this.votoManualModalRef
+        );
+      },
+      error: (err) => {
+        this.toastr.error('Error al registrar el voto manual', err.error.message);
+        this.guardandoVotoManual = false;
+      },
+      complete: () => {
+        this.guardandoVotoManual = false;
+        this.resetForm(); // si lo necesitas aquí
+      },
+    });
   }
 
   async actualizarPuntoUsuario(puntoUsuarioId: number) {
@@ -732,24 +1035,38 @@ existeRepetidoPara(idPuntoOriginal: number): boolean {
       : puntoUsuario.usuario.usuarioReemplazo?.nombre || 'Reemplazo';
   }
 
-  
-// =====================
-// Calculo de resultados
-// =====================
+  // =====================
+  // Calculo de resultados
+  // =====================
 
   calcularResultadoAutomatico() {
     if (!this.puntoSeleccionado) return;
 
+    this.guardandoResultadoAutomatico = true;
+
     this.puntoService
-      .calcularResultados(this.puntoSeleccionado.id_punto, this.usuario.id_usuario)
+      .calcularResultados(
+        this.puntoSeleccionado.id_punto,
+        this.usuario.id_usuario
+      )
       .subscribe({
         next: () => {
           this.toastr.success('Resultado calculado correctamente', 'Éxito');
-          this.getPuntos(); // Actualiza los valores del punto actual
+          this.getPuntos();
           this.getResolucion(this.puntoSeleccionado.id_punto);
+          this.pasoModalResultados = 1;
+          this.cerrarModal(
+            'modalResultados',
+            undefined,
+            this.modalResultadosRef
+          );
         },
-        error: () => {
-          this.toastr.error('Error al calcular el resultado', 'Error');
+        error: (err) => {
+          this.toastr.error('Error al calcular el resultado', err.error.message);
+          this.guardandoResultadoAutomatico = false;
+        },
+        complete: () => {
+          this.guardandoResultadoAutomatico = false;
         },
       });
   }
@@ -757,10 +1074,12 @@ existeRepetidoPara(idPuntoOriginal: number): boolean {
   calcularResultadoManual() {
     if (!this.puntoSeleccionado || !this.usuario?.id_usuario) return;
 
+    this.guardandoResultadoManual = true;
+
     const data = {
       id_punto: this.puntoSeleccionado.id_punto,
       id_usuario: this.usuario.id_usuario,
-      resultado: this.resultadoManualSeleccionado, // 'aprobada' | 'rechazada' | 'pendiente'
+      resultado: this.resultadoManualSeleccionado,
     };
 
     this.puntoService.calcularResultadosManual(data).subscribe({
@@ -769,21 +1088,152 @@ existeRepetidoPara(idPuntoOriginal: number): boolean {
         this.getPuntos();
         this.getResolucion(this.puntoSeleccionado.id_punto);
         this.pasoModalResultados = 1;
+
+        this.guardandoResultadoManual = false;
+        this.cerrarModal('modalResultados', undefined, this.modalResultadosRef);
       },
       error: () => {
         this.toastr.error('Error al guardar resultado manual', 'Error');
         console.log(this.resultadoManualSeleccionado);
         console.log(this.usuario?.id_usuario);
         console.log(this.puntoSeleccionado?.id_punto);
+        this.guardandoResultadoManual = false;
       },
     });
   }
 
-// =====================
-// Resolucion
-// =====================
+  async calcularResultadoHibrido() {
+    if (!this.puntoSeleccionado) return;
+
+    const puntosUnicos = new Set(this.votosHibridos.map((v) => v.punto));
+    if (puntosUnicos.size > 1) {
+      console.warn('❌ Hay múltiples puntos en los votos:', puntosUnicos);
+      this.toastr.error('Los votos contienen puntos inconsistentes');
+      return;
+    }
+
+    this.guardandoResultadoHibrido = true;
+
+    this.puntoService
+      .calcularResultadosHibrido(
+        this.puntoSeleccionado.id_punto,
+        this.votosHibridos
+      )
+      .subscribe({
+        next: () => {
+          this.toastr.success('Resultado calculado correctamente');
+          this.getPuntos();
+          this.getResolucion(this.puntoSeleccionado.id_punto);
+          this.pasoModalResultados = 1;
+          this.cerrarModal(
+            'modalResultados',
+            undefined,
+            this.modalResultadosRef
+          );
+          //console.table(this.votosHibridos, ['idUsuario', 'punto', 'opcion']);
+        },
+        error: (err) => {
+          this.toastr.error('Error al calcular el resultado híbrido', err.error.message);
+          //console.table(this.votosHibridos, ['idUsuario', 'punto', 'opcion']);
+          this.guardandoResultadoHibrido = false;
+        },
+        complete: () => {
+          this.guardandoResultadoHibrido = false;
+        },
+      });
+  }
+
+  abrirModalResultados(tipo: 'normal' | 'dirimente' = 'normal'): void {
+    this.pasoModalResultados = 1;
+    this.resultadoManualSeleccionado = null;
+    this.busquedaVotoHibrido = '';
+    this.filtroVotoHibrido = 'todos';
+    this.agruparYFiltrarVotosHibridos();
+
+    if (this.modalResultadosRef) {
+      this.modalResultadosRef.show();
+    } else {
+      const modalElement = document.getElementById('modalResultados');
+      if (modalElement) {
+        this.modalResultadosRef = new Modal(modalElement);
+        this.modalResultadosRef.show();
+      }
+    }
+  }
+
+  // =====================
+  // Funcionalidad de voto hibrido
+  // =====================
+
+  agruparYFiltrarVotosHibridos(): void {
+    const normalizados = this.votosHibridos
+      .filter((voto) => {
+        const coincideBusqueda =
+          this.busquedaVotoHibrido.trim().length === 0 ||
+          voto.usuario.nombre
+            .toLowerCase()
+            .includes(this.busquedaVotoHibrido.toLowerCase());
+
+        const coincideFiltro =
+          this.filtroVotoHibrido === 'todos' ||
+          (this.filtroVotoHibrido === 'sinvoto' && !voto.opcion) ||
+          voto.opcion === this.filtroVotoHibrido;
+
+        return coincideBusqueda && coincideFiltro;
+      })
+      .sort((a, b) => a.usuario.nombre.localeCompare(b.usuario.nombre));
+
+    const agrupados = new Map<string, any[]>();
+    for (const voto of normalizados) {
+      const grupoNombre = voto.usuario.grupoUsuario?.nombre || 'Otros';
+      if (!agrupados.has(grupoNombre)) {
+        agrupados.set(grupoNombre, []);
+      }
+      agrupados.get(grupoNombre)!.push(voto);
+    }
+
+    const ordenGrupos = [
+      'Decanos',
+      'Estudiantes',
+      'Profesores',
+      'Rector',
+      'Trabajadores',
+      'Vicerrector',
+      'Otros',
+    ];
+
+    this.agrupadosVotosHibridos = Array.from(
+      agrupados,
+      ([grupo, usuarios]) => ({
+        grupo,
+        usuarios,
+      })
+    ).sort((a, b) => {
+      const indexA = ordenGrupos.indexOf(a.grupo);
+      const indexB = ordenGrupos.indexOf(b.grupo);
+      return indexA - indexB;
+    });
+  }
+
+  cambiarFiltroVotoHibrido(
+    filtro: 'todos' | 'afavor' | 'encontra' | 'abstencion' | 'sinvoto'
+  ): void {
+    this.filtroVotoHibrido = filtro;
+    this.agruparYFiltrarVotosHibridos();
+  }
+
+  actualizarBusquedaVotoHibrido(valor: string): void {
+    this.busquedaVotoHibrido = valor;
+    this.agruparYFiltrarVotosHibridos();
+  }
+
+  // =====================
+  // Resolucion
+  // =====================
 
   crearResolucion() {
+    this.guardandoResolucion = true;
+
     const resolucionData: IResolucion = {
       punto: { id_punto: this.puntoSeleccionado.id_punto },
       nombre: this.resolucionForm.value.nombre,
@@ -795,11 +1245,12 @@ existeRepetidoPara(idPuntoOriginal: number): boolean {
       next: () => {
         this.toastr.success('Resolución creada con éxito');
         this.getResolucion(this.puntoSeleccionado.id_punto);
-        this.modoCreacionResolucion = false; // ✅ Oculta el formulario
-        //window.location.reload();
+        this.modoCreacionResolucion = false;
+        this.guardandoResolucion = false;
       },
       error: () => {
         this.toastr.error('Error al crear la resolución');
+        this.guardandoResolucion = false;
       },
     });
   }
@@ -807,8 +1258,11 @@ existeRepetidoPara(idPuntoOriginal: number): boolean {
   editarResolucion() {
     if (!this.puntoSeleccionado || !this.resolucionActual) return;
 
-    const updateResolucionData: IResolucion = {
-      punto: { id_punto: this.puntoSeleccionado.id_punto },
+    this.guardandoResolucion = true;
+
+    const updateResolucionData: any = {
+      id_punto: this.puntoSeleccionado.id_punto,
+      id_usuario: this.usuario?.id_usuario,
       nombre: this.resolucionForm.value.nombre!,
       descripcion: this.resolucionForm.value.descripcion!,
     };
@@ -817,9 +1271,14 @@ existeRepetidoPara(idPuntoOriginal: number): boolean {
       next: () => {
         this.toastr.success('Resolución actualizada', 'Éxito');
         this.getResolucion(this.puntoSeleccionado!.id_punto);
+        this.guardandoResolucion = false;
       },
-      error: () => {
-        this.toastr.error('Error al actualizar la resolución', 'Error');
+      error: (err) => {
+        this.toastr.error(
+          err.error.message,
+          'Error al actualizar la resolución'
+        );
+        this.guardandoResolucion = false;
       },
     });
   }
@@ -832,9 +1291,9 @@ existeRepetidoPara(idPuntoOriginal: number): boolean {
     );
   }
 
-// =====================
-// Utilidades de la interfaz
-// ===================== 
+  // =====================
+  // Utilidades de la interfaz
+  // =====================
   resetForm() {
     this.votoManualForm.patchValue({
       opcion: '',
@@ -894,34 +1353,36 @@ existeRepetidoPara(idPuntoOriginal: number): boolean {
     this.showOptions = !this.showOptions;
   }
 
-  cerrarModal(modalId: string, form?: FormGroup) {
+  cerrarModal(modalId: string, form?: FormGroup, modalRef?: any) {
     const modalElement = document.getElementById(modalId);
     if (modalElement) {
-      modalElement.classList.remove('show');
-      modalElement.style.display = 'none';
-      modalElement.setAttribute('aria-hidden', 'true');
-      modalElement.removeAttribute('aria-modal');
-      modalElement.removeAttribute('role');
+      const modalInstance = modalRef;
+      if (modalInstance) {
+        modalInstance.hide();
+      } else {
+        modalElement.classList.remove('show');
+        modalElement.style.display = 'none';
+        modalElement.setAttribute('aria-hidden', 'true');
+        modalElement.removeAttribute('aria-modal');
+        modalElement.removeAttribute('role');
+      }
     }
 
-    // Limpieza de estilos y clases
     document.body.classList.remove('modal-open');
     document.body.style.overflow = '';
     document.body.style.paddingRight = '';
 
-    // Elimina cualquier backdrop sobrante
     const backdrops = document.getElementsByClassName('modal-backdrop');
     while (backdrops[0]) {
       backdrops[0].parentNode?.removeChild(backdrops[0]);
     }
 
-    // Restablecer el formulario
-    this.resetForm();
-    form.reset();
+    if (form) form.reset(); // ✅ solo el form
   }
 
   // Alterna la visibilidad del dropdown asociado a un puntoUsuario específico
   toggleDropdownxd(id_punto_usuario: number, event: Event) {
+    console.log('Dropdown clickeado', id_punto_usuario);
     event.stopPropagation();
     this.activeDropdown =
       this.activeDropdown === id_punto_usuario ? null : id_punto_usuario;
@@ -939,24 +1400,27 @@ existeRepetidoPara(idPuntoOriginal: number): boolean {
     this.activeDropdown = null;
   }
 
-  
-// =====================
-// Flujo de pasos del modal de resultados
-// ===================== 
-  irAPasoManual() {
+  // =====================
+  // Flujo de pasos del modal de resultados
+  // =====================
+  irAPasoConfirmarAutomatico() {
     this.pasoModalResultados = 2;
+  }
+
+  irAPasoManual() {
+    this.pasoModalResultados = 3;
+  }
+
+  irAPasoConfirmacion() {
+    this.pasoModalResultados = 4;
   }
 
   volverAlPasoInicial() {
     this.pasoModalResultados = 1;
   }
 
-  irAPasoConfirmacion() {
-    this.pasoModalResultados = 3;
-  }
-
   volverAlPasoManual() {
-    this.pasoModalResultados = 2;
+    this.pasoModalResultados = 3;
   }
 
   volverAGestionGrupos() {
@@ -964,6 +1428,34 @@ existeRepetidoPara(idPuntoOriginal: number): boolean {
     this.grupoForm.reset({ nombre: '', puntos: [] });
   }
 
+  irAPasoConfirmarHibrido() {
+    this.pasoModalResultados = 6;
+  }
+
+  volverAPasoHibrido() {
+    this.pasoModalResultados = 5;
+  }
+
+  irAPasoHibrido() {
+    if (!this.puntoUsuarios?.length) return;
+
+    // Clonar con opción por defecto 'afavor'
+    this.votosHibridos = this.puntoUsuarios.map((pu) => ({
+      idUsuario: pu.usuario.id_usuario,
+      votante: this.usuario.id_usuario,
+      punto: this.puntoSeleccionado.id_punto,
+      opcion: 'afavor',
+      es_razonado: false,
+      usuario: { ...pu.usuario }, // clonar todo el objeto usuario, incluyendo grupoUsuario
+    }));
+
+    this.agruparYFiltrarVotosHibridos(); // ⚡ fuerza el agrupamiento inicial
+
+    this.pasoModalResultados = 5;
+    console.log('idPuntoSeleccionado:', this.puntoSeleccionado.id_punto);
+    console.log('Votos híbridos inicializados:', this.votosHibridos);
+    console.log('puntoUsuarios:', this.puntoUsuarios);
+  }
 
   goBack() {
     this.location.back();

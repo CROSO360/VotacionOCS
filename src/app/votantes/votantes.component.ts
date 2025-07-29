@@ -1,7 +1,7 @@
 import { CommonModule, Location } from '@angular/common';
 import { Component, HostListener, OnInit } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { BarraSuperiorComponent } from '../barra-superior/barra-superior.component';
+import { BarraSuperiorComponent } from '../components/barra-superior/barra-superior.component';
 import { UsuarioService } from '../services/usuario.service';
 import { IUsuario } from '../interfaces/IUsuario';
 import { GrupoUsuarioService } from '../services/grupoUsuario.service';
@@ -12,6 +12,7 @@ import { catchError, concatMap, forkJoin, map, Observable, of, tap } from 'rxjs'
 import { IPunto } from '../interfaces/IPunto';
 import { PuntoService } from '../services/punto.service';
 import { ToastrService } from 'ngx-toastr';
+import { FooterComponent } from "../components/footer/footer.component";
 
 @Component({
   selector: 'app-votantes',
@@ -21,7 +22,8 @@ import { ToastrService } from 'ngx-toastr';
     ReactiveFormsModule,
     FormsModule,
     BarraSuperiorComponent,
-  ],
+    FooterComponent
+],
   templateUrl: './votantes.component.html',
   styleUrl: './votantes.component.css',
 })

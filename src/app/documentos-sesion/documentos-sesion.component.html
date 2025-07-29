@@ -8,18 +8,16 @@
    ======================= -->
 <div class="main-container my-5">
 
-  <!-- Botón para regresar a la vista anterior -->
-  <button class="back-button" (click)="goBack()">&#8592;</button>
-
   <!-- Título de la página con el nombre de la sesión -->
   <h2 class="text-center">Documentos {{ sesion?.nombre }}</h2>
+
+  <app-boton-atras></app-boton-atras><br><br>
 
   <!-- =======================
        Tabla contenedora de documentos
        ======================= -->
   <div class="documents-container">
     <table class="documents-table">
-
       <!-- Fila para subir nuevos archivos -->
       <tr>
         <td colspan="3" class="upload-container">
@@ -47,16 +45,32 @@
             Ver
           </button>
         </td>
-        <td class="btn-container">
+        <td class="text-center">
           <button
-            class="btn btn-danger"
+            class="btn btn-danger d-block mx-auto"
             (click)="eliminarDocumento(documento.documento.id_documento)"
+            [disabled]="
+              eliminandoDocumento.get(documento.documento.id_documento)
+            "
           >
-            Eliminar
+            <ng-container
+              *ngIf="
+                !eliminandoDocumento.get(documento.documento.id_documento);
+                else cargandoEliminar
+              "
+            >
+              <i class="bi bi-trash me-2"></i>
+              Eliminar
+            </ng-container>
+            <ng-template #cargandoEliminar>
+              <span class="spinner-border spinner-border-sm me-2"></span>
+              Eliminando...
+            </ng-template>
           </button>
         </td>
       </tr>
-
     </table>
   </div>
 </div>
+
+<app-footer></app-footer>

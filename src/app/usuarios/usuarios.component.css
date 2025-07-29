@@ -146,3 +146,83 @@ select {
 .capitalize-options {
   text-transform: capitalize;
 }
+
+
+
+
+/* ==== ESTILO PARA USUARIOS EN GRID ==== */
+
+
+.usuarios-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.usuarios-grid .list-group-item {
+  padding: 12px;
+  border: 1px solid #e0e0e0;
+  border-radius: 5px;
+  transition: background-color 0.2s;
+}
+
+.usuario-nombre {
+  font-size: 15px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@media (max-width: 992px) {
+  .usuarios-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 576px) {
+  .usuarios-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+/* ==== ESTILO PARA BARRA DE NAVEGACIÓN DE TABS ==== */
+
+/* Estilo base de tabs */
+.nav-tabs .nav-link {
+  color: #444;
+  background-color: #f8f9fa;
+  transition: all 0.2s ease-in-out;
+  border: none;
+  border-radius: 4px 4px 0 0;
+  padding: 8px 16px;
+}
+
+/* Hover */
+.nav-tabs .nav-link:hover {
+  background-color: #efefef;
+  color: #000;
+}
+
+/* Tab activo */
+.nav-tabs .nav-link.active {
+  background-color: #c2c2c2;
+  color: #000;
+  font-weight: 600;
+  box-shadow: 0px 2px 6px rgba(0, 0, 0, 0.15);
+  border: none;
+}
+
+
+/* Barra de búsqueda */
+
+.input-group .form-control:focus {
+  box-shadow: 0 0 5px rgba(0,0,0,0.1);
+  border-color: #ced4da;
+}
+
+.usuario-inactivo {
+  background-color: #d5d5d5;
+  color: #4b5359; /* gris tipo Bootstrap muted */
+  font-style: italic;
+}

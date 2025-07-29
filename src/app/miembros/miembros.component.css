@@ -1,3 +1,4 @@
+
 /* ===========================
    Estilo general de la lista
    =========================== */
@@ -60,6 +61,13 @@
   cursor: pointer;
 }
 
+/*barra de busqueda*/
+.input-group .form-control:focus {
+  box-shadow: 0 0 5px rgba(0,0,0,0.1);
+  border-color: #ced4da;
+}
+
+
 /* ===========================
    Responsividad para dispositivos medianos y grandes
    =========================== */
@@ -73,4 +81,150 @@
   .list-group {
     max-width: 100%; /* Reestablece ancho completo en pantallas grandes */
   }
+}
+
+
+/* ===========================
+   Estilo de lista seleccionar
+   =========================== */
+
+
+/* Lista principal */
+.lista-usuarios {
+  border-radius: 6px;
+  overflow: hidden;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+
+/* Ítems individuales */
+.list-group-item {
+  padding: 10px 16px;
+  transition: background-color 0.2s ease-in-out;
+}
+
+.list-group-item:hover {
+  background-color: #f9f9f9;
+}
+
+/* Checkbox con espacio */
+.form-check-input {
+  margin-top: 0;
+}
+
+/* Texto del usuario */
+.usuario-nombre {
+  font-size: 15px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Encabezado 'Seleccionar todos' */
+.list-group-item.bg-light {
+  background-color: #f0f0f0 !important;
+  border-bottom: 1px solid #ddd;
+}
+
+
+/* Grid de 3 columnas */
+.usuarios-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+/* Estilo de cada celda */
+.usuarios-grid .list-group-item {
+  padding: 12px;
+  border: 1px solid #e0e0e0;
+  border-radius: 5px;
+  transition: background-color 0.2s;
+}
+
+.usuarios-grid .list-group-item:hover {
+  background-color: #f9f9f9;
+}
+
+/* Ítems que ocupan ancho completo (como el encabezado o mensaje vacío) */
+.col-span-3 {
+  grid-column: span 3;
+}
+
+/* Adaptable a pantallas más pequeñas */
+@media (max-width: 992px) {
+  .usuarios-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 576px) {
+  .usuarios-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+/* ===========================
+   Estilo de lista seleccionada
+   =========================== */
+
+   /* Contenedor flexible con ajuste automático */
+.tags-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* Estilo de etiqueta ligera */
+.tag-item {
+  display: flex;
+  align-items: center;
+  background-color: #f2f4f7;
+  padding: 6px 10px;
+  border-radius: 20px;
+  font-size: 14px;
+  color: #333;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  transition: background-color 0.2s ease;
+}
+
+.tag-item:hover {
+  background-color: #e6e9ee;
+}
+
+.tag-text {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+
+/* ===========================
+   Estilo de filtro
+   =========================== */
+
+
+/* Estilo base de tabs */
+.nav-tabs .nav-link {
+  color: #444;
+  background-color: #f8f9fa;
+  transition: all 0.2s ease-in-out;
+  border: none;
+  border-radius: 4px 4px 0 0;
+  padding: 8px 16px;
+}
+
+/* Hover */
+.nav-tabs .nav-link:hover {
+  background-color: #efefef;
+  color: #000;
+}
+
+/* Tab activo */
+.nav-tabs .nav-link.active {
+  background-color: #c2c2c2;
+  color: #000;
+  font-weight: 600;
+  box-shadow: 0px 2px 6px rgba(0, 0, 0, 0.15);
+  border: none;
 }

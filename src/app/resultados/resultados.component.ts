@@ -11,7 +11,7 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 
 // Componentes
-import { BarraSuperiorComponent } from '../barra-superior/barra-superior.component';
+import { BarraSuperiorComponent } from '../components/barra-superior/barra-superior.component';
 
 // Interfaces
 import { IPunto } from '../interfaces/IPunto';
@@ -20,6 +20,9 @@ import { ISesion } from '../interfaces/ISesion';
 // Servicios
 import { PuntoService } from '../services/punto.service';
 import { SesionService } from '../services/sesion.service';
+import { BotonAtrasComponent } from "../components/boton-atras/boton-atras.component";
+import { ToastrService } from 'ngx-toastr';
+import { FooterComponent } from "../components/footer/footer.component";
 
 @Component({
   selector: 'app-resultados',
@@ -29,7 +32,9 @@ import { SesionService } from '../services/sesion.service';
     FormsModule,
     ReactiveFormsModule,
     BarraSuperiorComponent,
-  ],
+    BotonAtrasComponent,
+    FooterComponent
+],
   templateUrl: './resultados.component.html',
   styleUrl: './resultados.component.css',
 })
@@ -53,7 +58,8 @@ export class ResultadosComponent implements OnInit {
     private sesionService: SesionService,
     private route: ActivatedRoute,
     private router: Router,
-    private location: Location
+    private location: Location,
+    private toastrService: ToastrService
   ) {}
 
   // =======================
@@ -109,8 +115,9 @@ export class ResultadosComponent implements OnInit {
         window.open(url, '_blank'); // Abre el PDF en una nueva pestaña
       },
       error: (err) => {
-        console.error('Error al generar el reporte:', err);
-        alert('No se pudo generar el reporte. Intente nuevamente.');
+        console.error('Error al generar el reporte:', err.error.message);
+        this.toastrService.error('No se pudo generar el reporte. Intente nuevamente.', err.error.message);
+        this.generandoReporte = false;
       },
       complete: () => {
         this.generandoReporte = false;

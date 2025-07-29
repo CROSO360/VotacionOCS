@@ -4,17 +4,17 @@
      Contenedor Principal
      ======================= -->
 <div class="container my-5">
-
   <!-- Botón para regresar al dashboard -->
-  <button class="back-button" (click)="goBack()">←</button>
 
   <!-- Título de la sesión actual -->
   <h2 class="text-center">Resultados de la sesión {{ sesion?.nombre }}</h2>
 
+  <app-boton-atras></app-boton-atras><br /><br />
+
   <!-- =======================
        Selector de punto
        ======================= -->
-  <label class="form-label">Punto:</label>
+  <label class="form-label">Punto: </label>
   <select
     [(ngModel)]="puntoSeleccionado"
     (change)="onChangePuntoSeleccionado()"
@@ -25,20 +25,27 @@
   </select>
 
   <!-- =======================
-       Botón para generar el reporte PDF
-       ======================= -->
+     Botón para generar el reporte PDF
+     ======================= -->
   <div class="mb-4">
     <button
       *ngIf="sesion?.estado === false"
-      class="btn btn-primary"
+      class="btn btn-primary d-flex align-items-center"
       (click)="generarReporte()"
       [disabled]="generandoReporte"
     >
-      <span *ngIf="!generandoReporte">Generar Reporte</span>
-      <span *ngIf="generandoReporte">
-        <span class="spinner-border spinner-border-sm me-2"></span>
+      <ng-container *ngIf="!generandoReporte; else loadingContent">
+        <i class="bi bi-file-earmark-arrow-down me-2"></i>
+        Generar Reporte
+      </ng-container>
+      <ng-template #loadingContent>
+        <span
+          class="spinner-border spinner-border-sm me-2"
+          role="status"
+          aria-hidden="true"
+        ></span>
         Generando...
-      </span>
+      </ng-template>
     </button>
   </div>
 
@@ -46,14 +53,15 @@
        Sección de detalle y resultados
        ======================= -->
   <div *ngFor="let punto of puntos">
-
     <!-- Descripción del punto seleccionado -->
     <p *ngIf="punto.id_punto == puntoSeleccionado">{{ punto.detalle }}</p>
 
     <!-- Tabla de resultados automáticos -->
     <div
       class="points-container"
-      *ngIf="punto.id_punto == puntoSeleccionado && !punto.resolucion?.voto_manual"
+      *ngIf="
+        punto.id_punto == puntoSeleccionado && !punto.resolucion?.voto_manual
+      "
     >
       <table class="results-table">
         <thead>
@@ -83,7 +91,9 @@
 
           <!-- Fila total -->
           <ng-container *ngIf="resultados.length">
-            <ng-container *ngIf="resultados[resultados.length - 1].resultado as total">
+            <ng-container
+              *ngIf="resultados[resultados.length - 1].resultado as total"
+            >
               <tr class="total-row">
                 <td>Total</td>
                 <td>{{ punto.n_afavor || 0 }}</td>
@@ -117,7 +127,9 @@
           </tr>
           <tr>
             <th>Descripción</th>
-            <td style="white-space: pre-wrap">{{ punto.resolucion.descripcion }}</td>
+            <td style="white-space: pre-wrap">
+              {{ punto.resolucion.descripcion }}
+            </td>
           </tr>
         </tbody>
       </table>
@@ -128,10 +140,10 @@
       <span *ngIf="punto.resolucion.voto_manual; else auto">
         Manual (registrada por la Secretaría General)
       </span>
-      <ng-template #auto>
-        Automática (calculada por el sistema)
-      </ng-template>
+      <ng-template #auto> Automática (calculada por el sistema) </ng-template>
       <br /><br />
     </div>
   </div>
 </div>
+
+<app-footer></app-footer>

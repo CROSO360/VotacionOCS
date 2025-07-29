@@ -2,107 +2,108 @@
 
 <!-- Contenedor principal encapsulado -->
 <div class="main-container my-5">
-  <!-- Botón para regresar al dashboard -->
-  <button class="back-button" (click)="goBack()">←</button>
-
   <!-- Título de la página -->
   <h2 class="text-center">Puntos de la sesión {{ sesion?.nombre }}</h2>
 
+  <app-boton-atras></app-boton-atras><br /><br />
+
   <div class="buttons-container m-4">
     <button
-      class="btn btn-secondary"
+      class="btn btn-outline-secondary"
       (click)="irADocumentosSesion(idSesion!)"
-      aria-label="Documentos sesión"
     >
+      <i class="bi bi-folder2-open me-1"></i>
       Documentos
     </button>
+    <!-- Botón: Agregar punto -->
     <button
-      class="btn btn-secondary"
+      class="btn btn-success d-flex align-items-center"
       type="button"
-      data-bs-toggle="modal"
-      data-bs-target="#crearPuntoModal"
+      (click)="abrirCrearPunto()"
       [disabled]="sesion?.estado === false"
       aria-label="Agregar punto"
     >
+      <i class="bi bi-plus-circle me-1"></i>
       Agregar punto
     </button>
-
   </div>
 
-<!-- Contenedor con Scroll para los puntos -->
-<div
-  class="points-container"
-  cdkDropList
-  [cdkDropListData]="puntos"
-  (cdkDropListDropped)="reordenar($event)"
-  (cdkDragStarted)="onDragStarted()"
-  (cdkDragEnded)="onDragEnded()"
->
-  <table class="points-table">
-    <tr
-      *ngFor="let punto of puntos; let i = index"
-      cdkDrag
-      [cdkDragData]="punto"
-      class="draggable-row"
-      [cdkDragDisabled]="!punto.status || !sesion.estado"
+  <!-- Contenedor relativo -->
+  <div class="points-wrapper position-relative">
+    <!-- Overlay de bloqueo -->
+    <div
+      *ngIf="bloqueandoReordenamiento"
+      class="blocking-overlay d-flex justify-content-center align-items-center"
     >
-      <!-- Drag Handle (solo si status es true) -->
-      <td *ngIf="punto.status && sesion.estado" class="drag-handle" cdkDragHandle title="Mover">
-        &#x2630;
-      </td>
-      <td *ngIf="!punto.status" class="drag-handle disabled-cell"></td>
+      <span class="spinner-border text-primary" role="status"></span>
+    </div>
 
-      <!-- Nombre del punto -->
-      <td class="point-name">{{ punto.nombre }}</td>
-
-      <!-- Botón fantasma -->
-      <td class="btn-container">{{ punto.orden }}</td>
-
-      <!-- Botón ver punto -->
-      <td class="btn-container">
-        <button
-          class="btn btn-secondary"
-          type="button"
-          (click)="irAPunto(idSesion!, punto.id_punto!)"
-          aria-label="Punto"
+    <!-- Contenedor con Scroll para los puntos -->
+    <div
+      class="points-container"
+      cdkDropList
+      [cdkDropListData]="puntos"
+      (cdkDropListDropped)="reordenar($event)"
+      (cdkDragStarted)="onDragStarted()"
+      (cdkDragEnded)="onDragEnded()"
+    >
+      <table class="points-table">
+        <tr
+          *ngFor="let punto of puntos; let i = index"
+          cdkDrag
+          [cdkDragData]="punto"
+          class="draggable-row"
+          [cdkDragDisabled]="!punto.status || !sesion.estado"
         >
-          Ver punto
-        </button>
-      </td>
+          <!-- Drag Handle (solo si status es true) -->
+          <td
+            *ngIf="punto.status && sesion.estado"
+            class="drag-handle"
+            cdkDragHandle
+            title="Mover"
+          >
+            &#x2630;
+          </td>
+          <td *ngIf="!punto.status" class="drag-handle disabled-cell"></td>
 
-      <!-- Vista previa durante el arrastre -->
-      <ng-template cdkDragPreview>
-        <table class="points-table drag-preview-row">
-          <tr>
-            <td class="drag-handle">&#x2630;</td>
-            <td class="point-name">{{ punto.nombre }}</td>
-            <td class="btn-container">LOOOL</td>
-            <td class="btn-container">
-              <button class="btn btn-secondary">Ver punto</button>
-            </td>
-          </tr>
-        </table>
-      </ng-template>
-    </tr>
-  </table>
-</div>
+          <!-- Nombre del punto -->
+          <td class="point-name">{{ punto.nombre }}</td>
 
+          <!-- Botón fantasma -->
+          <td class="btn-container">{{ punto.orden }}</td>
 
-  
-  
+          <!-- Botón: Ver punto -->
+          <td class="btn-container">
+            <button
+              class="btn btn-punto"
+              type="button"
+              (click)="irAPunto(idSesion!, punto.id_punto!)"
+              aria-label="Punto"
+            >
+              Ver punto
+            </button>
+          </td>
+
+          <!-- Vista previa durante el arrastre -->
+          <ng-template cdkDragPreview>
+            <table class="points-table drag-preview-row">
+              <tr>
+                <td class="drag-handle">&#x2630;</td>
+                <td class="point-name">{{ punto.nombre }}</td>
+                <td class="btn-container">LOOOL</td>
+                <td class="btn-container">
+                  <button class="btn btn-secondary">Ver punto</button>
+                </td>
+              </tr>
+            </table>
+          </ng-template>
+        </tr>
+      </table>
+    </div>
+  </div>
 
   <!-- Botones al final -->
   <div class="buttons-container my-4">
-    <!--button
-      class="btn btn-secondary"
-      type="button"
-      data-bs-toggle="modal"
-      data-bs-target="#crearPuntoModal"
-      [disabled]="sesion?.estado === false"
-      aria-label="Agregar punto"
-    >
-      Agregar punto
-    </button-->
     <button
       class="btn btn-secondary"
       (click)="irAAsistencia(idSesion!)"
@@ -131,82 +132,13 @@
     >
       Ver resultados
     </button>
-  </div><br><br>
-</div>
-
-<!-- Modal para editar punto -->
-<div
-  #exampleModal
-  class="modal fade custom-modal"
-  id="exampleModal"
-  tabindex="-1"
-  aria-labelledby="exampleModalLabel"
-  aria-hidden="true"
->
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h1 class="modal-title fs-5" id="exampleModalLabel">Editar punto</h1>
-        <button
-          type="button"
-          class="btn-close"
-          data-bs-dismiss="modal"
-          aria-label="Close"
-        ></button>
-      </div>
-      <div class="modal-body">
-        <form [formGroup]="modificarPuntoForm" (ngSubmit)="editarPunto()">
-          <div class="form-group">
-            <input type="hidden" formControlName="idPunto" />
-            
-            <label for="nombre" class="form-label">Nombre:</label>
-            <input
-              formControlName="nombre"
-              type="text"
-              id="nombre"
-              placeholder="Nombre"
-              class="form-control"
-              [class.is-invalid]="modificarPuntoForm.get('nombre')?.invalid && modificarPuntoForm.get('nombre')?.touched"
-              aria-label="Nombre del punto"
-            />
-            <div *ngIf="modificarPuntoForm.get('nombre')?.invalid && modificarPuntoForm.get('nombre')?.touched" class="invalid-feedback">
-              El nombre es obligatorio.
-            </div>
-        
-            <label for="detalle" class="form-label">Detalle:</label>
-            <input
-              formControlName="detalle"
-              type="text"
-              id="detalle"
-              placeholder="Detalle"
-              class="form-control"
-              [class.is-invalid]="modificarPuntoForm.get('detalle')?.invalid && modificarPuntoForm.get('detalle')?.touched"
-              aria-label="Detalle del punto"
-            />
-            <div *ngIf="modificarPuntoForm.get('detalle')?.invalid && modificarPuntoForm.get('detalle')?.touched" class="invalid-feedback">
-              El detalle es obligatorio.
-            </div>
-            
-            <label for="estado" class="form-label">Estado </label>
-            <input type="checkbox" formControlName="estado" aria-label="Estado del punto" />
-          </div>
-        
-          <button type="submit" class="btn btn-primary" aria-label="Guardar cambios" [disabled]="modificarPuntoForm.invalid">
-            Guardar cambios
-          </button>
-        </form>
-        
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" aria-label="Cerrar">
-          Cerrar
-        </button>
-      </div>
-    </div>
   </div>
+  <br /><br />
 </div>
 
-<!-- Modal para crear punto -->
+<!-- =============================== -->
+<!-- Modal: Crear punto -->
+<!-- =============================== -->
 <div
   #crearPuntoModal
   class="modal fade custom-modal"
@@ -217,62 +149,100 @@
 >
   <div class="modal-dialog">
     <div class="modal-content">
+      <!-- CABECERA -->
       <div class="modal-header">
         <h1 class="modal-title fs-5" id="crearPuntoModalLabel">Crear punto</h1>
         <button
           type="button"
           class="btn-close"
           data-bs-dismiss="modal"
-          aria-label="Close"
+          aria-label="Cerrar"
         ></button>
       </div>
+
+      <!-- CUERPO -->
       <div class="modal-body">
         <form [formGroup]="crearPuntoForm" (ngSubmit)="crearPunto()">
-          <div class="form-group">
-            <label for="nombre" class="form-label">Nombre:</label>
-            <input
-              formControlName="nombre"
-              type="text"
-              id="nombre"
-              placeholder="Nombre"
-              class="form-control"
-              [class.is-invalid]="crearPuntoForm.get('nombre')?.invalid && crearPuntoForm.get('nombre')?.touched"
-              aria-label="Nombre del nuevo punto"
-            />
-            <div *ngIf="crearPuntoForm.get('nombre')?.invalid && crearPuntoForm.get('nombre')?.touched" class="invalid-feedback">
-              El nombre es obligatorio.
-            </div>
-        
-            <label for="detalle" class="form-label">Detalle:</label>
-            <input
-              formControlName="detalle"
-              type="text"
-              id="detalle"
-              placeholder="Detalle"
-              class="form-control"
-              [class.is-invalid]="crearPuntoForm.get('detalle')?.invalid && crearPuntoForm.get('detalle')?.touched"
-              aria-label="Detalle del nuevo punto"
-            />
-            <div *ngIf="crearPuntoForm.get('detalle')?.invalid && crearPuntoForm.get('detalle')?.touched" class="invalid-feedback">
-              El detalle es obligatorio.
-            </div>
-
-            <label for="es_administrativa" class="form-label">Tema administrativo</label>
-            <input type="checkbox" formControlName="es_administrativa" id="es_administrativa" />
+          <!-- Campo: Nombre -->
+          <label for="nombre" class="form-label">Nombre:</label>
+          <input
+            type="text"
+            id="nombre"
+            class="form-control"
+            formControlName="nombre"
+            placeholder="Nombre del punto"
+          />
+          <div
+            *ngIf="
+              crearPuntoForm.get('nombre')?.invalid &&
+              crearPuntoForm.get('nombre')?.touched
+            "
+            class="text-danger"
+          >
+            El nombre es obligatorio.
           </div>
-        
-          <button type="submit" class="btn btn-primary" aria-label="Guardar punto" [disabled]="crearPuntoForm.invalid">
-            Guardar cambios
-          </button>
+
+          <!-- Campo: Detalle -->
+          <label for="detalle" class="form-label">Detalle:</label>
+          <textarea
+            id="detalle"
+            class="form-control"
+            formControlName="detalle"
+            placeholder="Detalle del punto"
+            rows="4"
+          ></textarea>
+
+          <div
+            *ngIf="
+              crearPuntoForm.get('detalle')?.invalid &&
+              crearPuntoForm.get('detalle')?.touched
+            "
+            class="text-danger"
+          >
+            El detalle es obligatorio.
+          </div>
+
+          <!-- Campo: Tema administrativa -->
+          <div class="form-check mt-3">
+            <input
+              type="checkbox"
+              id="es_administrativa"
+              class="form-check-input"
+              formControlName="es_administrativa"
+            />
+            <label for="es_administrativa" class="form-check-label">
+              Tema administrativo
+            </label>
+          </div>
+
+          <!-- PIE DEL MODAL -->
+          <div class="modal-footer mt-4">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-bs-dismiss="modal"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              class="btn btn-primary d-flex align-items-center"
+              [disabled]="crearPuntoForm.invalid || guardandoPunto"
+            >
+              <ng-container *ngIf="!guardandoPunto; else loadingGuardar">
+                <i class="bi bi-save me-2"></i>
+                Guardar cambios
+              </ng-container>
+              <ng-template #loadingGuardar>
+                <span class="spinner-border spinner-border-sm me-2"></span>
+                Guardando...
+              </ng-template>
+            </button>
+          </div>
         </form>
-        
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" aria-label="Cerrar">
-          Cerrar
-        </button>
       </div>
     </div>
   </div>
 </div>
 
+<app-footer></app-footer>

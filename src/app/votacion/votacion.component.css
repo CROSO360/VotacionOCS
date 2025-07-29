@@ -9,38 +9,39 @@
 }
 
 .square {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   border: 1px solid #ccc;
-  padding: 10px;
-  text-align: center;
-  vertical-align: middle;
+  border-radius: 8px;
+  padding: 10px 15px;
+  /*background-color: #fff;*/
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+  transition: box-shadow 0.2s ease-in-out;
+  position: relative;
+  background-color: #fafafa;
+  border-color: #e0e0e0;
+}
+
+.square:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.point-name {
+  margin: 0;
+  font-weight: 500;
 }
 
 .points-container {
-  max-height: 350px;
+  max-height: 500px;
   overflow-y: auto;
   border: 1px solid #ccc;
   padding: 15px;
   margin-bottom: 20px;
 }
 
-.back-button {
-  /*background-color: transparent;
-    border: 1px solid black;*/
-  font-size: 24px;
-  cursor: pointer;
-  margin-bottom: 20px;
-}
-
-button {
-  background-color: #333;
-  color: white;
-  border: none;
-  cursor: pointer;
-  border-radius: 4px;
-}
-
-button:hover {
-  background-color: #555;
+.btn-container {
+  margin-left: auto;
 }
 
 .sin-votar {
@@ -68,23 +69,27 @@ button:hover {
   animation: blink 1s infinite;
 }
 
+.reemplazo-info {
+  font-size: 12px;
+  color: black;
+  font-style: italic;
+}
+
+
+.btn-razonado {
+  font-size: 13px;
+  padding: 4px 8px;
+  line-height: 1.2;
+}
+
+
 @keyframes blink {
-  0% { background-color: red; }
-  50% { background-color: transparent; }
-  100% { background-color: red; }
+  0%   { background-color: #90a4ae	; }
+  50%  { background-color: transparent; }
+  100% { background-color: #90a4ae	; }
 }
 
-select {
-  padding: 8px;
-  font-size: 16px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  margin-bottom: 10px;
-}
 
-.square {
-  position: relative; /* Permite posicionar el botón en relación al contenedor .square */
-}
 
 .three-dots-btn {
   position: absolute;
@@ -99,6 +104,89 @@ select {
 .three-dots-btn:focus {
   outline: none; /* Elimina el borde de enfoque predeterminado */
 }
+
+/*.three-dots-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 20px;
+  padding: 5px;
+}*/
+
+
+.disabled-box {
+  opacity: 0.4;
+  pointer-events: none;
+  background-color: #f2f2f2;
+}
+
+/* Contenedor general: muestra 2 grupos por fila */
+.grid-grupos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+}
+
+/* Cada grupo */
+.grupo-block {
+  flex: 1 1 32%;
+  min-width: 280px;
+  max-width: 420px;
+  background-color: #fafafa;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 10px;
+  box-sizing: border-box;
+}
+
+/* Título del grupo */
+.grupo-titulo {
+  font-weight: bold;
+  font-size: 15px;
+  margin-bottom: 10px;
+  border-left: 4px solid #007bff;
+  padding-left: 8px;
+}
+
+/* Dentro del grupo: tarjetas alineadas horizontalmente */
+.grupo-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 12px;
+}
+
+
+
+.back-button {
+  /*background-color: transparent;
+    border: 1px solid black;*/
+  font-size: 24px;
+  cursor: pointer;
+  margin-bottom: 20px;
+}
+
+button {
+  background-color: #333;
+  color: white;
+  border: none;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+button:hover {
+  background-color: #555;
+}
+
+
+
+select {
+  padding: 8px;
+  font-size: 16px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  margin-bottom: 10px;
+}
+
 
 
 
@@ -175,20 +263,14 @@ select {
   border-left: 1px solid #ccc;
 }
 
-.three-dots-btn {
-  background: none;
-  border: none;
-  cursor: pointer;
-  font-size: 20px;
-  padding: 5px;
-}
+
 
 .custom-dropdown {
   position: relative;
   display: inline-block;
 }
 
-.custom-dropdown-toggle {
+/*.custom-dropdown-toggle {
   background-color: #6c757d;
   color: white;
   padding: 10px 20px;
@@ -196,6 +278,13 @@ select {
   cursor: pointer;
   font-size: 16px;
   border-radius: 5px;
+}*/
+
+.custom-dropdown-toggle {
+  padding: 5px 10px;
+  border-radius: 4px;
+  background-color: gray;
+  font-size: 16px;
 }
 
 .custom-dropdown-menu {
@@ -222,11 +311,6 @@ select {
   background-color: #ddd;
 }
 
-.disabled-box {
-  opacity: 0.4;
-  pointer-events: none;
-  background-color: #f2f2f2;
-}
 
 
 .custom-select-width {
@@ -235,46 +319,103 @@ select {
 }
 
 
-/*.points-container {
-    max-height: 280px;
-    overflow-y: auto;
-    border: 1px solid #ccc;
-    padding: 15px;
-    margin-bottom: 20px;
+.custom-dropdown-toggle:hover {
+  background-color: #90a4ae;
 }
 
-.points-table {
-    width: 100%;
-    border-collapse: collapse;
+
+/* Ítem de asistencia */
+.asistencia-item {
+  min-height: 64px;
+  border: 1px solid #ddd;
+  border-left: 5px solid transparent;
+  border-radius: 4px;
+  background-color: #fff;
+  padding: 10px 15px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: nowrap; /* 🟢 Esto evita que el botón salte debajo */
+  gap: 12px; /* 🟢 Espacio entre las dos columnas */
 }
 
-.points-table td {
-    padding: 10px;
-    border: 1px solid #ccc;
-    text-align: center; 
-    vertical-align: middle; 
+
+/* Borde azul para miembros */
+.asistencia-miembro {
+  border-left-color: #0d6efd !important; /* Bootstrap primary */
 }
 
-.point-name {
-    width: 30%; 
+/* Borde gris para extras */
+.asistencia-extra {
+  border-left-color: #6c757d !important; /* Bootstrap secondary */
 }
 
-.btn-container {
-    width: 35%; 
+.cuadro-color {
+  width: 12px;
+  height: 12px;
+  display: inline-block;
+  border-radius: 2px;
 }
 
-.btn, .buttons-container .btn-secondary {
-    width: 100%; 
-    padding: 12px;
-    text-align: center;
-    width: max-content; 
-    padding: 8px 15px; 
-    white-space: nowrap;
-    min-width: 150px; 
+.asistencia-item .form-select-sm {
+  min-width: 120px; /* 🟢 Fuerza ancho mínimo del selector */
 }
 
-.buttons-container {
-    display: flex;
-    justify-content: space-between;
-    margin-top: 30px; /* añade un espacio entre la tabla y los botones 
-}*/
+.asistencia-item button {
+  white-space: nowrap; /* 🟢 Evita que "Cambiar" se divida en dos líneas */
+  padding: 4px 10px;
+}
+
+/* Ítem de votación híbrida */
+.voto-hibrido-item {
+  min-height: 64px;
+  border: 1px solid #ddd;
+  border-left: 5px solid transparent;
+  border-radius: 4px;
+  background-color: #fff;
+  padding: 10px 15px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: nowrap;
+  gap: 12px;
+}
+
+/* Borde por tipo de voto (opcional y visual) */
+.voto-afavor {
+  border-left-color: #198754 !important; /* Bootstrap success */
+}
+.voto-encontra {
+  border-left-color: #dc3545 !important; /* Bootstrap danger */
+}
+.voto-abstencion {
+  border-left-color: #ffc107 !important; /* Bootstrap warning */
+}
+.voto-sinvoto {
+  border-left-color: #6c757d !important; /* Bootstrap secondary */
+}
+
+/* Selector */
+.voto-hibrido-item .form-select-sm {
+  min-width: 120px;
+}
+
+/* Nombre del usuario */
+.voto-hibrido-item span {
+  font-weight: 600;
+  flex-grow: 1;
+}
+
+/* Opcional: para mantener alineado el select */
+.voto-hibrido-item .form-select {
+  width: 50%;
+}
+
+/* 🔵 Aplica solo al paso 5 del modal de votación híbrida */
+.modal-content .paso-hibrido-expandido {
+  max-width: 95vw;
+  width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+}
+

@@ -4,13 +4,15 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { ToastrService } from 'ngx-toastr';
 
 // Componentes y servicios personalizados
-import { BarraSuperiorComponent } from '../barra-superior/barra-superior.component';
+import { BarraSuperiorComponent } from '../components/barra-superior/barra-superior.component';
 import { UsuarioService } from '../services/usuario.service';
 import { GrupoUsuarioService } from '../services/grupoUsuario.service';
 import { MiembroService } from '../services/miembro.service';
 
 // RxJS
 import { forkJoin, Observable, tap } from 'rxjs';
+import { BotonAtrasComponent } from "../components/boton-atras/boton-atras.component";
+import { FooterComponent } from "../components/footer/footer.component";
 
 @Component({
   selector: 'app-miembros',
@@ -20,7 +22,9 @@ import { forkJoin, Observable, tap } from 'rxjs';
     ReactiveFormsModule,
     FormsModule,
     BarraSuperiorComponent,
-  ],
+    BotonAtrasComponent,
+    FooterComponent
+],
   templateUrl: './miembros.component.html',
   styleUrl: './miembros.component.css',
 })
@@ -38,6 +42,10 @@ export class MiembrosComponent {
   miembros: any[] = [];
   grupoActual: any = null;
   gruposUsuarios: any[] = [];
+
+
+  //falgs
+  guardandoMiembros: boolean = false;
 
   // =====================
   // Constructor e inyección de servicios
@@ -158,31 +166,43 @@ export class MiembrosComponent {
   // Guardar lista de miembros
   // =====================
   guardarMiembros() {
-    const eliminarObservables = this.miembros.map((miembro) =>
-      this.miembroService.deleteData(miembro.id_miembro!).toPromise()
-    );
-
-    Promise.all(eliminarObservables)
-      .then(() => {
-        this.toastr.info('Miembros anteriores eliminados', 'Proceso');
-
-        const agregarObservables = this.usuariosSeleccionados.map((usuario) =>
-          this.miembroService.saveData({
-            usuario: { id_usuario: usuario.id_usuario },
-            estado: true,
-          }).toPromise()
-        );
-
-        Promise.all(agregarObservables).then(() => {
-          this.toastr.success('Lista de miembros actualizada correctamente', 'Éxito');
-          this.cargarMiembros(); // Refrescar lista
-        });
-      })
-      .catch((error) => {
-        this.toastr.error('Error al actualizar los miembros', 'Error');
-        console.error(error);
-      });
+  if (this.usuariosSeleccionados.length === 0) {
+    this.toastr.warning('Debes seleccionar al menos un miembro.', 'Aviso');
+    return;
   }
+
+  this.guardandoMiembros = true;
+
+  const eliminarObservables = this.miembros.map((miembro) =>
+    this.miembroService.deleteData(miembro.id_miembro!).toPromise()
+  );
+
+  Promise.all(eliminarObservables)
+    .then(() => {
+      this.toastr.info('Miembros anteriores eliminados', 'Proceso');
+
+      const agregarObservables = this.usuariosSeleccionados.map((usuario) =>
+        this.miembroService.saveData({
+          usuario: { id_usuario: usuario.id_usuario },
+          estado: true,
+        }).toPromise()
+      );
+
+      return Promise.all(agregarObservables);
+    })
+    .then(() => {
+      this.toastr.success('Lista de miembros actualizada correctamente', 'Éxito');
+      this.cargarMiembros(); // Refrescar lista
+    })
+    .catch((error) => {
+      this.toastr.error('Error al actualizar los miembros', 'Error');
+      console.error(error);
+    })
+    .finally(() => {
+      this.guardandoMiembros = false;
+    });
+}
+
 
   // =====================
   // Navegación
