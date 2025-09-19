@@ -35,7 +35,7 @@ import { ToastrService } from 'ngx-toastr';
 import { BotonAtrasComponent } from '../components/boton-atras/boton-atras.component';
 
 import { Modal } from 'bootstrap';
-import { FooterComponent } from "../components/footer/footer.component"; // asegúrate que bootstrap está instalado
+import { FooterComponent } from '../components/footer/footer.component'; // asegúrate que bootstrap está instalado
 
 @Component({
   selector: 'app-asistencia',
@@ -46,8 +46,8 @@ import { FooterComponent } from "../components/footer/footer.component"; // aseg
     ReactiveFormsModule,
     BarraSuperiorComponent,
     BotonAtrasComponent,
-    FooterComponent
-],
+    FooterComponent,
+  ],
   templateUrl: './asistencia.component.html',
   styleUrl: './asistencia.component.css',
 })
@@ -93,6 +93,16 @@ export class AsistenciaComponent implements OnInit {
 
   tipoAsistenciaActual: string | null = null; // 'presente', 'ausente' o null (todos)
 
+  totalCount: number = 0;
+  presentesCount: number = 0;
+  ausentesCount: number = 0;
+
+  private norm = (v: any) =>
+    (v ?? 'ausente').toString().trim().toLowerCase() as 'presente' | 'ausente';
+
+  trackByGrupo = (_: number, g: { grupo: string }) => g.grupo;
+  trackByAsistencia = (_: number, a: IAsistencia) => a.id_asistencia;
+
   // =======================
   // Constructor
   // =======================
@@ -113,6 +123,11 @@ export class AsistenciaComponent implements OnInit {
   ngOnInit(): void {
     this.idSesion = parseInt(this.route.snapshot.paramMap.get('idSesion')!, 10);
 
+    const norm = (v: any) =>
+      (v ?? 'ausente').toString().trim().toLowerCase() as
+        | 'presente'
+        | 'ausente';
+
     const asistenciaModalEl = document.getElementById('modalAsistencia');
     if (asistenciaModalEl)
       this.asistenciaModalRef = new Modal(asistenciaModalEl);
@@ -128,7 +143,10 @@ export class AsistenciaComponent implements OnInit {
         this.gruposUsuarios = grupos;
         this.usuarios = usuarios;
         this.sesion = sesion;
-        this.asistencias = asistencias || [];
+        this.asistencias = (asistencias || []).map((a) => ({
+          ...a,
+          tipo_asistencia: norm(a.tipo_asistencia),
+        }));
         this.asistenciasOriginales = [...this.asistencias];
         this.miembrosOCS = miembros.map((m) => m.usuario);
 
@@ -143,15 +161,27 @@ export class AsistenciaComponent implements OnInit {
         );
         this.filtrarUsuarios();
         this.cambiarGrupo(null);
+
         this.filtrarAsistencias();
-        this.agrupadosPorGrupoAsistencia = this.agruparAsistenciasPorGrupo(
-          this.asistencias
-        );
+
+        this.actualizarContadores();
       },
       error: (err) => {
         console.error('Error al cargar los datos:', err);
         this.toastr.error('Error al cargar los datos', 'Error');
       },
+    });
+  }
+
+  onCambioTipoAsistencia(
+    a: IAsistencia,
+    nuevo: 'presente' | 'ausente',
+    anchor?: HTMLElement
+  ) {
+    this.keepAnchorPosition(anchor, () => {
+      a.tipo_asistencia = this.norm(nuevo);
+      this.actualizarContadores();
+      this.filtrarAsistencias();
     });
   }
 
@@ -167,6 +197,13 @@ export class AsistenciaComponent implements OnInit {
 
     return nombresMapeados[nombre.toLowerCase()] || nombre;
   }
+
+  // Devuelve true si la asistencia está presente (para reflejar el switch en la vista)
+isPresente(a: IAsistencia): boolean {
+  const v = (a?.tipo_asistencia ?? 'ausente') + '';
+  return v.trim().toLowerCase() === 'presente';
+}
+
 
   // =======================
   // Carga de datos
@@ -205,26 +242,42 @@ export class AsistenciaComponent implements OnInit {
   filtrarAsistencias(): void {
     const filtro = this.busqueda.toLowerCase().trim();
 
-    this.asistenciasFiltradas = this.asistenciasOriginales.filter((a) => {
-      const coincideBusqueda =
-        a.usuario?.nombre?.toLowerCase().includes(filtro) ||
-        a.usuario?.cedula?.includes(filtro);
+    this.asistenciasFiltradas = (this.asistenciasOriginales || []).filter(
+      (a) => {
+        const coincideBusqueda =
+          (a.usuario?.nombre?.toLowerCase() || '').includes(filtro) ||
+          (a.usuario?.cedula || '').includes(filtro);
 
-      const coincideTipo =
-        !this.tipoAsistenciaActual ||
-        a.tipo_asistencia === this.tipoAsistenciaActual;
+        const coincideTipo =
+          !this.tipoAsistenciaActual ||
+          this.norm(a.tipo_asistencia) === this.tipoAsistenciaActual;
 
-      return coincideBusqueda && coincideTipo;
-    });
+        return coincideBusqueda && coincideTipo;
+      }
+    );
 
     this.agrupadosPorGrupoAsistencia = this.agruparAsistenciasPorGrupo(
       this.asistenciasFiltradas
     );
   }
 
+  actualizarContadores(): void {
+    const base = this.asistenciasOriginales || [];
+    this.totalCount = base.length;
+    this.presentesCount = base.filter(
+      (a) => this.norm(a.tipo_asistencia) === 'presente'
+    ).length;
+    this.ausentesCount = base.filter(
+      (a) => this.norm(a.tipo_asistencia) === 'ausente'
+    ).length;
+  }
+
   cambiarTipoAsistencia(tipo: string | null): void {
-    this.tipoAsistenciaActual = tipo;
-    this.filtrarAsistencias();
+    const anchor = document.activeElement as HTMLElement | null;
+    this.keepAnchorPosition(anchor, () => {
+      this.tipoAsistenciaActual = tipo;
+      this.filtrarAsistencias();
+    });
   }
 
   filtrarUsuarios() {
@@ -343,23 +396,38 @@ export class AsistenciaComponent implements OnInit {
     }
   }
 
-  enviarAsistencia() {
+  enviarAsistencia(): void {
     if (!this.idSesion) return;
+    if (!this.asistencias?.length) {
+      this.toastr.info('No hay asistencias para enviar.');
+      return;
+    }
+
     this.enviandoAsistencia = true;
 
-    this.asistenciaService.saveManyData(this.asistencias).subscribe({
-      next: () => {
-        this.toastr.success('Asistencias guardadas correctamente');
-        this.ngOnInit();
-        this.enviandoAsistencia = false;
-        this.cerrarModal('modalConfirmarEnvio');
-      },
-      error: (err) => {
-        console.error('Error al guardar asistencias:', err);
-        this.toastr.error('Error al guardar asistencias', err.error.message);
-        this.enviandoAsistencia = false;
-      },
-    });
+    const actualizaciones = this.asistencias.map((a: any) => ({
+      id_asistencia: a.id_asistencia,
+      tipo_asistencia: a.tipo_asistencia,
+    }));
+
+    this.asistenciaService
+      .guardarAsistencias(this.idSesion, actualizaciones)
+      .subscribe({
+        next: () => {
+          this.toastr.success('Asistencias guardadas y votos sincronizados');
+          this.ngOnInit(); // si así recargas la vista
+          this.enviandoAsistencia = false;
+          this.cerrarModal('modalConfirmarEnvio');
+        },
+        error: (err) => {
+          console.error('Error al guardar asistencias:', err);
+          this.toastr.error(
+            'Error al guardar asistencias',
+            err?.error?.message || ''
+          );
+          this.enviandoAsistencia = false;
+        },
+      });
   }
 
   agruparAsistenciasPorGrupo(
@@ -411,37 +479,36 @@ export class AsistenciaComponent implements OnInit {
   }
 
   cerrarModal(modalId: string): void {
-  try {
-    const modalEl = document.getElementById(modalId);
-    if (!modalEl) return;
+    try {
+      const modalEl = document.getElementById(modalId);
+      if (!modalEl) return;
 
-    // Cerrar con Bootstrap
-    const modalInstance = Modal.getInstance(modalEl) || new Modal(modalEl);
-    modalInstance.hide();
+      // Cerrar con Bootstrap
+      const modalInstance = Modal.getInstance(modalEl) || new Modal(modalEl);
+      modalInstance.hide();
 
-    // Esperar al evento 'hidden' para limpiar el body
-    const onHidden = () => {
-      const otrosAbiertos = document.querySelectorAll('.modal.show').length;
+      // Esperar al evento 'hidden' para limpiar el body
+      const onHidden = () => {
+        const otrosAbiertos = document.querySelectorAll('.modal.show').length;
 
-      if (otrosAbiertos === 0) {
-        document.body.classList.remove('modal-open');
-        document.body.style.removeProperty('overflow');
-        document.body.style.removeProperty('padding-right');
-      }
+        if (otrosAbiertos === 0) {
+          document.body.classList.remove('modal-open');
+          document.body.style.removeProperty('overflow');
+          document.body.style.removeProperty('padding-right');
+        }
 
-      // Limpiar backdrops
-      document.querySelectorAll('.modal-backdrop').forEach((b) => b.remove());
+        // Limpiar backdrops
+        document.querySelectorAll('.modal-backdrop').forEach((b) => b.remove());
 
-      // Quitar el listener
-      modalEl.removeEventListener('hidden.bs.modal', onHidden);
-    };
+        // Quitar el listener
+        modalEl.removeEventListener('hidden.bs.modal', onHidden);
+      };
 
-    modalEl.addEventListener('hidden.bs.modal', onHidden);
-  } catch (error) {
-    console.error(`Error al cerrar el modal "${modalId}":`, error);
+      modalEl.addEventListener('hidden.bs.modal', onHidden);
+    } catch (error) {
+      console.error(`Error al cerrar el modal "${modalId}":`, error);
+    }
   }
-}
-
 
   goBack() {
     this.location.back();
@@ -459,4 +526,49 @@ export class AsistenciaComponent implements OnInit {
       this.showOptions = false;
     }
   }
+
+  /** Devuelve el contenedor desplazable más cercano (o window) */
+  private getScrollContainer(el?: HTMLElement): HTMLElement | Window {
+    if (!el) return window;
+    let node: HTMLElement | null = el.parentElement;
+    while (node && node !== document.body) {
+      const oy = getComputedStyle(node).overflowY;
+      if (/(auto|scroll)/.test(oy)) return node;
+      node = node.parentElement;
+    }
+    return window;
+  }
+
+  /** Mantén el elemento `el` en la misma posición de viewport tras run() */
+private keepAnchorPosition(
+  el: HTMLElement | null | undefined,
+  run: () => void
+) {
+  const anchor = (el as HTMLElement) ?? (document.activeElement as HTMLElement | null);
+  const before = anchor?.getBoundingClientRect().top ?? null;
+  const container = this.getScrollContainer(anchor || undefined);
+
+  run(); // muta estado/listas
+
+  // Espera al repintado
+  requestAnimationFrame(() => {
+    if (before == null || !anchor) return;
+
+    // Si el elemento ya no existe (p.ej. lo ocultó el filtro), no tocar el scroll
+    if (!anchor.isConnected || !document.body.contains(anchor)) return;
+
+    const after = anchor.getBoundingClientRect().top;
+    const delta = after - before;
+
+    if (Math.abs(delta) < 1) return;
+
+    if (container === window) {
+      // ✅ Compensar el desplazamiento (signo invertido)
+      window.scrollBy(0, -delta);
+    } else {
+      (container as HTMLElement).scrollTop -= delta;
+    }
+  });
+}
+
 }

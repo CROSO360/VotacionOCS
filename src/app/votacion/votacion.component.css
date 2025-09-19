@@ -419,3 +419,45 @@ select {
   margin-right: auto;
 }
 
+/* votacion.component.css */
+.form-check.form-switch .form-check-input {
+  cursor: pointer;
+}
+.asistencia-item .form-check-label {
+  margin-left: .25rem;
+}
+
+
+.code-row {
+  display: flex;
+  justify-content: center;
+}
+
+.session-code-box {
+  display: inline-block;
+  padding: .5rem .9rem;
+  border: 1px solid #e1e1e1;
+  border-radius: .5rem;
+  background: #f8f9fa;
+  cursor: pointer;
+  user-select: none;
+  transition: background .15s ease, border-color .15s ease, box-shadow .15s ease;
+  min-width: 180px;
+  text-align: center;
+  font-weight: 500;
+  line-height: 1.2;
+
+  &:hover { background: #f1f3f5; }
+  &:focus-visible { outline: 2px solid #6c757d; outline-offset: 2px; }
+}
+
+.session-code-box.visible {
+  background: #ffffff;
+  border-color: #d0d0d0;
+  box-shadow: 0 1px 4px rgba(0,0,0,.08);
+}
+
+.code-text {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+  letter-spacing: .04em;
+}

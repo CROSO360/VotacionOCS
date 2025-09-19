@@ -5,7 +5,7 @@
 
 // Importaciones Angular y comunes
 import { CommonModule } from '@angular/common';
-import { Component } from '@angular/core';
+import { Component, ElementRef, ViewChild } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Location } from '@angular/common';
 
@@ -22,18 +22,23 @@ import { BarraSuperiorComponent } from '../components/barra-superior/barra-super
 import { ISesion } from '../interfaces/ISesion';
 import { ISesionDocumento } from '../interfaces/ISesionDocumento';
 import { IDocumento } from '../interfaces/IDocumento';
-import { BotonAtrasComponent } from "../components/boton-atras/boton-atras.component";
-import { FooterComponent } from "../components/footer/footer.component";
+import { BotonAtrasComponent } from '../components/boton-atras/boton-atras.component';
+import { FooterComponent } from '../components/footer/footer.component';
+import { finalize, switchMap } from 'rxjs';
 
 @Component({
   selector: 'app-documentos-sesion',
   standalone: true,
-  imports: [CommonModule, BarraSuperiorComponent, BotonAtrasComponent, FooterComponent],
+  imports: [
+    CommonModule,
+    BarraSuperiorComponent,
+    BotonAtrasComponent,
+    FooterComponent,
+  ],
   templateUrl: './documentos-sesion.component.html',
-  styleUrl: './documentos-sesion.component.css'
+  styleUrl: './documentos-sesion.component.css',
 })
 export class DocumentosSesionComponent {
-
   // =======================
   // Propiedades
   // =======================
@@ -43,6 +48,11 @@ export class DocumentosSesionComponent {
 
   //flags
   eliminandoDocumento: Map<number, boolean> = new Map();
+  // Flag de carga
+  subiendoDocumento = false;
+
+  // Referencia al <input type="file">
+  @ViewChild('archivoInput') archivoInput!: ElementRef<HTMLInputElement>;
 
   // =======================
   // Constructor
@@ -82,9 +92,11 @@ export class DocumentosSesionComponent {
   getSesionDocumentos() {
     const query = `sesion.id_sesion=${this.idSesion}`;
     const relations = ['documento'];
-    this.sesionDocumentoService.getAllDataBy(query, relations).subscribe((data) => {
-      this.sesionDocumentos = data;
-    });
+    this.sesionDocumentoService
+      .getAllDataBy(query, relations)
+      .subscribe((data) => {
+        this.sesionDocumentos = data;
+      });
   }
 
   // =======================
@@ -101,6 +113,7 @@ export class DocumentosSesionComponent {
     const input = event.target as HTMLInputElement;
     if (input.files && input.files.length > 0) {
       const selectedFile = input.files[0];
+      this.subiendoDocumento = true;
       this.subirDocumento(selectedFile);
     }
   }
@@ -109,38 +122,66 @@ export class DocumentosSesionComponent {
   //  Subir documento y asociarlo a la sesión
   // =======================
   subirDocumento(documento: File) {
-    this.documentoService.subirDocumento(documento).subscribe((data) => {
-      const sesionDocumentoData: ISesionDocumento = {
-        sesion: { id_sesion: this.idSesion },
-        documento: { id_documento: data.id_documento },
-      };
-      this.sesionDocumentoService.saveData(sesionDocumentoData).subscribe(() => {
-        this.toastrService.success('Documento subido correctamente');
-        this.getSesionDocumentos();
+    this.documentoService
+      .subirDocumento(documento)
+      .pipe(
+        switchMap((data) => {
+          const sesionDocumentoData: ISesionDocumento = {
+            sesion: { id_sesion: this.idSesion },
+            documento: { id_documento: data.id_documento },
+          };
+          return this.sesionDocumentoService.saveData(sesionDocumentoData);
+        }),
+        finalize(() => {
+          // ⬅️ siempre vuelve a la normalidad (éxito o error)
+          this.subiendoDocumento = false;
+          this.resetInputArchivo();
+        })
+      )
+      .subscribe({
+        next: () => {
+          this.toastrService.success('Documento subido correctamente');
+          this.getSesionDocumentos();
+        },
+        error: (err) => {
+          this.toastrService.error(
+            'No se pudo subir el documento',
+            err?.error?.message || 'Error'
+          );
+          this.subiendoDocumento = false;
+          this.resetInputArchivo();
+        },
       });
-    });
+  }
+
+  // Limpia el input para permitir volver a elegir el mismo archivo si se desea
+  private resetInputArchivo(): void {
+    if (this.archivoInput) this.archivoInput.nativeElement.value = '';
   }
 
   // =======================
   // Eliminar documento por ID
   // =======================
   eliminarDocumento(id: number): void {
-  this.eliminandoDocumento.set(id, true);
+    this.eliminandoDocumento.set(id, true);
 
-  this.documentoService.eliminarDocumento(id).subscribe({
-    next: () => {
-      this.toastrService.success('Documento eliminado correctamente');
-      this.getSesionDocumentos();
-    },
-    error: (err) => {
-      this.toastrService.error('No se pudo eliminar el documento', err.error.message);
-      this.eliminandoDocumento.set(id, false);
-    },
-    complete: () => {
-      this.eliminandoDocumento.set(id, false);
-    }
-  });
-}
+    this.documentoService.eliminarDocumento(id).subscribe({
+      next: () => {
+        this.toastrService.success('Documento eliminado correctamente');
+        this.getSesionDocumentos();
+      },
+      error: (err) => {
+        this.toastrService.error(
+          'No se pudo eliminar el documento',
+          err.error.message
+        );
+        this.eliminandoDocumento.set(id, false);
+      },
+      complete: () => {
+        this.eliminandoDocumento.set(id, false);
+      },
+    });
+  }
 
   // =======================
   // Volver a la vista anterior

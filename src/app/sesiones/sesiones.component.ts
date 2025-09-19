@@ -177,11 +177,14 @@ export class SesionesComponent implements OnInit {
   abrirEditar(sesion: any) {
     this.modificarSesionForm.reset();
 
+    const fechaBD = sesion.fecha_inicio; // "2025-05-26 06:50:19"
+    const fechaLocal = fechaBD.replace(' ', 'T').slice(0, 16);
+
     this.modificarSesionForm.setValue({
       idSesion: sesion.id_sesion,
       nombre: sesion.nombre,
       codigo: sesion.codigo,
-      fecha_inicio: sesion.fecha_inicio.substring(0, 10),
+      fecha_inicio: fechaLocal,
       tipo: sesion.tipo,
       estado: sesion.estado,
     });

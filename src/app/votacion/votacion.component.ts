@@ -9,6 +9,7 @@ import {
   HostListener,
   OnInit,
   Renderer2,
+  ViewChild,
 } from '@angular/core';
 import {
   FormControl,
@@ -47,7 +48,8 @@ import { IResolucion } from '../interfaces/IResolucion';
 import { IGrupo } from '../interfaces/IGrupo';
 import { GrupoService } from '../services/grupo.service';
 import { BotonAtrasComponent } from '../components/boton-atras/boton-atras.component';
-import { FooterComponent } from "../components/footer/footer.component";
+import { FooterComponent } from '../components/footer/footer.component';
+import { data } from 'jquery';
 
 @Component({
   selector: 'app-votacion',
@@ -58,12 +60,13 @@ import { FooterComponent } from "../components/footer/footer.component";
     ReactiveFormsModule,
     BarraSuperiorComponent,
     BotonAtrasComponent,
-    FooterComponent
-],
+    FooterComponent,
+  ],
   templateUrl: './votacion.component.html',
   styleUrl: './votacion.component.css',
 })
 export class VotacionComponent implements OnInit {
+  
   // =======================================
   // CONSTRUCTOR E INYECCIÓN DE DEPENDENCIAS
   // =======================================
@@ -175,7 +178,31 @@ export class VotacionComponent implements OnInit {
   guardandoResultadoHibrido = false;
   cargandoReconsideracion: boolean = false;
 
+  showCodigo = false;
+
   agrupadosPorGrupo: { grupo: string; usuarios: IPuntoUsuario[] }[] = [];
+
+  presentesCount: number = 0;
+  ausentesCount: number = 0;
+  totalCount: number = 0;
+
+  contadoresHibrido = {
+    todos: 0,
+    afavor: 0,
+    encontra: 0,
+    abstencion: 0,
+    sinvoto: 0,
+  };
+
+  private norm = (v: any) =>
+    (v ?? 'ausente').toString().trim().toLowerCase() as 'presente' | 'ausente';
+
+  @ViewChild('nominaScroll') nominaScroll?: ElementRef<HTMLElement>;
+  @ViewChild('hibridoScroll') hibridoScroll?: ElementRef<HTMLElement>;
+
+  trackByGrupo = (_: number, g: { grupo: string }) => g.grupo;
+  trackByAsistencia = (_: number, a: IAsistencia) => a.id_asistencia;
+  trackByVoto = (_: number, v: any) => v.idUsuario;
 
   // =====================
   // Formularios reactivos
@@ -224,7 +251,7 @@ export class VotacionComponent implements OnInit {
     }).subscribe({
       next: ({ sesion, puntos, usuario, asistencia, miembrosOCS, grupos }) => {
         this.sesion = sesion;
-        this.puntos = puntos;
+        this.puntos = puntos.sort((a: any, b: any) => a.orden - b.orden);       ;
         this.usuario = usuario;
         this.nomina = asistencia;
         this.asistenciasOriginales = asistencia; // ✅ Esta línea es la clave
@@ -234,6 +261,7 @@ export class VotacionComponent implements OnInit {
         // Agrupar después de asignar nomina
         this.agruparNominaPorGrupo();
         this.agruparYFiltrarVotosHibridos();
+        this.filtrarAsistenciasNomina();
 
         if (this.puntos.length > 0) {
           const idGuardado = localStorage.getItem('puntoSeleccionadoId');
@@ -281,7 +309,7 @@ export class VotacionComponent implements OnInit {
     const relations = ['sesion', 'puntoReconsiderado'];
 
     this.puntoService.getAllDataBy(query, relations).subscribe((data) => {
-      this.puntos = data;
+      this.puntos = data.sort((a: any, b: any) => a.orden - b.orden);
 
       const idGuardado = localStorage.getItem('puntoSeleccionadoId');
       const puntoRecuperado = this.puntos.find(
@@ -366,6 +394,10 @@ export class VotacionComponent implements OnInit {
       },
     });
   }
+
+  toggleCodigo(): void {
+  this.showCodigo = !this.showCodigo;
+}
 
   // =====================
   // Métodos de administración de puntos
@@ -641,27 +673,44 @@ export class VotacionComponent implements OnInit {
   }
 
   // Guarda los cambios realizados en el tipo de asistencia
-  confirmarAsistencia() {
-    if (this.nomina.length === 0) return;
+  confirmarAsistencia(): void {
+  if (!this.idSesion) { this.toastr.warning('Sesión no válida.'); return; }
 
-    this.confirmandoAsistencia = true;
+  this.confirmandoAsistencia = true;
 
-    const actualizaciones = this.nomina.map((asistencia) => ({
-      id_asistencia: asistencia.id_asistencia,
-      tipo_asistencia: asistencia.tipo_asistencia,
-    }));
+  // ✅ usar la fuente completa (o solo cambios calculados contra un snapshot)
+  const actualizaciones = (this.asistenciasOriginales ?? []).map(a => ({
+    id_asistencia: a.id_asistencia,
+    // normaliza por si hay null/undefined
+    tipo_asistencia: (a.tipo_asistencia ?? 'ausente').toString().trim().toLowerCase()
+  }));
 
-    this.asistenciaService.saveManyData(actualizaciones).subscribe({
+  this.asistenciaService.guardarAsistencias(this.idSesion, actualizaciones)
+    .subscribe({
       next: () => {
-        this.toastr.success('Asistencia actualizada correctamente', 'Éxito');
+        this.toastr.success('Asistencia actualizada y votos sincronizados', 'Éxito');
         this.confirmandoAsistencia = false;
+        this.getPuntoUsuarios(this.puntoSeleccionado.id_punto);
+
+        // ✅ re-cargar del backend para evitar estado “optimista” desfasado
+        this.asistenciaService.getAllDataBy(
+          `sesion.id_sesion=${this.idSesion}`, ['usuario','usuario.grupoUsuario']
+        ).subscribe(data => {
+          this.nomina = data;
+          this.asistenciasOriginales = data;
+          this.agruparNominaPorGrupo();
+          this.actualizarContadores();
+          this.filtrarAsistenciasNomina(); // re-aplica búsqueda/filtros actuales
+        });
       },
       error: () => {
         this.toastr.error('Error al actualizar la asistencia', 'Error');
         this.confirmandoAsistencia = false;
       },
     });
-  }
+}
+
+
   cambiarPrincipalAlternoNomina(idUsuario: number) {
     if (!this.idSesion || !idUsuario) return;
 
@@ -796,27 +845,60 @@ export class VotacionComponent implements OnInit {
   }
 
   filtrarAsistenciasNomina(): void {
-    const texto = this.busquedaNomina.toLowerCase().trim();
+    this.withNominaScroll(() => {
+      const texto = this.busquedaNomina.toLowerCase().trim();
+      let filtradas = this.asistenciasOriginales;
 
-    let filtradas = this.asistenciasOriginales;
+      if (texto) {
+        filtradas = filtradas.filter((a) => {
+          const nombre = a.usuario?.nombre?.toLowerCase() || '';
+          const cedula = a.usuario?.cedula?.toLowerCase() || '';
+          return nombre.includes(texto) || cedula.includes(texto);
+        });
+      }
 
-    if (texto) {
-      filtradas = filtradas.filter((a) => {
-        const nombre = a.usuario?.nombre?.toLowerCase() || '';
-        const cedula = a.usuario?.cedula?.toLowerCase() || '';
-        return nombre.includes(texto) || cedula.includes(texto);
-      });
-    }
+      if (this.filtroAsistencia !== 'todos') {
+        filtradas = filtradas.filter(
+          (a) => this.norm(a.tipo_asistencia) === this.filtroAsistencia
+        );
+      }
 
-    if (this.filtroAsistencia !== 'todos') {
-      filtradas = filtradas.filter(
-        (a) => a.tipo_asistencia === this.filtroAsistencia
-      );
-    }
-
-    this.nomina = filtradas;
-    this.agruparNominaPorGrupo();
+      this.nomina = filtradas;
+      this.agruparNominaPorGrupo();
+      this.actualizarContadores();
+    });
   }
+
+  actualizarContadores(): void {
+    const base = this.asistenciasOriginales ?? [];
+    this.totalCount = base.length;
+    this.presentesCount = base.filter(
+      (a) => this.norm(a.tipo_asistencia) === 'presente'
+    ).length;
+    this.ausentesCount = base.filter(
+      (a) => this.norm(a.tipo_asistencia) === 'ausente'
+    ).length;
+  }
+
+  onCambioTipo(asistencia: IAsistencia, nuevo: 'presente' | 'ausente' | null) {
+    this.withNominaScroll(() => {
+      asistencia.tipo_asistencia = nuevo;
+      const i = this.asistenciasOriginales.findIndex(
+        (a) => a.id_asistencia === asistencia.id_asistencia
+      );
+      if (i !== -1) this.asistenciasOriginales[i].tipo_asistencia = nuevo;
+
+      this.actualizarContadores();
+      this.filtrarAsistenciasNomina();
+    });
+  }
+
+  
+isPresente(a: IAsistencia): boolean {
+  const v = (a?.tipo_asistencia ?? 'ausente') + '';
+  return v.trim().toLowerCase() === 'presente';
+}
+
 
   agruparAsistenciasPorGrupo(
     asistencias: IAsistencia[]
@@ -844,8 +926,18 @@ export class VotacionComponent implements OnInit {
   }
 
   cambiarFiltro(valor: 'todos' | 'presente' | 'ausente') {
-    this.filtroAsistencia = valor;
-    this.filtrarAsistenciasNomina();
+    this.withNominaScroll(() => {
+      this.filtroAsistencia = valor;
+      this.filtrarAsistenciasNomina();
+    });
+  }
+
+  resetFiltros(): void {
+    this.withNominaScroll(() => {
+      this.busquedaNomina = '';
+      this.filtroAsistencia = 'todos';
+      this.filtrarAsistenciasNomina();
+    });
   }
 
   // =====================
@@ -944,7 +1036,10 @@ export class VotacionComponent implements OnInit {
         );
       },
       error: (err) => {
-        this.toastr.error('Error al registrar el voto manual', err.error.message);
+        this.toastr.error(
+          'Error al registrar el voto manual',
+          err.error.message
+        );
         this.guardandoVotoManual = false;
       },
       complete: () => {
@@ -1062,7 +1157,10 @@ export class VotacionComponent implements OnInit {
           );
         },
         error: (err) => {
-          this.toastr.error('Error al calcular el resultado', err.error.message);
+          this.toastr.error(
+            err.error.message,
+            'Error al calcular el resultado'
+          );
           this.guardandoResultadoAutomatico = false;
         },
         complete: () => {
@@ -1133,7 +1231,10 @@ export class VotacionComponent implements OnInit {
           //console.table(this.votosHibridos, ['idUsuario', 'punto', 'opcion']);
         },
         error: (err) => {
-          this.toastr.error('Error al calcular el resultado híbrido', err.error.message);
+          this.toastr.error(
+            'Error al calcular el resultado híbrido',
+            err.error.message
+          );
           //console.table(this.votosHibridos, ['idUsuario', 'punto', 'opcion']);
           this.guardandoResultadoHibrido = false;
         },
@@ -1166,52 +1267,64 @@ export class VotacionComponent implements OnInit {
   // =====================
 
   agruparYFiltrarVotosHibridos(): void {
-    const normalizados = this.votosHibridos
-      .filter((voto) => {
-        const coincideBusqueda =
-          this.busquedaVotoHibrido.trim().length === 0 ||
-          voto.usuario.nombre
-            .toLowerCase()
-            .includes(this.busquedaVotoHibrido.toLowerCase());
+    this.withHibridoScroll(() => {
+      const texto = (this.busquedaVotoHibrido || '').toLowerCase().trim();
 
-        const coincideFiltro =
-          this.filtroVotoHibrido === 'todos' ||
-          (this.filtroVotoHibrido === 'sinvoto' && !voto.opcion) ||
-          voto.opcion === this.filtroVotoHibrido;
+      // 1) Búsqueda
+      const listaConBusqueda = (this.votosHibridos ?? []).filter(
+        (voto) =>
+          !texto || (voto.usuario?.nombre || '').toLowerCase().includes(texto)
+      );
 
-        return coincideBusqueda && coincideFiltro;
-      })
-      .sort((a, b) => a.usuario.nombre.localeCompare(b.usuario.nombre));
-
-    const agrupados = new Map<string, any[]>();
-    for (const voto of normalizados) {
-      const grupoNombre = voto.usuario.grupoUsuario?.nombre || 'Otros';
-      if (!agrupados.has(grupoNombre)) {
-        agrupados.set(grupoNombre, []);
+      // 2) Contadores
+      const c = { todos: 0, afavor: 0, encontra: 0, abstencion: 0, sinvoto: 0 };
+      c.todos = listaConBusqueda.length;
+      for (const v of listaConBusqueda) {
+        if (!v.opcion) c.sinvoto++;
+        else if (v.opcion === 'afavor') c.afavor++;
+        else if (v.opcion === 'encontra') c.encontra++;
+        else if (v.opcion === 'abstencion') c.abstencion++;
       }
-      agrupados.get(grupoNombre)!.push(voto);
-    }
+      this.contadoresHibrido = c;
 
-    const ordenGrupos = [
-      'Decanos',
-      'Estudiantes',
-      'Profesores',
-      'Rector',
-      'Trabajadores',
-      'Vicerrector',
-      'Otros',
-    ];
+      // 3) Filtro activo
+      const filtradas = listaConBusqueda
+        .filter((v) =>
+          this.filtroVotoHibrido === 'todos'
+            ? true
+            : this.filtroVotoHibrido === 'sinvoto'
+            ? !v.opcion
+            : v.opcion === this.filtroVotoHibrido
+        )
+        .sort((a, b) => a.usuario.nombre.localeCompare(b.usuario.nombre));
 
-    this.agrupadosVotosHibridos = Array.from(
-      agrupados,
-      ([grupo, usuarios]) => ({
-        grupo,
-        usuarios,
-      })
-    ).sort((a, b) => {
-      const indexA = ordenGrupos.indexOf(a.grupo);
-      const indexB = ordenGrupos.indexOf(b.grupo);
-      return indexA - indexB;
+      // 4) Agrupar
+      const agrupados = new Map<string, any[]>();
+      for (const v of filtradas) {
+        const g = v.usuario.grupoUsuario?.nombre || 'Otros';
+        if (!agrupados.has(g)) agrupados.set(g, []);
+        agrupados.get(g)!.push(v);
+      }
+
+      const ordenGrupos = [
+        'Decanos',
+        'Estudiantes',
+        'Profesores',
+        'Rector',
+        'Trabajadores',
+        'Vicerrector',
+        'Otros',
+      ];
+
+      this.agrupadosVotosHibridos = Array.from(
+        agrupados,
+        ([grupo, usuarios]) => ({
+          grupo,
+          usuarios,
+        })
+      ).sort(
+        (a, b) => ordenGrupos.indexOf(a.grupo) - ordenGrupos.indexOf(b.grupo)
+      );
     });
   }
 
@@ -1222,8 +1335,12 @@ export class VotacionComponent implements OnInit {
     this.agruparYFiltrarVotosHibridos();
   }
 
+  onCambioOpcionHibrido() {
+    this.agruparYFiltrarVotosHibridos();
+  }
+
   actualizarBusquedaVotoHibrido(valor: string): void {
-    this.busquedaVotoHibrido = valor;
+    this.busquedaVotoHibrido = valor ?? '';
     this.agruparYFiltrarVotosHibridos();
   }
 
@@ -1294,6 +1411,23 @@ export class VotacionComponent implements OnInit {
   // =====================
   // Utilidades de la interfaz
   // =====================
+
+  private preserveScroll(run: () => void, ref?: ElementRef<HTMLElement>) {
+    const el = ref?.nativeElement;
+    const y = el?.scrollTop ?? null;
+    run();
+    setTimeout(() => {
+      if (el && y != null) el.scrollTop = y;
+    }, 0);
+  }
+
+  private withNominaScroll(run: () => void) {
+    this.preserveScroll(run, this.nominaScroll);
+  }
+  private withHibridoScroll(run: () => void) {
+    this.preserveScroll(run, this.hibridoScroll);
+  }
+
   resetForm() {
     this.votoManualForm.patchValue({
       opcion: '',
@@ -1400,6 +1534,18 @@ export class VotacionComponent implements OnInit {
     this.activeDropdown = null;
   }
 
+  irAAsistencia(id: number) {
+    this.navegarA('asistencia', id);
+  }
+
+  navegarA(ruta: string, id: number) {
+    if (id) {
+      this.router.navigate([`/${ruta}`, id]);
+    } else {
+      console.error(`ID no definido: ${id}`);
+    }
+  }
+
   // =====================
   // Flujo de pasos del modal de resultados
   // =====================
@@ -1439,22 +1585,40 @@ export class VotacionComponent implements OnInit {
   irAPasoHibrido() {
     if (!this.puntoUsuarios?.length) return;
 
-    // Clonar con opción por defecto 'afavor'
-    this.votosHibridos = this.puntoUsuarios.map((pu) => ({
-      idUsuario: pu.usuario.id_usuario,
-      votante: this.usuario.id_usuario,
-      punto: this.puntoSeleccionado.id_punto,
-      opcion: 'afavor',
-      es_razonado: false,
-      usuario: { ...pu.usuario }, // clonar todo el objeto usuario, incluyendo grupoUsuario
-    }));
+    // mapa rápido: id_usuario -> 'presente' | 'ausente'
+    const asistenciaMap = new Map<number, string>(
+      (this.nomina || []).map((a: any) => [
+        a.usuario?.id_usuario,
+        (a.tipo_asistencia ?? 'ausente').toString().trim().toLowerCase(),
+      ])
+    );
 
-    this.agruparYFiltrarVotosHibridos(); // ⚡ fuerza el agrupamiento inicial
+    const esAdmin = !!this.puntoSeleccionado?.es_administrativa;
 
+    this.votosHibridos = this.puntoUsuarios.map((pu) => {
+      const u = pu.usuario;
+      const grupo = (u?.grupoUsuario?.nombre || '').toLowerCase();
+
+      const esPresente = asistenciaMap.get(u.id_usuario) === 'presente';
+      const esRector = grupo === 'rector';
+      const esTrabajador = grupo === 'trabajador';
+
+      // regla: presente ∧ !rector ∧ !(administrativa ∧ trabajador)
+      const habilitado = esPresente && !esRector && !(esAdmin && esTrabajador);
+
+      return {
+        idUsuario: u.id_usuario,
+        votante: this.usuario.id_usuario,
+        punto: this.puntoSeleccionado.id_punto,
+        opcion: habilitado ? 'afavor' : null, // los no habilitados salen "sin votar"
+        es_razonado: false,
+        habilitado, // ⬅️ usamos esto para [disabled]
+        usuario: { ...u }, // mantener datos en la UI
+      };
+    });
+
+    this.agruparYFiltrarVotosHibridos(); // actualiza contadores/tabs
     this.pasoModalResultados = 5;
-    console.log('idPuntoSeleccionado:', this.puntoSeleccionado.id_punto);
-    console.log('Votos híbridos inicializados:', this.votosHibridos);
-    console.log('puntoUsuarios:', this.puntoUsuarios);
   }
 
   goBack() {

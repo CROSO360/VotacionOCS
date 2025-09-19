@@ -141,6 +141,10 @@
         Manual (registrada por la Secretaría General)
       </span>
       <ng-template #auto> Automática (calculada por el sistema) </ng-template>
+      <br />
+      <span *ngIf="punto.requiere_voto_dirimente  ">
+        Voto dirimente del rector
+      </span>
       <br /><br />
     </div>
   </div>

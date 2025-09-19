@@ -87,6 +87,8 @@ export class SesionComponent implements OnInit {
   guardandoPunto = false;
   bloqueandoReordenamiento = false;
 
+  showCodigo = false;
+
   @ViewChild(CdkDropList) dropListRef!: CdkDropList<any>;
   @ViewChild(CdkDrag) dragRef!: CdkDrag<any>;
 
@@ -138,7 +140,7 @@ export class SesionComponent implements OnInit {
     const query = `sesion.id_sesion=${this.idSesion}`;
     const relations = ['sesion'];
     this.puntoService.getAllDataBy(query, relations).subscribe((data) => {
-      this.puntos = data;
+      this.puntos = data.sort((a: any, b: any) => a.orden - b.orden);
     });
   }
 
@@ -148,6 +150,10 @@ export class SesionComponent implements OnInit {
       this.sesion = data;
     });
   }
+
+  toggleCodigo(): void {
+  this.showCodigo = !this.showCodigo;
+}
 
   // =======================
   // Navegación

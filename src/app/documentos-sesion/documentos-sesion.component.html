@@ -7,11 +7,10 @@
    Contenedor principal
    ======================= -->
 <div class="main-container my-5">
-
   <!-- Título de la página con el nombre de la sesión -->
   <h2 class="text-center">Documentos {{ sesion?.nombre }}</h2>
 
-  <app-boton-atras></app-boton-atras><br><br>
+  <app-boton-atras></app-boton-atras><br /><br />
 
   <!-- =======================
        Tabla contenedora de documentos
@@ -20,14 +19,25 @@
     <table class="documents-table">
       <!-- Fila para subir nuevos archivos -->
       <tr>
-        <td colspan="3" class="upload-container">
+        <td
+          colspan="3"
+          class="upload-container"
+          [class.is-loading]="subiendoDocumento"
+          [attr.aria-busy]="subiendoDocumento"
+        >
           <label class="upload-label">
             <input
+              #archivoInput
               type="file"
-              (change)="onFileSelected($event)"
               class="file-input"
+              [disabled]="subiendoDocumento"
+              (change)="onFileSelected($event)"
             />
-            <span>Seleccionar archivo</span>
+            <span *ngIf="!subiendoDocumento">Seleccionar archivo</span>
+            <span *ngIf="subiendoDocumento">
+              <span class="spinner-border spinner-border-sm me-2"></span>
+              Subiendo…
+            </span>
           </label>
         </td>
       </tr>

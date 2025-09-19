@@ -5,7 +5,28 @@
   <!-- Título de la página -->
   <h2 class="text-center">Puntos de la sesión {{ sesion?.nombre }}</h2>
 
+<!-- Bloque del código -->
+  <div *ngIf="sesion?.codigo" class="code-row mt-2">
+    <div
+      class="session-code-box"
+      (click)="toggleCodigo()"
+      (keydown.enter)="toggleCodigo()"
+      (keydown.space)="toggleCodigo()"
+      role="button"
+      tabindex="0"
+      [attr.aria-pressed]="showCodigo"
+      [attr.aria-label]="showCodigo ? 'Ocultar código de sesión' : 'Mostrar código de sesión'"
+      [class.visible]="showCodigo"
+    >
+      <span *ngIf="!showCodigo">Código de sesión</span>
+      <span *ngIf="showCodigo" class="code-text">{{ sesion?.codigo }}</span>
+    </div>
+  </div>
+
+
+
   <app-boton-atras></app-boton-atras><br /><br />
+
 
   <div class="buttons-container m-4">
     <button
@@ -90,7 +111,7 @@
               <tr>
                 <td class="drag-handle">&#x2630;</td>
                 <td class="point-name">{{ punto.nombre }}</td>
-                <td class="btn-container">LOOOL</td>
+                <td class="btn-container">{{ punto.orden }}</td>
                 <td class="btn-container">
                   <button class="btn btn-secondary">Ver punto</button>
                 </td>

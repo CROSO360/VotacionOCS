@@ -41,24 +41,48 @@
           />
         </div>
 
-        <button
-          class="btn btn-primary mt-2 d-flex align-items-center"
-          type="submit"
-          [disabled]="
-            !formularioPuntoModificado() ||
-            modificarPuntoForm.invalid ||
-            guardandoPunto
-          "
-        >
-          <ng-container *ngIf="!guardandoPunto; else cargandoPunto">
-            <i class="bi bi-save me-2"></i>
-            Confirmar cambios
-          </ng-container>
-          <ng-template #cargandoPunto>
-            <span class="spinner-border spinner-border-sm me-2"></span>
-            Guardando...
-          </ng-template>
-        </button>
+        <div class="d-flex gap-2 mt-2">
+  <!-- Confirmar cambios -->
+  <button
+    class="btn btn-primary d-flex align-items-center"
+    type="submit"
+    [disabled]="
+      !formularioPuntoModificado() ||
+      modificarPuntoForm.invalid ||
+      guardandoPunto ||
+      eliminandoPunto ||
+      !sesion?.estado
+    "
+  >
+    <ng-container *ngIf="!guardandoPunto; else guardandoPuntoTpl">
+      <i class="bi bi-save me-2"></i>
+      Confirmar cambios
+    </ng-container>
+    <ng-template #guardandoPuntoTpl>
+      <span class="spinner-border spinner-border-sm me-2"></span>
+      Guardando...
+    </ng-template>
+  </button>
+
+  <!-- Eliminar punto -->
+  <button
+  *ngIf="sesion?.fase === 'pendiente'"
+    type="button"
+    class="btn btn-danger d-flex align-items-center"
+    (click)="eliminarPuntoConfirmado()"
+    [disabled]="eliminandoPunto || guardandoPunto || !sesion?.estado"
+  >
+    <ng-container *ngIf="!eliminandoPunto; else eliminandoTpl">
+      <i class="bi bi-trash3 me-2"></i>
+      Eliminar punto
+    </ng-container>
+    <ng-template #eliminandoTpl>
+      <span class="spinner-border spinner-border-sm me-2"></span>
+      Eliminando...
+    </ng-template>
+  </button>
+</div>
+
       </form>
     </div>
 
@@ -135,14 +159,25 @@
     <table class="documents-table">
       <!-- Subir nuevo documento -->
       <tr>
-        <td colspan="3" class="upload-container">
+        <td
+          colspan="3"
+          class="upload-container"
+          [class.is-loading]="subiendoDocumento"
+          [attr.aria-busy]="subiendoDocumento"
+        >
           <label class="upload-label">
             <input
+              #archivoInput
               type="file"
-              (change)="onFileSelected($event)"
               class="file-input"
+              [disabled]="subiendoDocumento"
+              (change)="onFileSelected($event)"
             />
-            <span>Seleccionar archivo</span>
+            <span *ngIf="!subiendoDocumento">Seleccionar archivo</span>
+            <span *ngIf="subiendoDocumento">
+              <span class="spinner-border spinner-border-sm me-2"></span>
+              Subiendo…
+            </span>
           </label>
         </td>
       </tr>

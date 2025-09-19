@@ -1,5 +1,5 @@
-import { Component } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { Component, ElementRef, ViewChild } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
 import { CommonModule, Location } from '@angular/common';
 import {
   FormGroup,
@@ -31,7 +31,9 @@ import { BarraSuperiorComponent } from '../components/barra-superior/barra-super
 import { ToastrService } from 'ngx-toastr';
 import { CookieService } from 'ngx-cookie-service';
 import { BotonAtrasComponent } from '../components/boton-atras/boton-atras.component';
-import { FooterComponent } from "../components/footer/footer.component";
+import { FooterComponent } from '../components/footer/footer.component';
+import { distinctUntilChanged, finalize, map, switchMap } from 'rxjs';
+
 
 @Component({
   selector: 'app-punto',
@@ -42,8 +44,8 @@ import { FooterComponent } from "../components/footer/footer.component";
     FormsModule,
     BarraSuperiorComponent,
     BotonAtrasComponent,
-    FooterComponent
-],
+    FooterComponent,
+  ],
   templateUrl: './punto.component.html',
   styleUrl: './punto.component.css',
 })
@@ -65,6 +67,11 @@ export class PuntoComponent {
   guardandoPunto = false;
   guardandoResolucion = false;
   eliminandoDocumento: Map<number, boolean> = new Map();
+  subiendoDocumento = false;
+  eliminandoPunto = false;
+
+
+  @ViewChild('archivoInput') archivoInput!: ElementRef<HTMLInputElement>;
 
   // =====================
   // Formularios reactivos
@@ -93,21 +100,42 @@ export class PuntoComponent {
     private route: ActivatedRoute,
     private location: Location,
     private toastrService: ToastrService,
-    private cookieService: CookieService
+    private cookieService: CookieService,
+    private router: Router,
   ) {}
 
   // =====================
   // Inicialización
   // =====================
   ngOnInit(): void {
-    this.puntoId = parseInt(this.route.snapshot.paramMap.get('idPunto')!, 10);
-    this.sesionId = parseInt(this.route.snapshot.paramMap.get('idSesion')!, 10);
-
+    // Cargar info del usuario 1 sola vez
     this.getUsuario();
-    this.getSesion();
-    this.getPunto();
-    this.getPuntoDocumentos();
-    this.getResolucion();
+
+    // Reaccionar a cambios de /punto/:idSesion/:idPunto
+    this.route.paramMap
+      .pipe(
+        map(pm => ({
+          idSesion: Number(pm.get('idSesion')),
+          idPunto:  Number(pm.get('idPunto')),
+        })),
+        // Evita recargar si llegan params iguales
+        distinctUntilChanged(
+          (a, b) => a.idSesion === b.idSesion && a.idPunto === b.idPunto
+        ),
+      )
+      .subscribe(({ idSesion, idPunto }) => {
+        this.sesionId = idSesion;
+        this.puntoId = idPunto;
+        this.cargarTodoDelPunto();
+      });
+  }
+  cargarTodoDelPunto() {
+    if (!this.sesionId || !this.puntoId) return;
+
+    this.getSesion();            // depende de this.sesionId
+    this.getPunto();             // depende de this.puntoId
+    this.getPuntoDocumentos();   // depende de this.puntoId
+    this.getResolucion();        // depende de this.puntoId
   }
 
   // =====================
@@ -165,7 +193,10 @@ export class PuntoComponent {
         this.getPunto();
       },
       error: (error) => {
-        this.toastrService.error('Error al actualizar el punto.', error.error.message);
+        this.toastrService.error(
+          'Error al actualizar el punto.',
+          error.error.message
+        );
         this.guardandoPunto = false;
       },
       complete: () => {
@@ -181,6 +212,43 @@ export class PuntoComponent {
       this.modificarPuntoForm.value.es_administrativa !==
         this.punto?.es_administrativa
     );
+  }
+  
+  eliminarPuntoConfirmado(): void {
+    if (!this.puntoId) return;
+
+    const ok = window.confirm(
+      '¿Estás seguro de eliminar este punto? Esta acción no se puede deshacer.'
+    );
+    if (!ok) return;
+
+    this.eliminarPunto();
+  }
+
+  private eliminarPunto(): void {
+    this.eliminandoPunto = true;
+
+    this.puntoService.deleteData(this.puntoId!).subscribe({
+      next: () => {
+        this.toastrService.success('Punto eliminado correctamente.');
+        // regresar a la pantalla de sesión
+        if (this.sesionId) {
+          this.router.navigate(['/sesion', this.sesionId]).catch(() => this.location.back());
+        } else {
+          this.location.back();
+        }
+      },
+      error: (err) => {
+        // el backend puede responder 400 si: sesion no está pendiente,
+        // hay resolución con auditorías, etc.
+        const msg = err?.error?.message || 'No se pudo eliminar el punto.';
+        this.toastrService.error(msg, 'Error');
+        this.eliminandoPunto = false;
+      },
+      complete: () => {
+        this.eliminandoPunto = false;
+      },
+    });
   }
 
   // =====================
@@ -203,21 +271,46 @@ export class PuntoComponent {
   onFileSelected(event: Event) {
     const input = event.target as HTMLInputElement;
     if (input.files?.length) {
+      this.subiendoDocumento = true;
       this.subirDocumento(input.files[0]);
     }
   }
 
   subirDocumento(documento: File) {
-    this.documentoService.subirDocumento(documento).subscribe((data) => {
-      const puntoDocumentoData: IPuntoDocumento = {
-        punto: { id_punto: this.puntoId },
-        documento: { id_documento: data.id_documento },
-      };
-      this.puntoDocumentoService.saveData(puntoDocumentoData).subscribe(() => {
-        this.toastrService.success('Documento subido correctamente');
-        this.getPuntoDocumentos();
+    this.documentoService
+      .subirDocumento(documento)
+      .pipe(
+        switchMap((data) => {
+          const puntoDocumentoData: IPuntoDocumento = {
+            punto: { id_punto: this.puntoId },
+            documento: { id_documento: data.id_documento },
+          };
+          return this.puntoDocumentoService.saveData(puntoDocumentoData);
+        }),
+        finalize(() => {
+          // ⬅️ volver a la normalidad siempre (éxito o error)
+          this.subiendoDocumento = false;
+          this.resetInputArchivo();
+        })
+      )
+      .subscribe({
+        next: () => {
+          this.toastrService.success('Documento subido correctamente');
+          this.getPuntoDocumentos();
+        },
+        error: (err) => {
+          this.toastrService.error(
+            'No se pudo subir el documento',
+            err?.error?.message || 'Error'
+          );
+          this.subiendoDocumento = false;
+          this.resetInputArchivo();
+        },
       });
-    });
+  }
+
+  private resetInputArchivo(): void {
+    if (this.archivoInput) this.archivoInput.nativeElement.value = '';
   }
 
   eliminarDocumento(id: number): void {
@@ -229,7 +322,10 @@ export class PuntoComponent {
         this.getPuntoDocumentos();
       },
       error: (err) => {
-        this.toastrService.error('No se pudo eliminar el documento', err.error.message);
+        this.toastrService.error(
+          'No se pudo eliminar el documento',
+          err.error.message
+        );
         this.eliminandoDocumento.set(id, false);
       },
       complete: () => {
@@ -268,7 +364,10 @@ export class PuntoComponent {
         this.getResolucion();
       },
       error: (err) => {
-        this.toastrService.error('Error al crear la resolución.', err.error.message);
+        this.toastrService.error(
+          'Error al crear la resolución.',
+          err.error.message
+        );
         this.guardandoResolucion = false;
       },
       complete: () => {
@@ -295,7 +394,10 @@ export class PuntoComponent {
         this.getResolucion();
       },
       error: (err) => {
-        this.toastrService.error('Error al actualizar la resolución.', err.error.message);
+        this.toastrService.error(
+          'Error al actualizar la resolución.',
+          err.error.message
+        );
         this.guardandoResolucion = false;
       },
       complete: () => {

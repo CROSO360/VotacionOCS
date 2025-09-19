@@ -65,41 +65,42 @@ BARRA SUPERIOR
 
     <!-- Filtro por tipo de asistencia -->
     <ul class="nav nav-pills mb-3">
-      <li class="nav-item">
-        <a
-          class="nav-link"
-          (click)="cambiarTipoAsistencia(null)"
-          [class.active]="tipoAsistenciaActual === null"
-        >
-          Todos
-        </a>
-      </li>
-      <li class="nav-item">
-        <a
-          class="nav-link"
-          (click)="cambiarTipoAsistencia('presente')"
-          [class.active]="tipoAsistenciaActual === 'presente'"
-        >
-          Presentes
-        </a>
-      </li>
-      <li class="nav-item">
-        <a
-          class="nav-link"
-          (click)="cambiarTipoAsistencia('ausente')"
-          [class.active]="tipoAsistenciaActual === 'ausente'"
-        >
-          Ausentes
-        </a>
-      </li>
-    </ul>
+  <li class="nav-item">
+    <a
+      class="nav-link"
+      (click)="cambiarTipoAsistencia(null)"
+      [class.active]="tipoAsistenciaActual === null"
+    >
+      Todos <span class="badge bg-secondary ms-1">{{ totalCount }}</span>
+    </a>
+  </li>
+  <li class="nav-item">
+    <a
+      class="nav-link"
+      (click)="cambiarTipoAsistencia('presente')"
+      [class.active]="tipoAsistenciaActual === 'presente'"
+    >
+      Presentes <span class="badge bg-success ms-1">{{ presentesCount }}</span>
+    </a>
+  </li>
+  <li class="nav-item">
+    <a
+      class="nav-link"
+      (click)="cambiarTipoAsistencia('ausente')"
+      [class.active]="tipoAsistenciaActual === 'ausente'"
+    >
+      Ausentes <span class="badge bg-danger ms-1">{{ ausentesCount }}</span>
+    </a>
+  </li>
+</ul>
+
 
     <!-- Contenedor tipo tabla en 3 columnas -->
     <!-- Contenedor agrupado por grupoUsuario -->
     <div class="row gy-4">
       <div
         class="col-12 col-md-6 col-lg-4"
-        *ngFor="let grupo of agrupadosPorGrupoAsistencia"
+        *ngFor="let grupo of agrupadosPorGrupoAsistencia; trackBy: trackByGrupo"
       >
         <!-- Panel del grupo -->
         <div class="p-2 border rounded shadow-sm h-100">
@@ -110,7 +111,7 @@ BARRA SUPERIOR
 
           <!-- Lista de asistencias en este grupo -->
           <div
-            *ngFor="let asistencia of grupo.asistencias"
+            *ngFor="let asistencia of grupo.asistencias; trackBy: trackByAsistencia"
             class="asistencia-item mb-2"
             [ngClass]="{
               'asistencia-miembro': esMiembroOCS(asistencia.usuario.id_usuario),
@@ -126,18 +127,23 @@ BARRA SUPERIOR
 
             <!-- Selector -->
             <div class="asistencia-select">
-              <select
-                class="form-select form-select-sm"
-                [(ngModel)]="asistencia.tipo_asistencia"
-                [ngModelOptions]="{ standalone: true }"
-                [disabled]="sesion?.estado === false"
-              >
-                <option [ngValue]="null" disabled selected hidden>
-                  Ninguno
-                </option>
-                <option value="presente">Presente</option>
-                <option value="ausente">Ausente</option>
-              </select>
+              <div class="form-check form-switch">
+  <input
+    #chk
+    class="form-check-input"
+    type="checkbox"
+    [id]="'asist-' + asistencia.id_asistencia"
+    [checked]="isPresente(asistencia)"
+    (change)="onCambioTipoAsistencia(asistencia, $any($event.target).checked ? 'presente' : 'ausente', chk)"
+  />
+  <label class="form-check-label small" [for]="'asist-' + asistencia.id_asistencia">
+    {{ isPresente(asistencia) ? 'Presente' : 'Ausente' }}
+  </label>
+</div>
+
+
+
+
             </div>
           </div>
         </div>
@@ -153,6 +159,7 @@ BARRA SUPERIOR
       *ngIf="sesion?.estado === true"
     >
       <button
+      *ngIf="sesion?.fase === 'pendiente'"
         type="button"
         class="btn btn-secondary"
         (click)="abrirModalAsistencia()"
@@ -161,6 +168,7 @@ BARRA SUPERIOR
       </button>
 
       <button
+      *ngIf="sesion?.fase === 'pendiente'"
         class="btn btn-danger"
         data-bs-toggle="modal"
         data-bs-target="#modalConfirmarEliminar"

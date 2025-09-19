@@ -119,4 +119,15 @@ export class AsistenciaService {
       usuariosSeleccionados,
     });
   }
+
+  /**
+   * Guarda en lote las asistencias de una sesión y sincroniza puntoUsuario en backend.
+   * @param idSesion id de la sesión
+   * @param actualizaciones arreglo { id_asistencia, tipo_asistencia }
+   */
+  guardarAsistencias( idSesion: number, actualizaciones: { id_asistencia: number; tipo_asistencia: string }[],
+  ): Observable<{ ok: boolean }> {
+    return this.http.post<{ ok: boolean }>( `${this.baseURL}/asistencia/guardar/${idSesion}`, { actualizaciones },
+    );
+  }
 }

@@ -6,17 +6,63 @@
   <!-- Título de la página -->
   <h2 class="text-center">{{ sesion?.nombre }}</h2>
 
+    <!-- Bloque del código -->
+  <div *ngIf="sesion?.codigo" class="code-row mt-2">
+    <div
+      class="session-code-box"
+      (click)="toggleCodigo()"
+      (keydown.enter)="toggleCodigo()"
+      (keydown.space)="toggleCodigo()"
+      role="button"
+      tabindex="0"
+      [attr.aria-pressed]="showCodigo"
+      [attr.aria-label]="showCodigo ? 'Ocultar código de sesión' : 'Mostrar código de sesión'"
+      [class.visible]="showCodigo"
+    >
+      <span *ngIf="!showCodigo">Código de sesión</span>
+      <span *ngIf="showCodigo" class="code-text">{{ sesion?.codigo }}</span>
+    </div>
+  </div>
+
   <app-boton-atras></app-boton-atras><br /><br />
+
+
 
   <!-- Mostrar solo si fase = pendiente -->
   <div *ngIf="sesion?.fase === 'pendiente'" class="text-center my-4">
-    <button
-      class="btn btn-primary"
-      data-bs-toggle="modal"
-      data-bs-target="#modalConfirmarIniciar"
+    <!-- Botón Iniciar sesión ó aviso si no hay asistencias -->
+    <ng-container
+      *ngIf="(asistenciasOriginales?.length ?? 0) > 0; else avisoSinAsistencias"
     >
-      Iniciar sesión
-    </button>
+      <button
+        class="btn btn-primary"
+        data-bs-toggle="modal"
+        data-bs-target="#modalConfirmarIniciar"
+      >
+        Iniciar sesión
+      </button>
+    </ng-container>
+
+    <ng-template #avisoSinAsistencias>
+      <div
+        class="alert alert-warning d-flex align-items-center mb-0"
+        role="alert"
+        aria-live="polite"
+      >
+        <i class="bi bi-exclamation-triangle me-2"></i>
+        <span>
+          No hay asistencias registradas para esta sesión. Genera la nómina en
+          el módulo <strong>Asistencia</strong> y vuelve para iniciar la sesión.
+        </span>
+        <!-- Opcional: botón para navegar directo -->
+        <button
+          class="btn btn-outline-secondary btn-sm ms-auto"
+          (click)="irAAsistencia(idSesion)"
+        >
+          Ir a Asistencia
+        </button>
+      </div>
+    </ng-template>
   </div>
 
   <!-- Agrega este código donde quieras que aparezca el combo de puntos -->
@@ -65,6 +111,7 @@
     </button-->
 
     <button
+      *ngIf="sesion?.fase === 'activa'"
       class="btn btn-outline-primary"
       data-bs-toggle="modal"
       data-bs-target="#modalGrupos"
@@ -86,6 +133,7 @@
       class="btn btn-outline-secondary"
       data-bs-toggle="modal"
       data-bs-target="#modalNomina"
+      (click)="ngOnInit()"
     >
       Nómina
     </button>
@@ -128,10 +176,24 @@
 
               <div
                 class="custom-dropdown"
-                *ngIf="sesion?.estado === true && puntoUsuario.estado !== false"
+                *ngIf="
+                  sesion?.fase === 'activa' &&
+                  sesion?.estado === true &&
+                  puntoUsuario.estado !== false
+                "
               >
                 <button
                   *ngIf="!puntoSeleccionado.resultado"
+                  class="custom-dropdown-toggle btn btn-outline-dark btn-sm"
+                  (click)="abrirVotoManual(puntoUsuario.usuario.id_usuario)"
+                >
+                  &#x22EE;
+                </button>
+                <button
+                  *ngIf="
+                    puntoSeleccionado.requiere_voto_dirimente &&
+                    puntoUsuario.usuario.grupoUsuario.nombre === 'rector'
+                  "
                   class="custom-dropdown-toggle btn btn-outline-dark btn-sm"
                   (click)="abrirVotoManual(puntoUsuario.usuario.id_usuario)"
                 >
@@ -260,6 +322,17 @@
           ? "Cálculo manual por Secretaría"
           : "Cálculo automático del sistema"
       }}
+    </p>
+    <p
+      class="text-muted text-end me-2 fst-italic"
+      *ngIf="
+        (puntoSeleccionado?.n_afavor != null ||
+        puntoSeleccionado?.n_encontra != null ||
+        puntoSeleccionado?.n_abstencion != null) &&
+        (puntoSeleccionado.requiere_voto_dirimente)
+      "
+    >
+      Voto dirimente del rector
     </p>
   </div>
 
@@ -492,7 +565,7 @@
   aria-labelledby="modalNominaLabel"
   aria-hidden="true"
 >
-  <div class="modal-dialog modal-xl">
+  <div class="modal-dialog modal-dialog-scrollable modal-xl">
     <div class="modal-content">
       <div class="modal-header">
         <h1 class="modal-title fs-5" id="modalNominaLabel">
@@ -505,86 +578,77 @@
           aria-label="Close"
         ></button>
       </div>
-      <div class="modal-body">
-        <div *ngIf="nomina.length > 0">
-          <!-- Leyenda de colores -->
-          <div class="d-flex align-items-center gap-3 mb-3 flex-wrap">
-            <div class="d-flex align-items-center gap-1">
-              <span class="cuadro-color bg-primary"></span>
-              <small class="text-muted">Miembros</small>
-            </div>
-            <div class="d-flex align-items-center gap-1">
-              <span class="cuadro-color bg-secondary"></span>
-              <small class="text-muted">Extras</small>
-            </div>
+      <div class="modal-body" #nominaScroll>
+        <!-- Leyenda de colores -->
+        <div class="d-flex align-items-center gap-3 mb-3 flex-wrap">
+          <div class="d-flex align-items-center gap-1">
+            <span class="cuadro-color bg-primary"></span>
+            <small class="text-muted">Miembros</small>
           </div>
-
-          <!--div class="input-group w-50 mb-3">
-            <input
-              class="form-control w-50 mx-auto my-3 shadow-sm"
-              type="text"
-              placeholder="Buscar por nombre o cédula"
-              [(ngModel)]="busqueda"
-              (input)="filtrarAsistencias()"
-            />
-          </div-->
-
-          <!-- Barra de búsqueda -->
-          <div class="input-group w-100 mb-3">
-            <input
-              type="text"
-              class="form-control shadow-sm"
-              placeholder="Buscar por nombre"
-              [(ngModel)]="busquedaNomina"
-              (input)="filtrarAsistenciasNomina()"
-            />
+          <div class="d-flex align-items-center gap-1">
+            <span class="cuadro-color bg-secondary"></span>
+            <small class="text-muted">Extras</small>
           </div>
+        </div>
 
-          <!-- Filtro por tipo de asistencia -->
-          <ul class="nav nav-pills mb-3">
-            <li class="nav-item">
-              <a
-                class="nav-link"
-                [class.active]="filtroAsistencia === 'todos'"
-                (click)="cambiarFiltro('todos')"
-              >
-                Todos
-              </a>
-            </li>
-            <li class="nav-item">
-              <a
-                class="nav-link"
-                [class.active]="filtroAsistencia === 'presente'"
-                (click)="cambiarFiltro('presente')"
-              >
-                Presentes
-              </a>
-            </li>
-            <li class="nav-item">
-              <a
-                class="nav-link"
-                [class.active]="filtroAsistencia === 'ausente'"
-                (click)="cambiarFiltro('ausente')"
-              >
-                Ausentes
-              </a>
-            </li>
-          </ul>
+        <!-- Barra de búsqueda (siempre visible) -->
+        <div class="input-group w-100 mb-3">
+          <input
+            type="text"
+            class="form-control shadow-sm"
+            placeholder="Buscar por nombre"
+            [(ngModel)]="busquedaNomina"
+            (input)="filtrarAsistenciasNomina()"
+          />
+        </div>
 
+        <!-- Filtro por tipo de asistencia (siempre visible) -->
+        <ul class="nav nav-pills mb-3">
+          <li class="nav-item">
+            <a
+              class="nav-link"
+              [class.active]="filtroAsistencia === 'todos'"
+              (click)="cambiarFiltro('todos')"
+            >
+              Todos
+              <span class="badge bg-secondary ms-1">{{ totalCount }}</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a
+              class="nav-link"
+              [class.active]="filtroAsistencia === 'presente'"
+              (click)="cambiarFiltro('presente')"
+            >
+              Presentes
+              <span class="badge bg-success ms-1">{{ presentesCount }}</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a
+              class="nav-link"
+              [class.active]="filtroAsistencia === 'ausente'"
+              (click)="cambiarFiltro('ausente')"
+            >
+              Ausentes
+              <span class="badge bg-danger ms-1">{{ ausentesCount }}</span>
+            </a>
+          </li>
+        </ul>
+
+        <!-- Contenido: grid o estado vacío -->
+        <ng-container *ngIf="nomina.length > 0; else estadoVacio">
           <!-- Grid de 3 columnas -->
           <div class="row gy-4">
             <div
               class="col-12 col-md-6 col-lg-4"
               *ngFor="let grupo of agrupadosPorGrupoNomina"
             >
-              <!-- Panel del grupo -->
               <div class="p-2 border rounded shadow-sm h-100">
-                <!-- Título del grupo -->
                 <h6 class="mb-3 border-start border-3 ps-2 text-primary">
                   {{ getNombreGrupoFormateado(grupo.grupo) }}
                 </h6>
 
-                <!-- Lista de asistencias -->
                 <div
                   *ngFor="let asistencia of grupo.asistencias"
                   class="asistencia-item mb-2"
@@ -597,26 +661,26 @@
                     )
                   }"
                 >
-                  <!-- Izquierda: Nombre y selector -->
                   <div class="d-flex flex-column flex-grow-1 me-3">
                     <span class="fw-semibold">{{
                       asistencia.usuario?.nombre
                     }}</span>
-                    <select
-                      class="form-select form-select-sm mt-1"
-                      [(ngModel)]="asistencia.tipo_asistencia"
-                      [ngModelOptions]="{ standalone: true }"
-                      [disabled]="sesion?.estado === false"
-                    >
-                      <option [ngValue]="null" disabled selected hidden>
-                        Ninguno
-                      </option>
-                      <option value="presente">Presente</option>
-                      <option value="ausente">Ausente</option>
-                    </select>
+                    <div class="form-check form-switch mt-1">
+  <input
+    class="form-check-input"
+    type="checkbox"
+    [id]="'asist-' + asistencia.id_asistencia"
+    [checked]="isPresente(asistencia)"
+    [disabled]="sesion?.estado === false"
+    (change)="onCambioTipo(asistencia, $any($event.target).checked ? 'presente' : 'ausente')"
+  />
+  <label class="form-check-label small" [for]="'asist-' + asistencia.id_asistencia">
+    {{ isPresente(asistencia) ? 'Presente' : 'Ausente' }}
+  </label>
+</div>
+
                   </div>
 
-                  <!-- Derecha: Botón "Cambiar" -->
                   <div
                     *ngIf="
                       esMiembroOCS(asistencia.usuario.id_usuario) &&
@@ -657,11 +721,27 @@
               </div>
             </div>
           </div>
-        </div>
-        <div *ngIf="nomina.length === 0">
-          <p>No hay asistencias registradas.</p>
-        </div>
+        </ng-container>
+
+        <!-- Estado vacío -->
+        <ng-template #estadoVacio>
+          <div class="text-center text-muted py-5">
+            <p class="mb-2" *ngIf="asistenciasOriginales?.length === 0">
+              No hay asistencias registradas.
+            </p>
+            <div *ngIf="asistenciasOriginales?.length > 0">
+              <p class="mb-3">Sin resultados para el filtro actual.</p>
+              <button
+                class="btn btn-outline-secondary btn-sm"
+                (click)="resetFiltros()"
+              >
+                Limpiar filtros
+              </button>
+            </div>
+          </div>
+        </ng-template>
       </div>
+
       <div class="modal-footer justify-content-between">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
           Atrás
@@ -701,235 +781,106 @@
   aria-hidden="true"
 >
   <div
-    class="modal-dialog modal-dialog-centered"
+    class="modal-dialog modal-dialog-scrollable modal-dialog-centered"
     [ngClass]="{ 'modal-xl': pasoModalResultados === 5 }"
   >
     <div class="modal-content">
       <!-- Encabezado -->
       <div class="modal-header">
-        <h5 class="modal-title" id="modalResultadosLabel">
-          Resultado del punto
-        </h5>
-        <button
-          type="button"
-          class="btn-close"
-          data-bs-dismiss="modal"
-          aria-label="Cerrar"
-        ></button>
+        <h5 class="modal-title" id="modalResultadosLabel">Resultado del punto</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
       </div>
 
-      <!-- Cuerpo -->
-      <div class="modal-body">
+      <!-- Cuerpo (deja aquí solo el contenido, sin botones de navegación) -->
+      <div class="modal-body" #hibridoScroll>
         <ng-container [ngSwitch]="pasoModalResultados">
-          <!-- Paso 1: Selección -->
+          <!-- Paso 1 -->
           <div *ngSwitchCase="1">
             <p>¿Cómo desea obtener el resultado de este punto?</p>
             <div class="d-grid gap-2">
-              <button
-                class="btn btn-outline-primary"
-                (click)="irAPasoConfirmarAutomatico()"
-              >
-                Calcular automáticamente
-              </button>
-              <button
-                class="btn btn-outline-secondary"
-                (click)="irAPasoManual()"
-              >
-                Asignar resultado manualmente
-              </button>
-
-              <button
-                class="btn btn-outline-success"
-                (click)="irAPasoHibrido()"
-              >
-                Asignar votos rápido y calcular ponderado
-              </button>
+              <button class="btn btn-outline-primary" (click)="irAPasoConfirmarAutomatico()">Calcular automáticamente</button>
+              <button class="btn btn-outline-secondary" (click)="irAPasoManual()" *ngIf="!puntoSeleccionado.requiere_voto_dirimente">Asignar resultado manualmente</button>
+              <button class="btn btn-outline-success" (click)="irAPasoHibrido()" *ngIf="!puntoSeleccionado.requiere_voto_dirimente">Asignar votos rápido y calcular ponderado</button>
             </div>
           </div>
 
-          <!-- Paso 2: Confirmar cálculo automático -->
+          <!-- Paso 2 -->
           <div *ngSwitchCase="2">
-            <p>
-              El sistema calculará automáticamente el resultado del punto según
-              los votos emitidos. ¿Desea continuar?
-            </p>
-            <div class="d-flex justify-content-between">
-              <button class="btn btn-secondary" (click)="volverAlPasoInicial()">
-                Atrás
-              </button>
-              <button
-                class="btn btn-success d-flex align-items-center"
-                (click)="calcularResultadoAutomatico()"
-                [disabled]="guardandoResultadoAutomatico"
-              >
-                <ng-container
-                  *ngIf="!guardandoResultadoAutomatico; else cargandoAuto"
-                >
-                  <i class="bi bi-calculator me-2"></i>
-                  Confirmar
-                </ng-container>
-                <ng-template #cargandoAuto>
-                  <span class="spinner-border spinner-border-sm me-2"></span>
-                  Calculando...
-                </ng-template>
-              </button>
-            </div>
+            <p>El sistema calculará automáticamente el resultado del punto según los votos emitidos. ¿Desea continuar?</p>
           </div>
 
-          <!-- Paso 3: Selección manual -->
+          <!-- Paso 3 -->
           <div *ngSwitchCase="3">
             <label for="resultadoManual">Seleccione el resultado manual:</label>
-            <select
-              id="resultadoManual"
-              class="form-select mt-2 mb-3"
-              [(ngModel)]="resultadoManualSeleccionado"
-            >
+            <select id="resultadoManual" class="form-select mt-2 mb-3" [(ngModel)]="resultadoManualSeleccionado">
               <option value="aprobada">Aprobada</option>
               <option value="rechazada">Rechazada</option>
               <option value="pendiente">Pendiente</option>
             </select>
-            <div class="d-flex justify-content-between">
-              <button class="btn btn-secondary" (click)="volverAlPasoInicial()">
-                Atrás
-              </button>
-              <button class="btn btn-primary" (click)="irAPasoConfirmacion()">
-                Continuar
-              </button>
-            </div>
           </div>
 
-          <!-- Paso 4: Confirmar resultado manual -->
+          <!-- Paso 4 -->
           <div *ngSwitchCase="4">
             <p>
               Se asignará el resultado manual:
-              <strong>{{ resultadoManualSeleccionado | titlecase }}</strong
-              >. Este resultado se registrará como ingreso manual por parte de
-              la Secretaría.
+              <strong>{{ resultadoManualSeleccionado | titlecase }}</strong>. Este resultado se registrará como ingreso manual por parte de la Secretaría.
             </p>
-            <div class="d-flex justify-content-between">
-              <button class="btn btn-secondary" (click)="volverAlPasoManual()">
-                Atrás
-              </button>
-              <button
-                class="btn btn-success d-flex align-items-center"
-                (click)="calcularResultadoManual()"
-                [disabled]="guardandoResultadoManual"
-              >
-                <ng-container
-                  *ngIf="!guardandoResultadoManual; else cargandoManual"
-                >
-                  <i class="bi bi-check2-circle me-2"></i>
-                  Confirmar
-                </ng-container>
-                <ng-template #cargandoManual>
-                  <span class="spinner-border spinner-border-sm me-2"></span>
-                  Guardando...
-                </ng-template>
-              </button>
-            </div>
           </div>
 
-          <!-- Paso 5: Votación híbrida -->
+          <!-- Paso 5: Híbrido -->
           <div *ngSwitchCase="5" class="paso-hibrido-expandido">
             <p>Revise o modifique los votos antes de calcular el resultado:</p>
 
-            <!-- Barra de búsqueda -->
-            <input
-              type="text"
-              class="form-control mb-3"
-              placeholder="Buscar por nombre..."
-              [(ngModel)]="busquedaVotoHibrido"
-              (ngModelChange)="actualizarBusquedaVotoHibrido($event)"
-            />
+            <input type="text" class="form-control mb-3" placeholder="Buscar por nombre..." [(ngModel)]="busquedaVotoHibrido" (ngModelChange)="actualizarBusquedaVotoHibrido($event)" />
 
-            <!-- Filtro por tipo de voto -->
             <ul class="nav nav-tabs mb-3">
               <li class="nav-item">
-                <a
-                  class="nav-link"
-                  [class.active]="filtroVotoHibrido === 'todos'"
-                  (click)="
-                    filtroVotoHibrido = 'todos'; agruparYFiltrarVotosHibridos()
-                  "
-                >
-                  Todos
+                <a class="nav-link" [class.active]="filtroVotoHibrido === 'todos'" (click)="filtroVotoHibrido = 'todos'; agruparYFiltrarVotosHibridos()">
+                  Todos <span class="badge bg-secondary ms-1">{{ contadoresHibrido.todos }}</span>
                 </a>
               </li>
               <li class="nav-item">
-                <a
-                  class="nav-link"
-                  [class.active]="filtroVotoHibrido === 'afavor'"
-                  (click)="
-                    filtroVotoHibrido = 'afavor'; agruparYFiltrarVotosHibridos()
-                  "
-                >
-                  A favor
+                <a class="nav-link" [class.active]="filtroVotoHibrido === 'afavor'" (click)="filtroVotoHibrido = 'afavor'; agruparYFiltrarVotosHibridos()">
+                  A favor <span class="badge bg-success ms-1">{{ contadoresHibrido.afavor }}</span>
                 </a>
               </li>
               <li class="nav-item">
-                <a
-                  class="nav-link"
-                  [class.active]="filtroVotoHibrido === 'encontra'"
-                  (click)="
-                    filtroVotoHibrido = 'encontra';
-                    agruparYFiltrarVotosHibridos()
-                  "
-                >
-                  En contra
+                <a class="nav-link" [class.active]="filtroVotoHibrido === 'encontra'" (click)="filtroVotoHibrido = 'encontra'; agruparYFiltrarVotosHibridos()">
+                  En contra <span class="badge bg-danger ms-1">{{ contadoresHibrido.encontra }}</span>
                 </a>
               </li>
               <li class="nav-item">
-                <a
-                  class="nav-link"
-                  [class.active]="filtroVotoHibrido === 'abstencion'"
-                  (click)="
-                    filtroVotoHibrido = 'abstencion';
-                    agruparYFiltrarVotosHibridos()
-                  "
-                >
-                  Abstención
+                <a class="nav-link" [class.active]="filtroVotoHibrido === 'abstencion'" (click)="filtroVotoHibrido = 'abstencion'; agruparYFiltrarVotosHibridos()">
+                  Abstención <span class="badge bg-warning text-dark ms-1">{{ contadoresHibrido.abstencion }}</span>
                 </a>
               </li>
               <li class="nav-item">
-                <a
-                  class="nav-link"
-                  [class.active]="filtroVotoHibrido === 'sinvoto'"
-                  (click)="
-                    filtroVotoHibrido = 'sinvoto';
-                    agruparYFiltrarVotosHibridos()
-                  "
-                >
-                  Sin votar
+                <a class="nav-link" [class.active]="filtroVotoHibrido === 'sinvoto'" (click)="filtroVotoHibrido = 'sinvoto'; agruparYFiltrarVotosHibridos()">
+                  Sin votar <span class="badge bg-secondary ms-1">{{ contadoresHibrido.sinvoto }}</span>
                 </a>
               </li>
             </ul>
 
-            <!-- Lista agrupada por grupo -->
             <div class="row gy-3">
-              <div
-                class="col-12 col-md-6 col-lg-4"
-                *ngFor="let grupo of agrupadosVotosHibridos"
-              >
+              <div class="col-12 col-md-6 col-lg-4" *ngFor="let grupo of agrupadosVotosHibridos">
                 <div class="p-2 border rounded shadow-sm h-100">
                   <h6 class="mb-3 border-start border-3 ps-2 text-primary">
                     {{ getNombreGrupoFormateado(grupo.grupo) }}
                   </h6>
 
-                  <div
-                    *ngFor="let voto of grupo.usuarios"
-                    class="voto-hibrido-item mb-2"
-                    [ngClass]="{
-                      'voto-afavor': voto.opcion === 'afavor',
-                      'voto-encontra': voto.opcion === 'encontra',
-                      'voto-abstencion': voto.opcion === 'abstencion',
-                      'voto-sinvoto': !voto.opcion
-                    }"
-                  >
+                  <div *ngFor="let voto of grupo.usuarios" class="voto-hibrido-item mb-2"
+                       [ngClass]="{
+                         'voto-afavor': voto.opcion === 'afavor',
+                         'voto-encontra': voto.opcion === 'encontra',
+                         'voto-abstencion': voto.opcion === 'abstencion',
+                         'voto-sinvoto': !voto.opcion,
+                         'voto-disabled': !voto.habilitado
+                       }">
                     <span>{{ voto.usuario.nombre }}</span>
-                    <select
-                      class="form-select form-select-sm"
-                      [(ngModel)]="voto.opcion"
-                    >
+                    <select class="form-select form-select-sm"
+                            [(ngModel)]="voto.opcion"
+                            [disabled]="!voto.habilitado"
+                            (ngModelChange)="onCambioOpcionHibrido()">
                       <option value="afavor">A favor</option>
                       <option value="encontra">En contra</option>
                       <option value="abstencion">Abstención</option>
@@ -939,55 +890,82 @@
                 </div>
               </div>
             </div>
-
-            <!-- Botones de navegación -->
-            <div class="d-flex justify-content-between mt-4">
-              <button class="btn btn-secondary" (click)="volverAlPasoInicial()">
-                Atrás
-              </button>
-              <button
-                class="btn btn-primary"
-                (click)="irAPasoConfirmarHibrido()"
-              >
-                Continuar
-              </button>
-            </div>
           </div>
 
-          <!-- Paso 6: Confirmar cálculo híbrido -->
+          <!-- Paso 6 -->
           <div *ngSwitchCase="6">
-            <p>
-              Se enviarán los votos seleccionados y el sistema calculará el
-              resultado de forma automática.
-            </p>
-
-            <div class="d-flex justify-content-between">
-              <button class="btn btn-secondary" (click)="volverAPasoHibrido()">
-                Atrás
-              </button>
-              <button
-                class="btn btn-success d-flex align-items-center"
-                (click)="calcularResultadoHibrido()"
-                [disabled]="guardandoResultadoHibrido"
-              >
-                <ng-container
-                  *ngIf="!guardandoResultadoHibrido; else cargandoHibrido"
-                >
-                  <i class="bi bi-gear-fill me-2"></i>
-                  Confirmar
-                </ng-container>
-                <ng-template #cargandoHibrido>
-                  <span class="spinner-border spinner-border-sm me-2"></span>
-                  Procesando...
-                </ng-template>
-              </button>
-            </div>
+            <p>Se enviarán los votos seleccionados y el sistema calculará el resultado de forma automática.</p>
           </div>
+        </ng-container>
+      </div>
+
+      <!-- Footer pegado (cambia según el paso) -->
+      <div class="modal-footer justify-content-between" *ngIf="pasoModalResultados !== 1">
+        <ng-container [ngSwitch]="pasoModalResultados">
+
+          <!-- Paso 2: Confirmar automático -->
+          <ng-container *ngSwitchCase="2">
+            <button class="btn btn-secondary" (click)="volverAlPasoInicial()">Atrás</button>
+            <button class="btn btn-success d-flex align-items-center"
+                    (click)="calcularResultadoAutomatico()"
+                    [disabled]="guardandoResultadoAutomatico">
+              <ng-container *ngIf="!guardandoResultadoAutomatico; else cargandoAuto">
+                <i class="bi bi-calculator me-2"></i> Confirmar
+              </ng-container>
+              <ng-template #cargandoAuto>
+                <span class="spinner-border spinner-border-sm me-2"></span> Calculando...
+              </ng-template>
+            </button>
+          </ng-container>
+
+          <!-- Paso 3: Selección manual -->
+          <ng-container *ngSwitchCase="3">
+            <button class="btn btn-secondary" (click)="volverAlPasoInicial()">Atrás</button>
+            <button class="btn btn-primary" (click)="irAPasoConfirmacion()">Continuar</button>
+          </ng-container>
+
+          <!-- Paso 4: Confirmar manual -->
+          <ng-container *ngSwitchCase="4">
+            <button class="btn btn-secondary" (click)="volverAlPasoManual()">Atrás</button>
+            <button class="btn btn-success d-flex align-items-center"
+                    (click)="calcularResultadoManual()"
+                    [disabled]="guardandoResultadoManual">
+              <ng-container *ngIf="!guardandoResultadoManual; else cargandoManual">
+                <i class="bi bi-check2-circle me-2"></i> Confirmar
+              </ng-container>
+              <ng-template #cargandoManual>
+                <span class="spinner-border spinner-border-sm me-2"></span> Guardando...
+              </ng-template>
+            </button>
+          </ng-container>
+
+          <!-- Paso 5: Híbrido -->
+          <ng-container *ngSwitchCase="5">
+            <button class="btn btn-secondary" (click)="volverAlPasoInicial()">Atrás</button>
+            <button class="btn btn-primary" (click)="irAPasoConfirmarHibrido()">Continuar</button>
+          </ng-container>
+
+          <!-- Paso 6: Confirmar híbrido -->
+          <ng-container *ngSwitchCase="6">
+            <button class="btn btn-secondary" (click)="volverAPasoHibrido()">Atrás</button>
+            <button class="btn btn-success d-flex align-items-center"
+                    (click)="calcularResultadoHibrido()"
+                    [disabled]="guardandoResultadoHibrido">
+              <ng-container *ngIf="!guardandoResultadoHibrido; else cargandoHibrido">
+                <i class="bi bi-gear-fill me-2"></i> Confirmar
+              </ng-container>
+              <ng-template #cargandoHibrido>
+                <span class="spinner-border spinner-border-sm me-2"></span> Procesando...
+              </ng-template>
+            </button>
+          </ng-container>
+
         </ng-container>
       </div>
     </div>
   </div>
 </div>
+
 
 <!-- =============================== -->
 <!-- Modal: Resolución del punto -->
