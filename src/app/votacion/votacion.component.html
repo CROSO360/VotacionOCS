@@ -154,7 +154,7 @@
             class="square d-flex align-items-center justify-content-between"
             *ngFor="let puntoUsuario of grupo.usuarios"
             [id]="puntoUsuario.id_punto_usuario"
-            [ngClass]="getClassForPuntoUsuario(puntoUsuario)"
+            [ngClass]="getClassForPuntoUsuario(puntoUsuario, puntoSeleccionado)"
           >
             <!-- Nombre -->
             <div class="fw-semibold">{{ getNombreUsuario(puntoUsuario) }}</div>
@@ -215,10 +215,10 @@
     <button
       class="btn btn-primary"
       (click)="abrirModalResultados('normal')"
-      *ngIf="resolucionActual && !puntoSeleccionado.resultado"
+      *ngIf="!puntoSeleccionado.resultado"
     >
       Calcular resultado
-    </button>
+    </button><!-- *ngIf="resolucionActual && !puntoSeleccionado.resultado" -->
 
     <button
       class="btn btn-primary"
@@ -265,76 +265,162 @@
     </button>
 
     <!-- Mensaje de advertencia -->
-    <div *ngIf="!resolucionActual" class="text-danger mt-2 small">
+    <!--div *ngIf="!resolucionActual" class="text-danger mt-2 small">
       ⚠️ Debe crear una resolución antes de calcular el resultado.
-    </div>
+    </div-->
 
     <!--button class="btn btn-primary">Finalizar Punto</button-->
   </div>
 
-  <!-- Tabla de resultados -->
-  <div class="resultados-container mt-4">
-    <h5 class="mb-3">Resultado del punto</h5>
 
-    <table class="table table-bordered text-center">
-      <thead class="table-light">
-        <tr>
-          <th>Opción</th>
-          <th>Cantidad de votantes</th>
-          <th>Total ponderado</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td>A favor</td>
-          <td>{{ puntoSeleccionado?.n_afavor || 0 }}</td>
-          <td>{{ puntoSeleccionado?.p_afavor || 0 | number : "1.2-2" }}</td>
-        </tr>
-        <tr>
-          <td>En contra</td>
-          <td>{{ puntoSeleccionado?.n_encontra || 0 }}</td>
-          <td>{{ puntoSeleccionado?.p_encontra || 0 | number : "1.2-2" }}</td>
-        </tr>
-        <tr>
-          <td>Abstención</td>
-          <td>{{ puntoSeleccionado?.n_abstencion || 0 }}</td>
-          <td>{{ puntoSeleccionado?.p_abstencion || 0 | number : "1.2-2" }}</td>
-        </tr>
-        <tr class="fw-bold table-active">
-          <td>Resultado</td>
-          <td colspan="2">{{ puntoSeleccionado?.resultado || "---" }}</td>
-        </tr>
-      </tbody>
-    </table>
+  <!-- ========================= -->
+<!-- TABLA 1: Resumen Ponderado -->
+<!-- ========================= -->
+<div class="resultados-container mt-4">
+  <h5 class="mb-3">Resumen ponderado</h5>
 
-    <p
-      class="text-muted text-end me-2 fst-italic"
-      *ngIf="
+  <table class="table table-bordered">
+    <tbody>
+      <tr>
+        <td class="fw-bold w-50">Mínimo requerido nominal</td>
+        <td class="text-end">{{ uiResumen.minNominal | number:'1.2-2' }}</td>
+      </tr>
+      <tr>
+        <td class="fw-bold">Mínimo requerido ponderado</td>
+        <td class="text-end">{{ uiResumen.minPonderado | number:'1.2-2' }}</td>
+      </tr>
+      <tr>
+        <td class="fw-bold">Votación A FAVOR (ponderado)</td>
+        <td class="text-end">{{ uiResumen.pFavor | number:'1.2-2' }}</td>
+      </tr>
+      <tr>
+        <td class="fw-bold">Votación EN CONTRA (ponderado)</td>
+        <td class="text-end">{{ uiResumen.pContra | number:'1.2-2' }}</td>
+      </tr>
+      <tr>
+        <td class="fw-bold">Votación ABSTENCIÓN (ponderado)</td>
+        <td class="text-end">{{ uiResumen.pAbstencion | number:'1.2-2' }}</td>
+      </tr>
+      <tr class="table-active">
+        <td class="fw-bold">Resultado sitema</td>
+        <td class="text-end fw-bold">{{ puntoSeleccionado.resultado }}</td>
+      </tr>
+      <tr class="table-active">
+        <td class="fw-bold">Estado Ponderado</td>
+        <td class="text-end fw-bold">{{ uiResumen.estadoPonderado }}</td>
+      </tr>
+      <tr class="table-active">
+        <td class="fw-bold">Estado Nominal</td>
+        <td class="text-end fw-bold">{{ uiResumen.estadoNominal }}</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <p class="text-muted text-end me-2 fst-italic"
+     *ngIf="
         puntoSeleccionado?.n_afavor != null ||
         puntoSeleccionado?.n_encontra != null ||
         puntoSeleccionado?.n_abstencion != null ||
         resolucionActual?.voto_manual
-      "
-    >
-      Fuente:
-      {{
-        resolucionActual?.voto_manual
-          ? "Cálculo manual por Secretaría"
-          : "Cálculo automático del sistema"
-      }}
-    </p>
-    <p
-      class="text-muted text-end me-2 fst-italic"
-      *ngIf="
+      ">
+    Fuente:
+    {{ resolucionActual?.voto_manual ? 'Cálculo manual por Secretaría' : 'Cálculo automático del sistema' }}
+  </p>
+
+  <p class="text-muted text-end me-2 fst-italic" *ngIf="
         (puntoSeleccionado?.n_afavor != null ||
         puntoSeleccionado?.n_encontra != null ||
         puntoSeleccionado?.n_abstencion != null) &&
         (puntoSeleccionado.requiere_voto_dirimente)
-      "
-    >
-      Voto dirimente del rector
-    </p>
+      ">
+    Voto dirimente del rector
+  </p>
+</div>
+
+<!-- Row para mostrar ambas tablas lado a lado -->
+<div class="row g-3 mt-3 align-items-start">
+  
+
+  <!-- Columna: Bases y mínimos -->
+  <div class="col-12 col-md-6" *ngIf="resumenBase as rb">
+    <div class="resultados-container">
+      <h6 class="mb-2">Bases y mínimos requeridos</h6>
+
+      <table class="table table-bordered table-sm text-center mb-2 compact-table">
+        <tbody>
+          <tr>
+            <td class="fw-bold text-start">Mitad de los miembros presentes</td>
+            <td class="text-end">{{ rb.resumen_excel.minimos.mitad_presentes_nominal | number:'1.2-2' }}</td>
+          </tr>
+          <tr>
+            <td class="fw-bold text-start">Mitad de los miembros ponderado</td>
+            <td class="text-end">{{ rb.resumen_excel.minimos.mitad_miembros_ponderado | number:'1.2-2' }}</td>
+          </tr>
+          <tr>
+            <td class="fw-bold text-start">2 3eras Partes Ponderadas</td>
+            <td class="text-end">{{ rb.resumen_excel.minimos.dos_tercios_ponderado | number:'1.2-2' }}</td>
+          </tr>
+          <tr>
+            <td class="fw-bold text-start">2 3eras Partes miembros</td>
+            <td class="text-end">{{ rb.resumen_excel.minimos.dos_tercios_miembros_nominal | number:'1.2-2' }}</td>
+          </tr>
+          <tr class="table-active">
+            <td class="fw-bold text-start">Mayoría Simple</td>
+            <td class="fw-bold text-end">{{ rb.resumen_excel.minimos.mayoria_simple | number:'1.2-2' }}</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- Bases (opcional, pequeñas) -->
+      <!--div class="small text-muted">
+        <div class="d-flex justify-content-between"><span>Presentes nominal:</span><span>{{ rb.resumen_excel.bases.presentes_nominal }}</span></div>
+        <div class="d-flex justify-content-between"><span>Miembros nominal:</span><span>{{ rb.resumen_excel.bases.miembros_nominal }}</span></div>
+        <div class="d-flex justify-content-between"><span>Censo ponderado:</span><span>{{ rb.resumen_excel.bases.censo_ponderado | number:'1.2-2' }}</span></div>
+      </div-->
+    </div>
   </div>
+  
+<!-- Columna: Votos -->
+  <div class="col-12 col-md-6">
+    <div class="resultados-container">
+      <h6 class="mb-2">Votos</h6>
+      <table class="table table-bordered table-sm text-center mb-2 compact-table">
+        <thead class="table-light">
+          <tr>
+            <th class="text-start">Opción</th>
+            <th class="w-25">Cantidad</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="fw-bold text-start">A favor</td>
+            <td>{{ uiResumen.nFavor }}</td>
+          </tr>
+          <tr>
+            <td class="fw-bold text-start">En contra</td>
+            <td>{{ uiResumen.nContra }}</td>
+          </tr>
+          <tr>
+            <td class="fw-bold text-start">Abstención</td>
+            <td>{{ uiResumen.nAbstencion }}</td>
+          </tr>
+          <tr>
+            <td class="fw-bold text-start">Sin votar (ausentes)</td>
+            <td>{{ uiResumen.nAusentes }}</td>
+          </tr>
+          <tr class="table-active">
+            <td class="fw-bold text-start">Total</td>
+            <td class="fw-bold">{{ uiResumen.nTotal }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  
+</div>
+
+
+
 
   <button
     class="btn btn-secondary"

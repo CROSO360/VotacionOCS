@@ -142,7 +142,10 @@ export class PuntoService {
   }
 
   calcularResultadosHibrido(idPunto: number, data: any): Observable<any> {
-    return this.http.post<any>(`${this.baseURL}/punto/resultado-hibrido/${idPunto}`, data);
+    return this.http.post<any>(
+      `${this.baseURL}/punto/resultado-hibrido/${idPunto}`,
+      data
+    );
   }
 
   /**
@@ -151,5 +154,19 @@ export class PuntoService {
    */
   getResultados(id: number): Observable<any> {
     return this.http.get<any>(`${this.baseURL}/punto/resultado/${id}`);
+  }
+
+  indicadorDeMayoria(id: number): Observable<any> {
+    return this.http.get<any>(
+      `${this.baseURL}/punto/indicadores-mayoria/${id}`
+    );
+  }
+
+  resumenBase(id: number): Observable<any> {
+    return this.http.get<any>(`${this.baseURL}/punto/resumen-base/${id}`);
+  }
+
+  resumenPonderado(id: number): Observable<any> {
+    return this.http.get<any>(`${this.baseURL}/punto/resumen-ponderado/${id}`);
   }
 }

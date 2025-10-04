@@ -66,7 +66,6 @@ import { data } from 'jquery';
   styleUrl: './votacion.component.css',
 })
 export class VotacionComponent implements OnInit {
-  
   // =======================================
   // CONSTRUCTOR E INYECCIÓN DE DEPENDENCIAS
   // =======================================
@@ -144,6 +143,10 @@ export class VotacionComponent implements OnInit {
   votoManualModalRef: any;
   modalResultadosRef: Modal | null = null;
 
+  // Estado de los resúmenes
+  resumenPonderado: any | null;
+  resumenBase: any | null;
+
   //filtros de nomina
   busquedaNomina: string = '';
   agrupadosPorGrupoNomina: any[] = [];
@@ -192,6 +195,25 @@ export class VotacionComponent implements OnInit {
     encontra: 0,
     abstencion: 0,
     sinvoto: 0,
+  };
+
+  // View-model para el template (tablas)
+  uiResumen = {
+    // Tabla 1
+    minNominal: 0,
+    minPonderado: 0,
+    pFavor: 0,
+    pContra: 0,
+    pAbstencion: 0,
+    estadoPonderado: '---',
+    estadoNominal: '---',
+
+    // Tabla 2
+    nFavor: 0,
+    nContra: 0,
+    nAbstencion: 0,
+    nAusentes: 0,
+    nTotal: 0,
   };
 
   private norm = (v: any) =>
@@ -251,7 +273,7 @@ export class VotacionComponent implements OnInit {
     }).subscribe({
       next: ({ sesion, puntos, usuario, asistencia, miembrosOCS, grupos }) => {
         this.sesion = sesion;
-        this.puntos = puntos.sort((a: any, b: any) => a.orden - b.orden);       ;
+        this.puntos = puntos.sort((a: any, b: any) => a.orden - b.orden);
         this.usuario = usuario;
         this.nomina = asistencia;
         this.asistenciasOriginales = asistencia; // ✅ Esta línea es la clave
@@ -396,8 +418,8 @@ export class VotacionComponent implements OnInit {
   }
 
   toggleCodigo(): void {
-  this.showCodigo = !this.showCodigo;
-}
+    this.showCodigo = !this.showCodigo;
+  }
 
   // =====================
   // Métodos de administración de puntos
@@ -411,6 +433,7 @@ export class VotacionComponent implements OnInit {
 
       this.getPuntoUsuarios(this.puntoSeleccionado.id_punto);
       this.getResolucion(this.puntoSeleccionado.id_punto);
+      this.cargarResmenesDelPunto(this.puntoSeleccionado.id_punto);
     }
   }
 
@@ -674,42 +697,55 @@ export class VotacionComponent implements OnInit {
 
   // Guarda los cambios realizados en el tipo de asistencia
   confirmarAsistencia(): void {
-  if (!this.idSesion) { this.toastr.warning('Sesión no válida.'); return; }
+    if (!this.idSesion) {
+      this.toastr.warning('Sesión no válida.');
+      return;
+    }
 
-  this.confirmandoAsistencia = true;
+    this.confirmandoAsistencia = true;
 
-  // ✅ usar la fuente completa (o solo cambios calculados contra un snapshot)
-  const actualizaciones = (this.asistenciasOriginales ?? []).map(a => ({
-    id_asistencia: a.id_asistencia,
-    // normaliza por si hay null/undefined
-    tipo_asistencia: (a.tipo_asistencia ?? 'ausente').toString().trim().toLowerCase()
-  }));
+    // ✅ usar la fuente completa (o solo cambios calculados contra un snapshot)
+    const actualizaciones = (this.asistenciasOriginales ?? []).map((a) => ({
+      id_asistencia: a.id_asistencia,
+      // normaliza por si hay null/undefined
+      tipo_asistencia: (a.tipo_asistencia ?? 'ausente')
+        .toString()
+        .trim()
+        .toLowerCase(),
+    }));
 
-  this.asistenciaService.guardarAsistencias(this.idSesion, actualizaciones)
-    .subscribe({
-      next: () => {
-        this.toastr.success('Asistencia actualizada y votos sincronizados', 'Éxito');
-        this.confirmandoAsistencia = false;
-        this.getPuntoUsuarios(this.puntoSeleccionado.id_punto);
+    this.asistenciaService
+      .guardarAsistencias(this.idSesion, actualizaciones)
+      .subscribe({
+        next: () => {
+          this.toastr.success(
+            'Asistencia actualizada y votos sincronizados',
+            'Éxito'
+          );
+          this.confirmandoAsistencia = false;
+          this.getPuntoUsuarios(this.puntoSeleccionado.id_punto);
+          this.cargarResmenesDelPunto(this.puntoSeleccionado.id_punto);
 
-        // ✅ re-cargar del backend para evitar estado “optimista” desfasado
-        this.asistenciaService.getAllDataBy(
-          `sesion.id_sesion=${this.idSesion}`, ['usuario','usuario.grupoUsuario']
-        ).subscribe(data => {
-          this.nomina = data;
-          this.asistenciasOriginales = data;
-          this.agruparNominaPorGrupo();
-          this.actualizarContadores();
-          this.filtrarAsistenciasNomina(); // re-aplica búsqueda/filtros actuales
-        });
-      },
-      error: () => {
-        this.toastr.error('Error al actualizar la asistencia', 'Error');
-        this.confirmandoAsistencia = false;
-      },
-    });
-}
-
+          // ✅ re-cargar del backend para evitar estado “optimista” desfasado
+          this.asistenciaService
+            .getAllDataBy(`sesion.id_sesion=${this.idSesion}`, [
+              'usuario',
+              'usuario.grupoUsuario',
+            ])
+            .subscribe((data) => {
+              this.nomina = data;
+              this.asistenciasOriginales = data;
+              this.agruparNominaPorGrupo();
+              this.actualizarContadores();
+              this.filtrarAsistenciasNomina(); // re-aplica búsqueda/filtros actuales
+            });
+        },
+        error: () => {
+          this.toastr.error('Error al actualizar la asistencia', 'Error');
+          this.confirmandoAsistencia = false;
+        },
+      });
+  }
 
   cambiarPrincipalAlternoNomina(idUsuario: number) {
     if (!this.idSesion || !idUsuario) return;
@@ -893,12 +929,10 @@ export class VotacionComponent implements OnInit {
     });
   }
 
-  
-isPresente(a: IAsistencia): boolean {
-  const v = (a?.tipo_asistencia ?? 'ausente') + '';
-  return v.trim().toLowerCase() === 'presente';
-}
-
+  isPresente(a: IAsistencia): boolean {
+    const v = (a?.tipo_asistencia ?? 'ausente') + '';
+    return v.trim().toLowerCase() === 'presente';
+  }
 
   agruparAsistenciasPorGrupo(
     asistencias: IAsistencia[]
@@ -1113,13 +1147,13 @@ isPresente(a: IAsistencia): boolean {
   }
 
   // Obtiene la clase CSS correspondiente al estado del puntoUsuario
-  getClassForPuntoUsuario(puntoUsuario: IPuntoUsuario) {
+  getClassForPuntoUsuario(puntoUsuario: IPuntoUsuario, punto: IPunto) {
     return {
       'sin-votar': puntoUsuario.opcion === null,
       afavor: puntoUsuario.opcion === 'afavor',
       encontra: puntoUsuario.opcion === 'encontra',
       abstencion: puntoUsuario.opcion === 'abstencion',
-      'disabled-box': puntoUsuario.estado === false,
+      'disabled-box': (puntoUsuario.estado === false && punto.resultado !== null),
     };
   }
 
@@ -1260,6 +1294,114 @@ isPresente(a: IAsistencia): boolean {
         this.modalResultadosRef.show();
       }
     }
+  }
+
+  /** Cargar y componer los datos de ambas tablas en un solo método */
+  cargarResmenesDelPunto(idPunto: number): void {
+    forkJoin({
+      ponderado: this.puntoService.resumenPonderado(idPunto),
+      base: this.puntoService.resumenBase(idPunto),
+    }).subscribe({
+      next: ({ ponderado, base }) => {
+        this.resumenPonderado = ponderado;
+        this.resumenBase = base;
+
+        // --- Fuentes con fallback seguro ---
+        const minNominal = ponderado?.minimos?.nominal ?? 0;
+
+        const minPonderado = ponderado?.minimos?.ponderado ?? 0;
+
+        const pFavor =
+          ponderado?.resultados?.ponderado?.a_favor ??
+          this.puntoSeleccionado?.p_afavor ??
+          0;
+
+        const pContra =
+          ponderado?.resultados?.ponderado?.en_contra ??
+          this.puntoSeleccionado?.p_encontra ??
+          0;
+
+        const pAbstencion =
+          ponderado?.resultados?.ponderado?.abstencion ??
+          this.puntoSeleccionado?.p_abstencion ??
+          0;
+
+        const estadoPonderado =
+          ponderado?.estados?.ponderado ??
+          this.puntoSeleccionado?.resultado ??
+          '---';
+
+        const estadoNominal = ponderado?.estados?.nominal ?? '---';
+
+        // Votos nominales
+        const nFavor =
+          ponderado?.votos_resumen?.a_favor ??
+          ponderado?.resultados?.nominal?.a_favor ??
+          this.puntoSeleccionado?.n_afavor ??
+          0;
+
+        const nContra =
+          ponderado?.votos_resumen?.en_contra ??
+          ponderado?.resultados?.nominal?.en_contra ??
+          this.puntoSeleccionado?.n_encontra ??
+          0;
+
+        const nAbstencion =
+          ponderado?.votos_resumen?.abstencion ??
+          ponderado?.resultados?.nominal?.abstencion ??
+          this.puntoSeleccionado?.n_abstencion ??
+          0;
+
+        const nAusentes = ponderado?.votos_resumen?.ausentes ?? 0;
+
+        const nTotal =
+          ponderado?.votos_resumen?.total ??
+          nFavor + nContra + nAbstencion + nAusentes;
+
+        // --- Set único al view-model ---
+        this.uiResumen = {
+          minNominal,
+          minPonderado,
+          pFavor,
+          pContra,
+          pAbstencion,
+          estadoPonderado,
+          estadoNominal,
+          nFavor,
+          nContra,
+          nAbstencion,
+          nAusentes,
+          nTotal,
+        };
+      },
+      error: () => {
+        // Limpieza mínima en caso de error
+        this.resumenPonderado = null;
+        this.resumenBase = null;
+        this.uiResumen = {
+          minNominal: 0,
+          minPonderado: 0,
+          pFavor: 0,
+          pContra: 0,
+          pAbstencion: 0,
+          estadoPonderado: '---',
+          estadoNominal: '---',
+          nFavor: 0,
+          nContra: 0,
+          nAbstencion: 0,
+          nAusentes: 0,
+          nTotal: 0,
+        };
+      },
+    });
+  }
+
+  // (opcional) helper si necesitas mostrar el dirimente
+  get requiereDirimente(): boolean {
+    return (
+      !!this.resumenPonderado?.estados?.requiere_voto_dirimente ||
+      !!this.puntoSeleccionado?.requiere_voto_dirimente
+    );
   }
 
   // =====================

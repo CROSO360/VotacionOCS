@@ -461,3 +461,18 @@ select {
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
   letter-spacing: .04em;
 }
+
+/* Hace las tablas más compactas sin perder legibilidad */
+.compact-table {
+  font-size: 0.9rem; /* baja un poco la tipografía */
+}
+.compact-table td, .compact-table th {
+  padding: 0.35rem 0.5rem; /* menos padding que table-sm por defecto */
+}
+
+/* Opcional: que ambos contenedores tengan la misma altura visual en md+ */
+@media (min-width: 768px) {
+  .resultados-container {
+    height: 100%;
+  }
+}
