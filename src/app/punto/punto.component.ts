@@ -80,6 +80,7 @@ export class PuntoComponent {
     nombre: new FormControl('', Validators.required),
     detalle: new FormControl('', Validators.required),
     es_administrativa: new FormControl(''),
+    calculo_resultado: new FormControl('', Validators.required),
   });
 
   resolucionForm = new FormGroup({
@@ -173,6 +174,7 @@ export class PuntoComponent {
         nombre: this.punto.nombre,
         detalle: this.punto.detalle,
         es_administrativa: this.punto.es_administrativa,
+        calculo_resultado: this.punto.calculo_resultado,
       });
     });
   }
@@ -185,6 +187,7 @@ export class PuntoComponent {
       nombre: this.modificarPuntoForm.value.nombre,
       detalle: this.modificarPuntoForm.value.detalle,
       es_administrativa: this.modificarPuntoForm.value.es_administrativa,
+      calculo_resultado: this.modificarPuntoForm.value.calculo_resultado,
     };
 
     this.puntoService.saveData(puntoData).subscribe({

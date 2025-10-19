@@ -50,6 +50,11 @@ export class BarraSuperiorComponent implements OnInit, OnDestroy {
 
   private subRouter?: Subscription;
 
+  // ====== Estado de notificaciones ======
+  mostrarNotificaciones = false;
+  notificaciones: any[] = [];
+  tieneNotificaciones = false;
+
   // ====== Ciclo de vida ======
   ngOnInit(): void {
     this.resolverContextoYDatos();
@@ -169,5 +174,28 @@ private getFirstParamFromRouteTree(candidates: string[]): string | null {
       this.sesion = { id_sesion: idSesion };
       this.cargandoSesion = false;
     }, 0);
+  }
+
+  abrirSesion(idSesion: number) {
+    this.router.navigate(['/sesion', idSesion.toString()]);
+    this.mostrarNotificaciones = false;
+    // Marcar como vista (opcional: podrías guardar en localStorage)
+    this.marcarNotificacionComoVista(idSesion);
+  }
+
+  marcarNotificacionComoVista(idSesion: number) {
+    // Remover la notificación de la lista
+    this.notificaciones = this.notificaciones.filter(n => n.sesion.id_sesion !== idSesion);
+    this.tieneNotificaciones = this.notificaciones.length > 0;
+    
+    // Opcional: guardar en localStorage para persistir
+    localStorage.setItem('notificacionesVistas', JSON.stringify(
+      JSON.parse(localStorage.getItem('notificacionesVistas') || '[]').concat([idSesion])
+    ));
+  }
+
+  // ====== Métodos de notificaciones ======
+  toggleNotifications() {
+    this.mostrarNotificaciones = !this.mostrarNotificaciones;
   }
 }

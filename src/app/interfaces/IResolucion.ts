@@ -1,38 +1,38 @@
-// =======================
+﻿// =======================
 // Interfaz: IResolucion
-// Representa la resolución tomada sobre un punto del orden del día
+// Representa la resoluciÃ³n tomada sobre un punto del orden del dÃ­a
 // =======================
 
 import { IPunto } from './IPunto';
 
 export interface IResolucion {
   /**
-   * Punto al que está asociada la resolución
+   * Punto al que estÃ¡ asociada la resoluciÃ³n
    */
   punto?: IPunto;
 
   /**
-   * Nombre o título de la resolución
+   * Nombre o tÃ­tulo de la resoluciÃ³n
    */
   nombre?: string;
 
   /**
-   * Descripción detallada de la resolución
+   * DescripciÃ³n detallada de la resoluciÃ³n
    */
   descripcion?: string;
 
   /**
-   * Fecha en la que se registró la resolución
+   * Fecha en la que se registrÃ³ la resoluciÃ³n
    */
   fecha?: Date;
 
   /**
-   * Indica si el resultado fue ingresado manualmente por la Secretaría
+   * Fuente que origina el resultado (por ejemplo, automatico, manual, hibrido)
    */
-  voto_manual?: boolean;
+  fuente_resultado?: string;
 
   /**
-   * Indica si la resolución está activa (según lógica de negocio)
+   * Indica si la resoluciÃ³n estÃ¡ activa (segÃºn lÃ³gica de negocio)
    */
   estado?: boolean;
 
@@ -41,3 +41,4 @@ export interface IResolucion {
    */
   status?: boolean;
 }
+

@@ -1,15 +1,133 @@
-/* =======================
-   Estilo para cada grupo de formulario
-   ======================= */
-.form-group {
-  margin-bottom: 20px;
+/* ===== Layout de la tarjeta y área de formulario ===== */
+.login-card{
+  max-width: 620px;              /* tarjeta algo más ancha */
+  border-radius: 14px;
+  padding: 28px 28px 24px;
 }
 
-/* =======================
-   Estilo para mensajes de error
-   ======================= */
-.error-message {
-  color: red;
+.login-card .card-body{
+  width: 520px;                  /* ancho “útil” como la foto 2 */
+  max-width: 100%;
+  margin: 0 auto;                /* centra inputs y botón dentro */
+}
+
+.login-logo{
+  width: 260px;                  /* logo más grande */
+  height: auto;
+  margin-bottom: 12px;
+}
+
+/* ===== Inputs con proporción agradable ===== */
+.form-control{
+  height: 46px;                  /* altura consistente */
   font-size: 15px;
-  margin-bottom: 5px;
+  border-radius: 10px;
+  padding: 10px 14px;
+  margin-bottom: 12px;
+}
+
+/* ===== Botón compacto (no full-width) ===== */
+/* Anula el w-100 de Bootstrap solo para el botón de login */
+.btn.login-btn.w-100{ width: auto !important; }
+
+.btn.login-btn{
+  background-color:#DA2C38 !important;   /* rojo */
+  color:#fff !important;
+  border:none;
+  padding: 10px 22px;           /* botón más corto */
+  font-size:16px;
+  border-radius:10px;
+  box-shadow:0 8px 24px rgba(218,44,56,.22);
+  display:inline-flex;          /* tamaño al contenido */
+  align-items:center;
+  gap:.5rem;
+}
+
+/* hover/active/disabled (paleta pedida) */
+.btn.login-btn:hover:not(:disabled){
+  background-color:#8DC63F !important;   /* verde */
+}
+.btn.login-btn:active{ transform: translateY(1px); }
+.btn.login-btn:disabled{
+  background-color:#424242 !important;   /* gris oscuro */
+  color:#fff !important;
+  opacity: .95;
+  box-shadow:none;
+}
+
+/* ===== Separaciones visuales ===== */
+.form-group.text-center.mt-3{
+  text-align:left !important;   /* alinear el botón a la izquierda como la foto */
+  margin-top: 8px !important;
+}
+
+/* Enlace debajo, centrado y con espacio */
+.login-card .card-body .text-center.mt-3{
+  margin-top: 14px !important;
+}
+
+/* ===== Responsive: en pantallas chicas, el botón vuelve a 100% ===== */
+@media (max-width: 480px){
+  .login-card .card-body{ width: 100%; }
+  .btn.login-btn{ width: 100% !important; justify-content:center; }
+  .login-logo{ width: 200px; }
+}
+
+/* ===== Subtítulo del login ===== */
+.login-subtitle {
+  font-size: 1.2rem;              /* tamaño elegante */
+  font-weight: 600;
+  color: var(--c-dark);           /* gris oscuro */
+  margin: 8px 0 20px;
+  line-height: 1.4;
+}
+
+.login-subtitle span {
+  color: var(--c-primary);        /* “OCS” en rojo */
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+/* Opcional: una línea decorativa */
+.login-subtitle::after {
+  content: "";
+  display: block;
+  width: 60px;
+  height: 3px;
+  background: var(--c-success);   /* verde */
+  margin: 10px auto 0;
+  border-radius: 2px;
+}
+
+/* Botón "ojito" */
+.toggle-password {
+  position: absolute;
+  top: 50%;
+  right: 12px;
+  transform: translateY(-50%);
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--c-dark, #424242);
+}
+
+.toggle-password:hover {
+  color: var(--c-primary, #DA2C38); /* rojo en hover */
+}
+
+.icon-eye,
+.icon-eye-off {
+  width: 22px;
+  height: 22px;
+  pointer-events: none; /* evita bloquear el click */
+}
+
+/* Espacio en el input para que no se monte el ojito */
+.form-control.pe-5 {
+  padding-right: 2.5rem !important;
 }

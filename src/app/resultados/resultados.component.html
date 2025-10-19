@@ -60,7 +60,9 @@
     <div
       class="points-container"
       *ngIf="
-        punto.id_punto == puntoSeleccionado && !punto.resolucion?.voto_manual
+        punto.id_punto == puntoSeleccionado &&
+        (punto.resolucion?.fuente_resultado === 'automatico' ||
+          punto.resolucion?.fuente_resultado === 'hibrido')
       "
     >
       <table class="results-table">
@@ -137,10 +139,12 @@
       <!-- Tipo de resolución -->
       <br />
       <strong>Tipo de resolución: </strong>
-      <span *ngIf="punto.resolucion.voto_manual; else auto">
-        Manual (registrada por la Secretaría General)
-      </span>
-      <ng-template #auto> Automática (calculada por el sistema) </ng-template>
+      <ng-container [ngSwitch]="punto.resolucion?.fuente_resultado">
+        <span *ngSwitchCase="'manual'">Manual (registrada por la secretaria General)</span>
+        <span *ngSwitchCase="'hibrido'">Resolución híbrida (votos manuales y cálculo automático)</span>
+        <span *ngSwitchCase="'automatico'">Automática (calculada por el sistema)</span>
+        <span *ngSwitchDefault>Automática (calculada por el sistema)</span>
+      </ng-container>
       <br />
       <span *ngIf="punto.requiere_voto_dirimente  ">
         Voto dirimente del rector

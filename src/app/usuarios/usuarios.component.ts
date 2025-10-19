@@ -392,4 +392,14 @@ export class UsuariosComponent implements OnInit {
   goBack() {
     this.location.back();
   }
+
+  // =====================
+  // FUNCIONES PARA CONTADORES
+  // =====================
+
+  getUsuariosPorGrupo(idGrupo: number): any[] {
+    return this.usuarios.filter(usuario => 
+      usuario.grupoUsuario?.id_grupo_usuario === idGrupo
+    );
+  }
 }

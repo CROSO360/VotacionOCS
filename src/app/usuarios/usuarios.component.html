@@ -28,31 +28,34 @@
     <!-- Opción: Todos -->
     <li class="nav-item">
       <a
-        class="nav-link"
+        class="nav-link d-flex align-items-center gap-2"
         [ngClass]="{ active: grupoActual === null }"
         (click)="cambiarGrupo(null)"
       >
-        Todos
+        <span>Todos</span>
+        <span class="badge bg-secondary fs-7">{{ usuarios.length }}</span>
       </a>
     </li>
 
     <!-- Opción: Por cada grupo -->
     <li class="nav-item" *ngFor="let grupo of gruposUsuarios">
       <a
-        class="nav-link text-capitalize"
+        class="nav-link text-capitalize d-flex align-items-center gap-2"
         [ngClass]="{
           active: grupoActual?.id_grupo_usuario === grupo.id_grupo_usuario
         }"
         (click)="cambiarGrupo(grupo)"
       >
-        {{ grupo.nombre }}
+        <span>{{ grupo.nombre }}</span>
+        <span class="badge bg-secondary fs-7">{{ getUsuariosPorGrupo(grupo.id_grupo_usuario).length }}</span>
       </a>
     </li>
   </ul>
 
+
   <!-- ===========================
-     Lista de usuarios (ESTILO MIEMBROS)
-     =========================== -->
+       Lista de usuarios (ESTILO MIEMBROS)
+       =========================== -->
   <div class="usuarios-grid mt-3">
     <!-- Usuario individual -->
     <div

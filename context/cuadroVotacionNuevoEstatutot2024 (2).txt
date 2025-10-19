@@ -1,0 +1,185 @@
+Número de 
+Miembros
+Valor del voto de 
+cada miembro
+Valor Total de 
+los Votos 
+ponderados
+Rector
+R = 
+1
+1
+1
+Vicerrectores
+V = 
+2
+1
+2
+Decanos u otras autoridades
+D = 
+11
+0,8
+8,8
+Profesores e Investigadores
+P = 
+15
+1
+15
+Estudiantes
+E = 
+8
+0,93
+7,44
+Trabajadores
+T = 
+1
+0,7
+0,7
+38
+5,43
+34,94
+38
+p
+E
+ = 
+p
+G
+ = 
+p
+T 
+= 
+Mitad de los miembros presentes
+19,00
+Mitad de los miembros ponderado
+17,47
+2 3eras Partes Ponderadas
+23,29
+2 3eras Partes miembros
+25,33
+     
+ 
+Mayoria Simple
+19
+hasta 5%
+CUADRO DE VOTACIONES OCS - ULEAM
+TOTAL  
+25%
+hasta 5%
+CUADRO INFORMATIVO
+Miembros presentes
+%
+Votos
+Nominales
+A FAVOR
+Votaciones 
+Ponderadas
+A FAVOR
+Votos
+Nominales
+EN CONTRA
+Votaciones 
+Ponderadas
+EN CONTRA
+Votos
+Nominales
+ABSTENCIÓN
+Votaciones 
+Ponderadas
+ABSTENCIÓN
+2,86%
+1
+1
+0
+0
+0
+0
+5,72%
+2
+2
+0
+0
+0
+0
+25,19%
+10
+8
+0
+0
+0
+0
+42,93%
+15
+15
+0
+0
+0
+0
+21,29%
+8
+7,44
+0
+0
+0
+0
+2,00%
+1
+0,7
+0
+0
+0
+0
+100,00%
+37
+34,14
+0
+0
+0
+0
+Mínimo requerido 
+Ponderado
+17,47
+CUADRO DE VOTACIONES OCS - ULEAM
+RESUMEN PONDERADO
+CUADRO INFORMATIVO
+Mínimo requerido nominal
+19,00
+38
+TOTAL
+APROBADO
+1
+0
+37
+AUSENTES
+EN CONTRA
+A FAVOR
+0
+ABSTENCIÓN
+34,14
+Estado Ponderado
+Votación A FAVOR
+VOTOS
+0,00
+0,00
+Votación ABSTENCIÓN
+Votación EN CONTRA
+Estado Nominal
+APROBADO
+Grupos
+Votos 
+de 
+Grupo
+% Votos de 
+Grupo
+11,80
+34%
+22,44
+66%
+34,24
+17,12
+11,647
+23,2933333
+2 terceras partes
+CUADRO DE VOTACIONES OCS - ULEAM
+Autoridades
+(R + V + D)
+P+E

@@ -1,8 +1,11 @@
 /* ===== ESTADO DE LA SESIÓN ===== */
 
-/* Fondo gris para sesiones finalizadas */
+/* Sombreado gris para sesiones finalizadas */
 .sesion-finalizada {
-  background-color: #dddddd;
+  background-color: #f8f9fa;
+  border-left: 4px solid #6c757d;
+  box-shadow: 0 2px 4px rgba(108, 117, 125, 0.15);
+  opacity: 0.8;
 }
 
 

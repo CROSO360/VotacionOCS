@@ -41,6 +41,10 @@ export class InicioSesionComponent implements OnInit {
   ) {}
 
   iniciandoSesion = false;
+  // =======================
+  // Mostrar / ocultar contraseña
+  // =======================
+  showPassword: boolean = false;
 
   // =======================
   // Formulario reactivo

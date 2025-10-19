@@ -1,111 +1,158 @@
 <!-- =======================
      Barra superior
      ======================= -->
-<div class="barra-superior d-flex justify-content-between align-items-center px-3 py-2">
-  <!-- Izquierda: botón hamburguesa + logo + texto -->
-  <div class="d-flex align-items-center gap-2">
-  <!-- Botón hamburguesa -->
-  <button class="btn-hamburguesa me-2 fs-3" type="button" (click)="toggleSidebar()" aria-label="Abrir menú lateral">
-    ☰
-  </button>
-
-  <img src="assets/logoUleam.png" alt="Logo ULEAM" height="40" class="me-2" />
-  <span class="uleam fw-bold" (click)="inicio()" style="cursor:pointer">ULEAM</span>
-</div>
-
-
-
-  <!-- Derecha: Cerrar sesión -->
-  <button class="btn-logout d-flex align-items-center" (click)="logout()" [disabled]="cerrandoSesion">
-    <ng-container *ngIf="!cerrandoSesion; else cerrando">
-      <i class="bi bi-box-arrow-right me-2"></i> Cerrar sesión
-    </ng-container>
-    <ng-template #cerrando>
-      <span class="spinner-border spinner-border-sm me-2"></span> Cerrando...
-    </ng-template>
-  </button>
-</div>
-
-<!-- =======================
-     Sidebar (overlay + panel)
-     ======================= -->
-<div class="sidebar-overlay" *ngIf="sidebarAbierto" (click)="toggleSidebar()" aria-hidden="true"></div>
-
-<nav class="sidebar" [class.abierto]="sidebarAbierto" aria-label="Navegación principal">
-  <!-- Cabecera del menú -->
-  <div class="sidebar-header d-flex align-items-center justify-content-between">
-    <span class="fw-semibold">Menú</span>
-    <button class="btn-cerrar" (click)="toggleSidebar()" aria-label="Cerrar menú">
-  X
-</button>
-
-  </div>
-
-  <!-- Versión HOME -->
-  <ul class="list-unstyled m-0" *ngIf="esHome; else menuSesion">
-    <li>
-      <button class="sidebar-link" (click)="ir('/home')">
-        <i class="bi bi-house-door me-2"></i>Inicio
+     <div class="barra-superior d-flex justify-content-between align-items-center px-3 py-2">
+      <!-- Izquierda: botón hamburguesa + logo + texto -->
+      <div class="d-flex align-items-center gap-2">
+      <!-- Botón hamburguesa -->
+      <button class="btn-hamburguesa me-2 fs-3" type="button" (click)="toggleSidebar()" aria-label="Abrir menú lateral">
+        ☰
       </button>
-    </li> 
-    <li><button class="sidebar-link" (click)="ir('/sesiones')"><i class="bi bi-calendar2-week me-2"></i>Sesiones</button></li>
-    <li><button class="sidebar-link" (click)="ir('/miembros')"><i class="bi bi-people me-2"></i>Miembros</button></li>
-    <li><button class="sidebar-link" (click)="ir('/usuarios')"><i class="bi bi-person-gear me-2"></i>Usuarios</button></li>
-  </ul>
-
-  <!-- Versión SESIÓN -->
-  <ng-template #menuSesion>
-  <ul class="list-unstyled m-0">
-    <li>
-      <button class="sidebar-link" (click)="ir('/home')">
-        <i class="bi bi-house-door me-2"></i>Inicio
-      </button>
-    </li>
-    <li><button class="sidebar-link" (click)="ir('/sesiones')"><i class="bi bi-calendar2-week me-2"></i>Sesiones</button></li>
-    <li><button class="sidebar-link" (click)="ir('/miembros')"><i class="bi bi-people me-2"></i>Miembros</button></li>
-    <li><button class="sidebar-link" (click)="ir('/usuarios')"><i class="bi bi-person-gear me-2"></i>Usuarios</button></li>
-
-    <!-- Encabezado de la sesión -->
-    <li class="mt-2">
-      <div class="session-chip" [title]="sesion.nombre || ('Sesión ' + idSesionActual)">
-        <i class="bi bi-calendar-event me-2"></i>
-        <span class="text-truncate">
-          <button class="sidebar-link" (click)="ir('/sesion/' + idSesionActual)">
-            {{ sesion.nombre || ('Sesión ' + idSesionActual) }}
-          </button>
-        </span>
+    
+      <img src="assets/logoUleam.png" alt="Logo ULEAM" height="40" class="me-2" />
+      <span class="uleam fw-bold" (click)="inicio()" style="cursor:pointer">ULEAM</span>
+    </div>
+    
+    
+    
+      <!-- Derecha: Notificaciones y Cerrar sesión -->
+      <div class="d-flex align-items-center gap-3">
+        <!-- Icono de notificaciones -->
+        <button class="btn-notification" 
+                [class.has-notifications]="tieneNotificaciones"
+                (click)="toggleNotifications()"
+                [title]="tieneNotificaciones ? 'Tienes notificaciones' : 'Sin notificaciones'">
+          <i class="bi bi-bell"></i>
+          <span class="notification-badge" *ngIf="tieneNotificaciones"></span>
+        </button>
+    
+        <!-- Botón cerrar sesión -->
+        <button class="btn-logout d-flex align-items-center" (click)="logout()" [disabled]="cerrandoSesion">
+          <ng-container *ngIf="!cerrandoSesion; else cerrando">
+            <i class="bi bi-box-arrow-right me-2"></i> Cerrar sesión
+          </ng-container>
+          <ng-template #cerrando>
+            <span class="spinner-border spinner-border-sm me-2"></span> Cerrando...
+          </ng-template>
+        </button>
       </div>
-    </li>
-
-    <!-- Grupo con color para opciones de la sesión -->
-    <li class="menu-section mt-2">
-      <ul class="list-unstyled m-0">
-        <!-- Puntos (submenú) -->
+    </div>
+    
+    <!-- =======================
+         Sidebar (overlay + panel)
+         ======================= -->
+    <div class="sidebar-overlay" *ngIf="sidebarAbierto" (click)="toggleSidebar()" aria-hidden="true"></div>
+    
+    <nav class="sidebar" [class.abierto]="sidebarAbierto" aria-label="Navegación principal">
+      <!-- Cabecera del menú -->
+      <div class="sidebar-header d-flex align-items-center justify-content-between">
+        <span class="fw-semibold">Menú</span>
+        <button class="btn-cerrar" (click)="toggleSidebar()" aria-label="Cerrar menú">
+      X
+    </button>
+    
+      </div>
+    
+      <!-- Versión HOME -->
+      <ul class="list-unstyled m-0" *ngIf="esHome; else menuSesion">
         <li>
-          <button class="sidebar-link d-flex w-100 justify-content-between align-items-center"
-                  (click)="togglePuntos()">
-            <span><i class="bi bi-list-check me-2"></i>Puntos</span>
-            <i class="bi" [ngClass]="{ 'bi-chevron-up': puntosAbierto, 'bi-chevron-down': !puntosAbierto }"></i>
+          <button class="sidebar-link" (click)="ir('/home')">
+            <i class="bi bi-house-door me-2"></i>Inicio
           </button>
-
-          <ul class="list-unstyled ps-3 submenu" *ngIf="puntosAbierto">
-            <li *ngIf="cargandoPuntos" class="px-2 py-1 text-muted small">Cargando...</li>
-            <li *ngIf="!cargandoPuntos && puntos.length === 0" class="px-2 py-1 text-muted small">Sin puntos</li>
-            <li *ngFor="let p of puntos">
-              <button class="sidebar-sublink" (click)="ir('/punto/' + idSesionActual + '/' + p.id_punto)">
-                <i class="bi bi-dot me-1"></i>{{ p.nombre }}
+        </li> 
+        <li><button class="sidebar-link" (click)="ir('/sesiones')"><i class="bi bi-calendar2-week me-2"></i>Sesiones</button></li>
+        <li><button class="sidebar-link" (click)="ir('/miembros')"><i class="bi bi-people me-2"></i>Miembros</button></li>
+        <li><button class="sidebar-link" (click)="ir('/usuarios')"><i class="bi bi-person-gear me-2"></i>Usuarios</button></li>
+      </ul>
+    
+      <!-- Versión SESIÓN -->
+      <ng-template #menuSesion>
+      <ul class="list-unstyled m-0">
+        <li>
+          <button class="sidebar-link" (click)="ir('/home')">
+            <i class="bi bi-house-door me-2"></i>Inicio
+          </button>
+        </li>
+        <li><button class="sidebar-link" (click)="ir('/sesiones')"><i class="bi bi-calendar2-week me-2"></i>Sesiones</button></li>
+        <li><button class="sidebar-link" (click)="ir('/miembros')"><i class="bi bi-people me-2"></i>Miembros</button></li>
+        <li><button class="sidebar-link" (click)="ir('/usuarios')"><i class="bi bi-person-gear me-2"></i>Usuarios</button></li>
+    
+        <!-- Encabezado de la sesión -->
+        <li class="mt-2">
+          <div class="session-chip" [title]="sesion.nombre || ('Sesión ' + idSesionActual)">
+            <i class="bi bi-calendar-event me-2"></i>
+            <span class="text-truncate">
+              <button class="sidebar-link" (click)="ir('/sesion/' + idSesionActual)">
+                {{ sesion.nombre || ('Sesión ' + idSesionActual) }}
               </button>
+            </span>
+          </div>
+        </li>
+    
+        <!-- Grupo con color para opciones de la sesión -->
+        <li class="menu-section mt-2">
+          <ul class="list-unstyled m-0">
+            <!-- Puntos (submenú) -->
+            <li>
+              <button class="sidebar-link d-flex w-100 justify-content-between align-items-center"
+                      (click)="togglePuntos()">
+                <span><i class="bi bi-list-check me-2"></i>Puntos</span>
+                <i class="bi" [ngClass]="{ 'bi-chevron-up': puntosAbierto, 'bi-chevron-down': !puntosAbierto }"></i>
+              </button>
+    
+              <ul class="list-unstyled ps-3 submenu" *ngIf="puntosAbierto">
+                <li *ngIf="cargandoPuntos" class="px-2 py-1 text-muted small">Cargando...</li>
+                <li *ngIf="!cargandoPuntos && puntos.length === 0" class="px-2 py-1 text-muted small">Sin puntos</li>
+                <li *ngFor="let p of puntos">
+                  <button class="sidebar-sublink" (click)="ir('/punto/' + idSesionActual + '/' + p.id_punto)">
+                    <i class="bi bi-dot me-1"></i>{{ p.nombre }}
+                  </button>
+                </li>
+              </ul>
             </li>
+    
+            <li><button class="sidebar-link" (click)="ir('/asistencia/' + idSesionActual)"><i class="bi bi-person-check me-2"></i>Asistencia</button></li>
+            <li><button class="sidebar-link" (click)="ir('/votacion/' + idSesionActual)"><i class="bi bi-ui-checks-grid me-2"></i>Votación</button></li>
+            <li><button class="sidebar-link" (click)="ir('/documentos-sesion/' + idSesionActual)"><i class="bi bi-file-earmark-text me-2"></i>Documentos</button></li>
+            <li><button class="sidebar-link" (click)="ir('/resultados/' + idSesionActual)"><i class="bi bi-bar-chart-line me-2"></i>Resultados</button></li>
           </ul>
         </li>
-
-        <li><button class="sidebar-link" (click)="ir('/asistencia/' + idSesionActual)"><i class="bi bi-person-check me-2"></i>Asistencia</button></li>
-        <li><button class="sidebar-link" (click)="ir('/votacion/' + idSesionActual)"><i class="bi bi-ui-checks-grid me-2"></i>Votación</button></li>
-        <li><button class="sidebar-link" (click)="ir('/documentos-sesion/' + idSesionActual)"><i class="bi bi-file-earmark-text me-2"></i>Documentos</button></li>
-        <li><button class="sidebar-link" (click)="ir('/resultados/' + idSesionActual)"><i class="bi bi-bar-chart-line me-2"></i>Resultados</button></li>
       </ul>
-    </li>
-  </ul>
-</ng-template>
-
-</nav>
+    </ng-template>
+    
+    </nav>
+    
+    <!-- =======================
+         Popup de notificaciones
+         ======================= -->
+    <div class="notification-overlay" *ngIf="mostrarNotificaciones" (click)="toggleNotifications()"></div>
+    
+    <div class="notification-popup" *ngIf="mostrarNotificaciones">
+      <div class="notification-header">
+        <h4>Notificaciones</h4>
+        <button class="btn-close-notification" (click)="toggleNotifications()">
+          <i class="bi bi-x"></i>
+        </button>
+      </div>
+      
+      <div class="notification-content">
+        <div *ngIf="notificaciones.length === 0" class="no-notifications">
+          <i class="bi bi-bell-slash"></i>
+          <p>No tienes notificaciones</p>
+        </div>
+        
+        <div *ngFor="let notificacion of notificaciones" 
+             class="notification-item"
+             (click)="abrirSesion(notificacion.sesion.id_sesion!)">
+          <div class="notification-icon">
+            <i class="bi bi-calendar-event"></i>
+          </div>
+          <div class="notification-text">
+            <h5>{{ notificacion.sesion.nombre }}</h5>
+            <p>{{ notificacion.mensaje }}</p>
+            <small>{{ notificacion.sesion.fecha_inicio | date:'dd/MM/yyyy HH:mm' }}</small>
+          </div>
+        </div>
+      </div>
+    </div>
+    

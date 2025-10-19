@@ -1,65 +1,504 @@
 /* =======================
-   Grid de tarjetas de sesiones
+   Variables de colores
    ======================= */
-.reuniones-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 20px;
+:root {
+  --primary-red: #E30613;
+  --text-dark: #4D4D4D;
+  --text-black: #000000;
+  --accent-green: #8DC63F;
+  --background-white: #FFFFFF;
+  --light-gray: #F8F9FA;
+  --border-gray: #E9ECEF;
+  --shadow-light: rgba(0, 0, 0, 0.1);
+  --shadow-medium: rgba(0, 0, 0, 0.15);
 }
 
 /* =======================
-   Tarjeta individual de sesión
+   Contenedor principal del dashboard
    ======================= */
-.reunion-card {
-  padding: 25px;
-  border: 1px solid #ccc;
+.dashboard-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+  background-color: var(--background-white);
+  min-height: calc(100vh - 200px);
+}
+
+/* =======================
+   Header del dashboard
+   ======================= */
+.dashboard-header {
+  background: linear-gradient(135deg, var(--primary-red) 0%, #C10512 100%);
+  border-radius: 16px;
+  padding: 2rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 8px 32px var(--shadow-medium);
+  color: var(--background-white);
+}
+
+.header-content {
   text-align: center;
-  cursor: pointer;
-  transition: 0.3s;
+}
+
+.main-title {
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin: 0 0 1rem 0;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.welcome-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.welcome-title {
+  font-size: 1.5rem;
+  font-weight: 500;
+  margin: 0;
+  opacity: 0.95;
+}
+
+.status-indicator {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(255, 255, 255, 0.2);
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  backdrop-filter: blur(10px);
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  background-color: var(--accent-green);
+  border-radius: 50%;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.status-text {
+  font-size: 0.9rem;
+  font-weight: 500;
 }
 
 /* =======================
-   Efecto hover en tarjeta de sesión
+   Sección de sesiones
    ======================= */
-.reunion-card:hover {
-  background-color: #f5f5f5;
+.sessions-section {
+  background-color: var(--background-white);
+  border-radius: 16px;
+  padding: 2rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 4px 20px var(--shadow-light);
+  border: 1px solid var(--border-gray);
 }
 
-/* =======================
-   Contenedor con scroll para sesiones
-   ======================= */
-.reuniones-container {
-  max-height: 260px;
-  overflow-y: auto;
-  border: 1px solid #ccc;
-  padding: 15px;
-  margin-bottom: 50px;
-}
-
-/* =======================
-   Contenedor de botones de navegación
-   ======================= */
-.buttons-container {
+.section-header {
   display: flex;
   justify-content: space-between;
-  margin-bottom: 30px;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid var(--border-gray);
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--text-black);
+  margin: 0;
+}
+
+.icon-session::before {
+  content: "📋";
+  font-size: 1.2rem;
+}
+
+.session-count {
+  background-color: var(--accent-green);
+  color: var(--background-white);
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  font-weight: 500;
 }
 
 /* =======================
-   Estilo de los botones
+   Grid de sesiones
    ======================= */
-.buttons-container button {
-  background-color: #333;
-  color: white;
-  border: none;
-  padding: 8px 15px;
+.sessions-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(336px, 1fr));
+  gap: 1.5rem;
+}
+
+/* =======================
+   Tarjeta de sesión
+   ======================= */
+.session-card {
+  background: linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%);
+  border: 2px solid var(--border-gray);
+  border-radius: 16px;
+  padding: 1.44rem;
   cursor: pointer;
-  border-radius: 4px;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+/* Barra superior con color según tipo de sesión */
+.session-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 5px;
+  background: linear-gradient(90deg, #E30613, #8DC63F);
+  transition: all 0.3s ease;
+  z-index: 2;
+}
+
+/* Colores específicos para sesiones ordinarias */
+.session-card.ordinaria::before {
+  background: linear-gradient(90deg, #8DC63F, #8DC63F) !important;
+  height: 5px !important;
+  z-index: 3 !important;
+}
+
+/* Colores específicos para sesiones extraordinarias */
+.session-card.extraordinaria::before {
+  background: linear-gradient(90deg, #da2c38 #da2c38) !important;
+  height: 5px !important;
+  z-index: 3 !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+
+.session-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.15);
+  border-color: var(--primary-red);
+  background: linear-gradient(145deg, #ffffff 0%, #f0f2f5 100%);
+}
+
+.session-card:hover::before {
+  height: 6px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.session-header {
+  margin-bottom: 1.5rem;
+  position: relative;
+}
+
+.session-name {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--text-black);
+  margin: 0 0 0.75rem 0;
+  line-height: 1.3;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  padding-right: 120px; /* Espacio para el badge */
+  word-wrap: break-word; /* Permite que el texto se ajuste */
+  overflow-wrap: break-word; /* Compatibilidad adicional */
+}
+
+.session-code {
+  background: linear-gradient(135deg, var(--light-gray) 0%, #e9ecef 100%);
+  color: var(--text-dark);
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  display: inline-block;
+}
+
+/* Badge de tipo de sesión más prominente */
+.session-type-badge {
+  position: absolute;
+  top: -0.5rem;
+  right: -0.5rem;
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 2;
+  background: #f8f9fa;
+  color: #4D4D4D;
+  border: 2px solid #e9ecef;
+}
+
+.session-type-badge.ordinaria {
+  background: linear-gradient(135deg, #8DC63F, #8DC63F);
+  color: white;
+}
+
+.session-type-badge.extraordinaria {
+  background: #da2c38 !important;
+  color: white !important;
+  border: 2px solid #da2c38 !important;
+  box-shadow: 0 4px 12px rgba(227, 6, 19, 0.3) !important;
+}
+
+/* Capitalización para badges */
+.session-type-badge.ordinaria::first-letter,
+.session-type-badge.extraordinaria::first-letter {
+  text-transform: capitalize;
+}
+
+/* Capitalización para fase */
+.phase-badge::first-letter {
+  text-transform: capitalize;
+}
+
+.session-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.session-type,
+.session-date,
+.session-phase {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.96rem;
+  color: var(--text-dark);
+}
+
+.icon-type::before {
+  content: "🏛️";
+}
+
+.icon-date::before {
+  content: "📅";
+}
+
+.icon-phase::before {
+  content: "⏱️";
+}
+
+.phase-badge {
+  background-color: var(--accent-green);
+  color: var(--background-white);
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.86rem;
+  font-weight: 500;
+}
+
+.session-action {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 1.25rem;
+  border-top: 2px solid var(--border-gray);
+  margin-top: 0.5rem;
+}
+
+.action-text {
+  color: var(--primary-red);
+  font-weight: 700;
+  font-size: 0.95rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.icon-arrow::before {
+  content: "→";
+  color: var(--primary-red);
+  font-weight: bold;
+  font-size: 1.2rem;
+  transition: all 0.3s ease;
+}
+
+.session-card:hover .icon-arrow::before {
+  transform: translateX(6px);
+  text-shadow: 0 2px 4px rgba(227, 6, 19, 0.3);
+}
+
+/* Efectos adicionales para diferenciar tipos de sesión */
+.session-card.ordinaria:hover {
+  border-color: #4A90E2;
+  box-shadow: 0 16px 48px rgba(74, 144, 226, 0.2);
+}
+
+.session-card.extraordinaria:hover {
+  border-color: var(--primary-red);
+  box-shadow: 0 16px 48px rgba(227, 6, 19, 0.2);
+}
+
+/* Sombra interna sutil para dar profundidad */
+.session-card::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 50%);
+  border-radius: 16px;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Asegurar que la barra superior esté por encima de la sombra interna */
+.session-card.extraordinaria::after {
+  top: 5px;
 }
 
 /* =======================
-   Efecto hover en botones
+   Estado sin sesiones
    ======================= */
-.buttons-container button:hover {
-  background-color: #555;
+.no-sessions {
+  text-align: center;
+  padding: 3rem 2rem;
+  color: var(--text-dark);
+}
+
+.icon-empty::before {
+  content: "📭";
+  font-size: 3rem;
+  display: block;
+  margin-bottom: 1rem;
+}
+
+.no-sessions h4 {
+  font-size: 1.2rem;
+  color: var(--text-black);
+  margin: 0 0 0.5rem 0;
+}
+
+.no-sessions p {
+  margin: 0;
+  opacity: 0.8;
+}
+
+/* =======================
+   Panel de navegación
+   ======================= */
+.navigation-panel {
+  background-color: var(--light-gray);
+  border-radius: 16px;
+  padding: 2rem;
+  border: 1px solid var(--border-gray);
+}
+
+.panel-title {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: var(--text-black);
+  margin: 0 0 1.5rem 0;
+}
+
+.icon-navigation::before {
+  content: "⚡";
+}
+
+.nav-buttons {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.nav-button {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 1.5rem;
+  border: none;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-align: left;
+}
+
+.nav-button.primary {
+  background-color: var(--primary-red);
+  color: var(--background-white);
+  box-shadow: 0 4px 16px rgba(227, 6, 19, 0.3);
+}
+
+.nav-button.primary:hover {
+  background-color: #C10512;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(227, 6, 19, 0.4);
+}
+
+.nav-button.secondary {
+  background-color: var(--background-white);
+  color: var(--text-dark);
+  border: 2px solid var(--border-gray);
+}
+
+.nav-button.secondary:hover {
+  border-color: var(--primary-red);
+  color: var(--primary-red);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px var(--shadow-light);
+}
+
+.icon-sessions::before {
+  content: "📅";
+}
+
+.icon-members::before {
+  content: "👥";
+}
+
+.icon-users::before {
+  content: "👤";
+}
+
+/* =======================
+   Responsive design
+   ======================= */
+@media (max-width: 768px) {
+  .dashboard-container {
+    padding: 1rem;
+  }
+  
+  .main-title {
+    font-size: 2rem;
+  }
+  
+  .sessions-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .nav-buttons {
+    grid-template-columns: 1fr;
+  }
+  
+  .section-header {
+    flex-direction: column;
+    gap: 1rem;
+    align-items: flex-start;
+  }
 }

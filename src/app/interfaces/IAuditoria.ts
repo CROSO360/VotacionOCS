@@ -44,7 +44,7 @@ export interface IAuditoria {
   /**
    * Valor anterior de la bandera de voto manual
    */
-  voto_manual_anterior?: boolean;
+  fuente_resultado_anterior?: boolean;
 
   // =======================
   // Valores actuales (después del cambio)
@@ -68,5 +68,5 @@ export interface IAuditoria {
   /**
    * Valor actual de la bandera de voto manual
    */
-  voto_manual_actual?: boolean;
+  fuente_resultado_actual?: boolean;
 }

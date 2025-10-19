@@ -1,68 +1,123 @@
-<!-- =======================
-   Contenedor general con margen
-   ======================= -->
 <div class="container my-5">
-  <!-- =======================
-       Tarjeta centrada de login
-       ======================= -->
-  <div class="card mx-auto" style="max-width: 400px">
-    <!-- Encabezado de la tarjeta -->
-    <div class="card-header text-center">
-      Sistema de de administracion de sesiones - OCS
+  <div class="card mx-auto login-card">
+    <!-- Logo ULEAM -->
+    <div class="text-center mt-4">
+      <img
+        src="assets/OCS.png"
+        alt="Universidad Laica Eloy Alfaro de Manabí (ULEAM)"
+        class="login-logo"
+        width="220"
+        height="80"
+        loading="lazy"
+      />
     </div>
 
-    <!-- =======================
-         Cuerpo del formulario de acceso
-         ======================= -->
+    
+
+    <!-- Formulario -->
     <div class="card-body">
-      <!-- Formulario reactivo vinculado con FormGroup -->
-      <form [formGroup]="adminLoginForm" (ngSubmit)="onSubmit()">
-        <!-- Campo de código de usuario -->
-        <div class="form-group">
-          <label for="codigo">Código de usuario:</label>
+      <form [formGroup]="adminLoginForm" (ngSubmit)="onSubmit()" novalidate>
+        <!-- Campo usuario -->
+        <div class="form-group mb-2">
+          <label for="codigo" class="visually-hidden">Código de usuario</label>
           <input
             type="text"
             class="form-control"
             id="codigo"
-            placeholder="Ingrese su codigo de usuario"
+            name="codigo"
+            placeholder="Código de usuario"
             formControlName="codigo"
+            autocomplete="username"
+            spellcheck="false"
+            required
+            [attr.aria-invalid]="adminLoginForm.get('codigo')?.invalid || null"
+            [attr.aria-describedby]="errorMessage ? 'login-error' : null"
           />
         </div>
 
-        <!-- Campo de contraseña -->
-        <div class="form-group">
-          <label for="contrasena">Contraseña:</label>
-          <input
-            type="password"
-            class="form-control"
-            id="contrasena"
-            placeholder="Ingrese su contraseña"
-            formControlName="contrasena"
-          />
-        </div>
+<!-- Campo contraseña con toggle -->
+<div class="form-group mb-2 position-relative">
+  <label for="contrasena" class="visually-hidden">Contraseña</label>
+  <input
+    [type]="showPassword ? 'text' : 'password'"
+    class="form-control pe-5"
+    id="contrasena"
+    name="contrasena"
+    placeholder="Contraseña"
+    formControlName="contrasena"
+    autocomplete="current-password"
+    required
+    [attr.aria-invalid]="adminLoginForm.get('contrasena')?.invalid || null"
+    [attr.aria-describedby]="errorMessage ? 'login-error' : null"
+  />
 
-        <!-- Mensaje de error si las credenciales son inválidas -->
-        <div *ngIf="errorMessage" class="error-message">
+  <!-- Botón toggle -->
+  <button
+    type="button"
+    class="toggle-password"
+    (click)="showPassword = !showPassword"
+    [attr.aria-label]="showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'"
+  >
+    <!-- Ojo abierto -->
+    <svg *ngIf="!showPassword" xmlns="http://www.w3.org/2000/svg" 
+         viewBox="0 0 24 24" fill="none" stroke="currentColor" 
+         stroke-width="2" stroke-linecap="round" stroke-linejoin="round" 
+         class="icon-eye">
+      <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z"/>
+      <circle cx="12" cy="12" r="3"/>
+    </svg>
+
+    <!-- Ojo tachado -->
+    <svg *ngIf="showPassword" xmlns="http://www.w3.org/2000/svg" 
+         viewBox="0 0 24 24" fill="none" stroke="currentColor" 
+         stroke-width="2" stroke-linecap="round" stroke-linejoin="round" 
+         class="icon-eye-off">
+      <path d="M17.94 17.94A10.94 10.94 0 0 1 12 19c-7 0-11-7-11-7 
+               a21.79 21.79 0 0 1 5.06-5.94m3.02-1.43A10.94 10.94 0 0 1 
+               12 5c7 0 11 7 11 7a21.77 21.77 0 0 1-4.35 5.94"/>
+      <line x1="1" y1="1" x2="23" y2="23"/>
+    </svg>
+  </button>
+</div>
+
+
+        <!-- Mensaje error -->
+        <div
+          *ngIf="errorMessage"
+          id="login-error"
+          class="error-message"
+          role="alert"
+        >
           {{ errorMessage }}
         </div>
-        <br />
 
-        <!-- Botón de ingreso -->
-        <div class="form-group text-center mt-4">
+        <!-- Botón -->
+        <div class="form-group text-center mt-3">
           <button
             type="submit"
-            class="btn btn-dark d-inline-flex align-items-center justify-content-center px-4"
+            class="btn login-btn w-100"
             [disabled]="iniciandoSesion || adminLoginForm.invalid"
+            [attr.aria-busy]="iniciandoSesion ? 'true' : null"
           >
             <ng-container *ngIf="!iniciandoSesion; else cargandoLogin">
-              <i class="bi bi-box-arrow-in-right me-2"></i>
-              Ingresar
+              Acceder
             </ng-container>
             <ng-template #cargandoLogin>
-              <span class="spinner-border spinner-border-sm me-2"></span>
+              <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
               Iniciando...
             </ng-template>
           </button>
+        </div>
+
+        <!-- Link -->
+        <div class="text-center mt-3">
+          <!--a
+            href="https://wa.me/593986314641"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            ¿Olvidó su contraseña?
+          </a-->
         </div>
       </form>
     </div>

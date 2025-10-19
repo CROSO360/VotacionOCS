@@ -88,9 +88,11 @@ export class SesionComponent implements OnInit {
   bloqueandoReordenamiento = false;
 
   showCodigo = false;
+  codigoCopiado = false;
 
   @ViewChild(CdkDropList) dropListRef!: CdkDropList<any>;
   @ViewChild(CdkDrag) dragRef!: CdkDrag<any>;
+  @ViewChild('pantallaCompletaModal') pantallaCompletaModal!: any;
 
   // =======================
   // Formularios reactivos
@@ -106,6 +108,7 @@ export class SesionComponent implements OnInit {
     nombre: new FormControl('', Validators.required),
     detalle: new FormControl('', Validators.required),
     es_administrativa: new FormControl(''),
+    calculo_resultado: new FormControl('', Validators.required),
   });
 
   // =======================
@@ -242,6 +245,7 @@ export class SesionComponent implements OnInit {
       nombre: this.crearPuntoForm.value.nombre,
       detalle: this.crearPuntoForm.value.detalle,
       es_administrativa: this.crearPuntoForm.value.es_administrativa,
+      calculo_resultado: this.crearPuntoForm.value.calculo_resultado,
     };
 
     this.puntoService.crearPunto(puntoData).subscribe({
@@ -386,5 +390,72 @@ export class SesionComponent implements OnInit {
 
   goBack() {
     this.location.back();
+  }
+
+  copiarCodigo(): void {
+    if (this.sesion?.codigo) {
+      navigator.clipboard.writeText(this.sesion.codigo).then(() => {
+        this.codigoCopiado = true;
+        this.toastrService.success('Código copiado al portapapeles');
+        
+        // Resetear el estado después de 2 segundos
+        setTimeout(() => {
+          this.codigoCopiado = false;
+        }, 2000);
+      }).catch(() => {
+        this.toastrService.error('Error al copiar el código');
+      });
+    }
+  }
+
+  abrirPantallaCompleta(): void {
+    if (this.pantallaCompletaModal) {
+      const modal = new Modal(this.pantallaCompletaModal.nativeElement);
+      modal.show();
+      
+      // Agregar listener para el botón atrás del navegador
+      const handlePopState = () => {
+        this.cerrarModalCompletamente();
+        window.removeEventListener('popstate', handlePopState);
+      };
+      
+      window.addEventListener('popstate', handlePopState);
+      
+      // También cerrar el modal cuando se cierre normalmente
+      this.pantallaCompletaModal.nativeElement.addEventListener('hidden.bs.modal', () => {
+        window.removeEventListener('popstate', handlePopState);
+      });
+    }
+  }
+
+  cerrarModalCompletamente(): void {
+    if (this.pantallaCompletaModal) {
+      const modal = new Modal(this.pantallaCompletaModal.nativeElement);
+      modal.hide();
+      
+      // Eliminar manualmente el backdrop si existe
+      const backdrop = document.querySelector('.modal-backdrop');
+      if (backdrop) {
+        backdrop.remove();
+      }
+      
+      // Eliminar la clase modal-open del body
+      document.body.classList.remove('modal-open');
+      document.body.style.overflow = '';
+      document.body.style.paddingRight = '';
+    }
+  }
+
+  verPuntoDesdePantallaCompleta(idSesion: number, idPunto: number): void {
+    console.log('Navegando a punto:', idSesion, idPunto);
+    
+    // Cerrar completamente el modal de pantalla completa
+    this.cerrarModalCompletamente();
+    
+    // Navegar inmediatamente después de cerrar el modal
+    setTimeout(() => {
+      console.log('Modal cerrado, navegando...');
+      this.irAPunto(idSesion, idPunto);
+    }, 50); // Tiempo mínimo para asegurar que el DOM se actualice
   }
 }

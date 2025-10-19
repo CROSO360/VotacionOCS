@@ -6,40 +6,109 @@
 <!-- =======================
    Contenedor principal del dashboard
    ======================= -->
-<div class="container my-5">
-
-  <h1 class="text-center">Secretaría General</h1><br>
-
-  <!-- Mensaje de bienvenida personalizado -->
-  <h2 class="text-center">OCS - {{ payload.nombre }}</h2>
-
-  <!-- Título de sección -->
-  <h3 class="mt-4">Sesiones en curso</h3>
-
+<div class="dashboard-container">
+  
   <!-- =======================
-       Lista de sesiones activas
+       Header del dashboard
        ======================= -->
-  <div class="reuniones-container">
-    <div class="reuniones-grid">
-      <button
-        *ngFor="let sesion of sesiones"
-        class="reunion-card"
-        (click)="irADetalleSesion(sesion.id_sesion!)"
-      >
-        {{ sesion.nombre }}
-        <br>
-        {{ sesion.codigo }}
-      </button>
+  <div class="dashboard-header">
+    <div class="header-content">
+      <h1 class="main-title">Secretaría General</h1>
+      <div class="welcome-section">
+        <h2 class="welcome-title">OCS - {{ payload.nombre }}</h2>
+        <div class="status-indicator">
+          <span class="status-dot"></span>
+         <!-- ======================= <span class="status-text">Sistema Activo</span> ======================= -->
+        </div>
+      </div>
     </div>
   </div>
 
   <!-- =======================
-       Botones de navegación a otras secciones
+       Sección de sesiones activas
        ======================= -->
-  <div class="buttons-container my-4">
-    <button class="btn btn-secondary" (click)="irASesiones()">Sesiones</button>
-    <button class="btn btn-secondary" (click)="irAMiembros()">Miembros</button>
-    <button class="btn btn-secondary" (click)="irAUsuarios()">Usuarios</button>
+  <div class="sessions-section">
+    <div class="section-header">
+      <h3 class="section-title">
+        <i class="icon-session"></i>
+        Sesiones en Curso
+      </h3>
+      <span class="session-count">{{ sesiones.length }} sesión(es) activa(s)</span>
+    </div>
+
+    <!-- Lista de sesiones activas -->
+    <div class="sessions-container">
+      <div class="sessions-grid" *ngIf="sesiones.length > 0; else noSessions">
+        <div
+          *ngFor="let sesion of sesiones"
+          class="session-card"
+          [class.ordinaria]="sesion.tipo === 'ordinaria' || !sesion.tipo"
+          [class.extraordinaria]="sesion.tipo === 'extraordinaria'"
+          (click)="irADetalleSesion(sesion.id_sesion!)"
+        >
+          <div class="session-header">
+            <h4 class="session-name">{{ sesion.nombre }}</h4>
+            <span class="session-code">{{ sesion.codigo }}</span>
+            <div class="session-type-badge"
+                 [class.ordinaria]="sesion.tipo === 'ordinaria' || !sesion.tipo"
+                 [class.extraordinaria]="sesion.tipo === 'extraordinaria'">
+              {{ (sesion.tipo || 'ordinaria') | titlecase }}
+            </div>
+          </div>
+          <div class="session-details">
+            <div class="session-type">
+              <i class="icon-type"></i>
+              <span>{{ (sesion.tipo || 'ordinaria') | titlecase }}</span>
+            </div>
+            <div class="session-date">
+              <i class="icon-date"></i>
+              <span>{{ sesion.fecha_inicio | date:'dd/MM/yyyy HH:mm' }}</span>
+            </div>
+            <div class="session-phase">
+              <i class="icon-phase"></i>
+              <span class="phase-badge">{{ (sesion.fase || 'en curso') | titlecase }}</span>
+            </div>
+          </div>
+          <div class="session-action">
+            <span class="action-text">Ingresar a sesión</span>
+            <i class="icon-arrow"></i>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Mensaje cuando no hay sesiones -->
+      <ng-template #noSessions>
+        <div class="no-sessions">
+          <i class="icon-empty"></i>
+          <h4>No hay sesiones activas</h4>
+          <p>No se encontraron sesiones en curso en este momento.</p>
+        </div>
+      </ng-template>
+    </div>
+  </div>
+
+  <!-- =======================
+       Panel de navegación rápida
+       ======================= -->
+  <div class="navigation-panel">
+    <h3 class="panel-title">
+      <i class="icon-navigation"></i>
+      Acceso Rápido
+    </h3>
+    <div class="nav-buttons">
+      <button class="nav-button secondary" (click)="irASesiones()">
+        <i class="icon-sessions"></i>
+        <span>Gestionar Sesiones</span>
+      </button>
+      <button class="nav-button secondary" (click)="irAMiembros()">
+        <i class="icon-members"></i>
+        <span>Miembros OCS</span>
+      </button>
+      <button class="nav-button secondary" (click)="irAUsuarios()">
+        <i class="icon-users"></i>
+        <span>Usuarios</span>
+      </button>
+    </div>
   </div>
 </div>
 

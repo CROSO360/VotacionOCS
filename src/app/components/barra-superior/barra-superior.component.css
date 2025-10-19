@@ -1,70 +1,189 @@
 /* =======================
+   Variables de colores coherentes
+   ======================= */
+:root {
+  --primary-red: #E30613;
+  --text-dark: #4D4D4D;
+  --text-black: #000000;
+  --accent-green: #8DC63F;
+  --background-white: #FFFFFF;
+  --light-gray: #F8F9FA;
+  --border-gray: #E9ECEF;
+  --shadow-light: rgba(0, 0, 0, 0.1);
+  --shadow-medium: rgba(0, 0, 0, 0.15);
+}
+
+/* =======================
    Contenedor de la barra superior
    ======================= */
 .barra-superior {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1em;
-  background-color: #f5f5f5; /* Color de fondo suave */
-  border-bottom: 1px solid #e0e0e0; /* Línea divisoria inferior */
+  padding: 1rem 2rem;
+  background: linear-gradient(135deg, var(--background-white) 0%, var(--light-gray) 100%);
+  border-bottom: 2px solid var(--border-gray);
+  box-shadow: 0 2px 20px var(--shadow-light);
+  position: relative;
+  z-index: 1000;
 }
 
 /* =======================
    Estilo del texto "ULEAM"
    ======================= */
 .barra-superior span {
-  font-size: 24px;
-  font-weight: bold;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-black);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
 /* =======================
    Botón hamburguesa
    ======================= */
 .btn-hamburguesa {
-  background: transparent;
+  background: linear-gradient(135deg, var(--primary-red), #C10512);
   border: none;
-  color: #000;          /* negro */
+  color: var(--background-white);
   cursor: pointer;
-  padding: 0;
+  padding: 0.75rem;
+  border-radius: 12px;
+  font-size: 1.2rem;
   line-height: 1;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(227, 6, 19, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
 }
+
 .btn-hamburguesa:hover {
-  opacity: 0.7;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(227, 6, 19, 0.4);
+  background: linear-gradient(135deg, #C10512, #A0040F);
 }
 
 /* =======================
    Botón cerrar sesión
    ======================= */
 .btn-logout {
-  background-color: #333;
-  color: white;
+  background: linear-gradient(135deg, var(--text-dark), #333);
+  color: var(--background-white);
   border: none;
-  padding: 8px 15px;
+  padding: 0.75rem 1.5rem;
   cursor: pointer;
-  border-radius: 4px;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(77, 77, 77, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  text-align: center;
 }
+
+.btn-logout:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px rgba(227, 6, 19, 0.25);
+  background: linear-gradient(135deg, var(--text-dark), #333);
+}
+
 .btn-logout:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+  transform: none;
+  box-shadow: 0 2px 8px rgba(77, 77, 77, 0.2);
 }
-
 
 /* =======================
-   Efecto hover en el botón
+   Botón de notificaciones
    ======================= */
-.barra-superior {
-  background-color: #f5f5f5;
-  border-bottom: 1px solid #ddd;
+.btn-notification {
+  background: linear-gradient(135deg, var(--text-dark), #333);
+  color: var(--background-white);
+  border: none;
+  padding: 0.75rem;
+  cursor: pointer;
+  border-radius: 12px;
+  font-size: 1.1rem;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(77, 77, 77, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  position: relative;
 }
+
+.btn-notification:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px rgba(77, 77, 77, 0.4);
+}
+
+.btn-notification.has-notifications {
+  background: linear-gradient(135deg, var(--primary-red), #C10512);
+  box-shadow: 0 4px 12px rgba(227, 6, 19, 0.4);
+  animation: pulse-notification 2s infinite;
+}
+
+.btn-notification.has-notifications:hover {
+  box-shadow: 0 8px 24px rgba(227, 6, 19, 0.5);
+}
+
+@keyframes pulse-notification {
+  0%, 100% { 
+    box-shadow: 0 4px 12px rgba(227, 6, 19, 0.4);
+  }
+  50% { 
+    box-shadow: 0 4px 20px rgba(227, 6, 19, 0.6);
+  }
+}
+
+.notification-badge {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  width: 12px;
+  height: 12px;
+  background: var(--accent-green);
+  border-radius: 50%;
+  border: 2px solid var(--background-white);
+  animation: pulse-badge 1.5s infinite;
+}
+
+@keyframes pulse-badge {
+  0%, 100% { 
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% { 
+    transform: scale(1.2);
+    opacity: 0.8;
+  }
+}
+
 
 /* =======================
    Cursor tipo puntero al pasar por "ULEAM"
    ======================= */
 .uleam {
   cursor: pointer;
-  font-size: 1.4rem;
-  color: #212529;
+  font-size: 1.5rem;
+  color: var(--primary-red);
+  font-weight: 700;
+  transition: all 0.3s ease;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.uleam:hover {
+  color: #C10512;
+  transform: scale(1.05);
+  text-shadow: 0 2px 4px rgba(227, 6, 19, 0.3);
 }
 
 
@@ -73,9 +192,10 @@
 .sidebar-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,.35);
-  backdrop-filter: blur(1px);
+  background: rgba(0,0,0,.4);
+  backdrop-filter: blur(4px);
   z-index: 1040;
+  transition: all 0.3s ease;
 }
 
 /* Panel lateral */
@@ -84,18 +204,19 @@
   top: 0;
   left: 0;
   height: 100dvh;
-  width: 290px;
+  width: 320px;
   max-width: 86vw;
-  background: #ffffff;
-  border-right: 1px solid #e5e7eb;
+  background: var(--background-white);
+  border-right: 2px solid var(--border-gray);
   transform: translateX(-100%);
-  transition: transform .25s ease;
+  transition: transform 0.3s ease;
   z-index: 1050;
   display: flex;
   flex-direction: column;
-  padding: 12px;
-  overflow-y: auto;       /* <<--- scroll vertical */
-  overflow-x: hidden; 
+  padding: 1.5rem;
+  overflow-y: auto;
+  overflow-x: hidden;
+  box-shadow: 4px 0 24px var(--shadow-medium);
 }
 
 .sidebar.abierto {
@@ -103,9 +224,17 @@
 }
 
 .sidebar-header {
-  padding: 8px 6px 12px 6px;
-  border-bottom: 1px solid #f1f5f9;
-  margin-bottom: 8px;
+  padding: 1rem 0;
+  border-bottom: 2px solid var(--border-gray);
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+.sidebar-header span {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--primary-red);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
 /* Items */
@@ -114,18 +243,36 @@
   width: 100%;
   text-align: left;
   border: none;
-  background: transparent;
-  padding: 10px 8px;
-  border-radius: 8px;
-  font-size: 0.98rem;
-  line-height: 1.2rem;
-  transition: background-color .2s ease;
+  background: linear-gradient(135deg, #F8F9FA, #E9ECEF);
+  padding: 1rem;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 500;
+  line-height: 1.4;
+  transition: all 0.3s ease;
+  color: #495057;
+  margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  border: 2px solid #6C757D;
+  box-shadow: 0 4px 12px rgba(108, 117, 125, 0.15);
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  hyphens: auto;
+  white-space: normal;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .sidebar-link:hover,
 .sidebar-sublink:hover {
-  background: #f4f6f8;
+  background: linear-gradient(135deg, var(--primary-red), #C10512);
+  color: var(--background-white);
   cursor: pointer;
+  transform: translateX(4px);
+  box-shadow: 0 4px 12px rgba(227, 6, 19, 0.3);
+  border-color: var(--primary-red);
 }
 
 .submenu {
@@ -156,45 +303,330 @@
   display: flex;
   align-items: center;
   max-width: 100%;
-  padding: .375rem .75rem;
-  border-radius: 9999px;
-  background: #e9ecef;    /* gris claro */
-  color: #343a40;
+  padding: 1.25rem 1.5rem;
+  border-radius: 18px 18px 0 0;
+  background: linear-gradient(135deg, #FFFFFF, #F8F9FA);
+  color: #495057;
   font-weight: 600;
-  box-shadow: 0 1px 2px rgba(0,0,0,.06);
+  font-size: 1.1rem;
+  box-shadow: none;
+  margin: 1.5rem 0 0 0;
+  border: 2px solid #DEE2E6;
+  border-bottom: none;
+  border-left: 4px solid #6C757D;
+  text-align: center;
+  justify-content: center;
+  letter-spacing: 0.5px;
 }
 
 /* Contenedor coloreado para las opciones de la sesión */
 .menu-section {
-  background: #f8f9fa;
-  border: 1px solid #dee2e6;
-  border-left: 4px solid #adb5bd; 
-  border-radius: .75rem;
-  padding: .5rem;
+  background: linear-gradient(135deg, #FFFFFF, #F8F9FA);
+  border: 2px solid #DEE2E6;
+  border-top: none;
+  border-left: 4px solid #6C757D;
+  border-radius: 0 0 18px 18px;
+  padding: 1.25rem;
+  margin: 0 0 1.5rem 0;
+  box-shadow: 0 6px 20px rgba(108, 117, 125, 0.12);
 }
 
 /* Ajustes de enlaces dentro del grupo para que se vean bien sobre el fondo */
 .menu-section .sidebar-link,
 .menu-section .sidebar-sublink {
-  background: transparent;
+  background: linear-gradient(135deg, #F8F9FA, #E9ECEF);
+  margin-bottom: 0.25rem;
+  border: 2px solid #6C757D;
+  box-shadow: 0 4px 12px rgba(108, 117, 125, 0.15);
+  color: #495057;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  hyphens: auto;
+  white-space: normal;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .menu-section .sidebar-link:hover,
 .menu-section .sidebar-sublink:hover {
-  background: rgba(0,0,0,.04);
-  border-radius: .5rem;
+  background: linear-gradient(135deg, var(--primary-red), #C10512);
+  color: var(--background-white);
+  border-radius: 12px;
+  transform: translateX(4px);
+  box-shadow: 0 4px 12px rgba(227, 6, 19, 0.3);
+  border-color: var(--primary-red);
 }
 
 .btn-cerrar {
-  background: transparent;
+  background: linear-gradient(135deg, var(--text-dark), #333);
   border: none;
   cursor: pointer;
-  padding: 0;
-  font-size: 1.5rem;   /* tamaño de la X */
+  padding: 0.5rem;
+  font-size: 1.2rem;
   line-height: 1;
-  color: #000;         /* negro */
+  color: var(--background-white);
+  border-radius: 8px;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(77, 77, 77, 0.3);
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .btn-cerrar:hover {
-  opacity: .7;
+  background: linear-gradient(135deg, #333, #222);
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(77, 77, 77, 0.4);
+}
+
+/* =======================
+   Estilos adicionales para mejorar la experiencia
+   ======================= */
+
+/* Logo ULEAM mejorado */
+.barra-superior img {
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.barra-superior img:hover {
+  transform: scale(1.05);
+}
+
+/* Mejoras en el scrollbar del sidebar */
+.sidebar::-webkit-scrollbar {
+  width: 8px;
+}
+
+.sidebar::-webkit-scrollbar-track {
+  background: var(--background-white);
+  border-radius: 4px;
+}
+
+.sidebar::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, var(--primary-red), #C10512);
+  border-radius: 4px;
+  border: 1px solid var(--background-white);
+}
+
+.sidebar::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, #C10512, #A0040F);
+}
+
+/* Animación de entrada para el sidebar */
+.sidebar.abierto {
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* Responsive design para la barra superior */
+@media (max-width: 768px) {
+  .barra-superior {
+    padding: 0.75rem 1rem;
+  }
+  
+  .btn-hamburguesa {
+    width: 40px;
+    height: 40px;
+    padding: 0.5rem;
+  }
+  
+  .btn-logout {
+    padding: 0.5rem 1rem;
+    font-size: 0.8rem;
+  }
+  
+  .uleam {
+    font-size: 1.2rem;
+  }
+}
+
+/* =======================
+   Popup de notificaciones
+   ======================= */
+.notification-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(2px);
+  z-index: 1060;
+}
+
+.notification-popup {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 400px;
+  max-width: 90vw;
+  max-height: 80vh;
+
+  /* Fondo sólido */
+  background: #fff; /* o var(--background-white) */
+  opacity: 1;
+  backdrop-filter: none;
+
+  border-radius: 16px;
+
+  /* Ajusta la sombra para que no dé efecto translúcido */
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.25);
+
+  z-index: 1070;
+  overflow: hidden;
+
+  /* Animación conservada */
+  animation: slideInNotification 0.3s ease-out;
+}
+
+@keyframes slideInNotification {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -60%);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%);
+  }
+}
+
+.notification-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem;
+  background: linear-gradient(135deg, var(--primary-red), #C10512);
+  color: var(--background-white);
+}
+
+.notification-header h4 {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+
+.btn-close-notification {
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  color: var(--background-white);
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.btn-close-notification:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: scale(1.1);
+}
+
+.notification-content {
+  max-height: 400px;
+  overflow-y: auto;
+  padding: 1rem;
+}
+
+.no-notifications {
+  text-align: center;
+  padding: 2rem;
+  color: var(--text-dark);
+}
+
+.no-notifications i {
+  font-size: 2rem;
+  margin-bottom: 1rem;
+  opacity: 0.5;
+}
+
+.notification-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1rem;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: 1px solid var(--border-gray);
+  margin-bottom: 0.75rem;
+}
+
+.notification-item:hover {
+  background: linear-gradient(135deg, var(--light-gray), #F0F2F5);
+  border-color: var(--primary-red);
+  transform: translateX(4px);
+  box-shadow: 0 4px 12px rgba(227, 6, 19, 0.15);
+}
+
+.notification-icon {
+  background: linear-gradient(135deg, var(--primary-red), #C10512);
+  color: var(--background-white);
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+
+.notification-text {
+  flex: 1;
+}
+
+.notification-text h5 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-black);
+}
+
+.notification-text p {
+  margin: 0 0 0.5rem 0;
+  font-size: 0.9rem;
+  color: var(--text-dark);
+  line-height: 1.4;
+}
+
+.notification-text small {
+  color: var(--text-dark);
+  opacity: 0.7;
+  font-size: 0.8rem;
+}
+
+/* Scrollbar para el popup */
+.notification-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.notification-content::-webkit-scrollbar-track {
+  background: var(--light-gray);
+  border-radius: 3px;
+}
+
+.notification-content::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, var(--primary-red), #C10512);
+  border-radius: 3px;
+}
+
+.notification-content::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, #C10512, #A0040F);
 }

@@ -50,6 +50,8 @@ import { GrupoService } from '../services/grupo.service';
 import { BotonAtrasComponent } from '../components/boton-atras/boton-atras.component';
 import { FooterComponent } from '../components/footer/footer.component';
 import { data } from 'jquery';
+import { ResultadoService } from '../services/resultado.service';
+import { IResultado } from '../interfaces/IResultado';
 
 @Component({
   selector: 'app-votacion',
@@ -85,6 +87,7 @@ export class VotacionComponent implements OnInit {
     private asistenciaService: AsistenciaService,
     private miembroService: MiembroService,
     private resolucionService: ResolucionService,
+    private resultadoService: ResultadoService,
     private cookieService: CookieService,
     private grupoService: GrupoService
   ) {}
@@ -144,7 +147,7 @@ export class VotacionComponent implements OnInit {
   modalResultadosRef: Modal | null = null;
 
   // Estado de los resúmenes
-  resumenPonderado: any | null;
+  resultadoPunto: IResultado | null = null;
   resumenBase: any | null;
 
   //filtros de nomina
@@ -1153,7 +1156,7 @@ export class VotacionComponent implements OnInit {
       afavor: puntoUsuario.opcion === 'afavor',
       encontra: puntoUsuario.opcion === 'encontra',
       abstencion: puntoUsuario.opcion === 'abstencion',
-      'disabled-box': (puntoUsuario.estado === false && punto.resultado !== null),
+      'disabled-box': (puntoUsuario.estado === false && punto.resultado !== null)||(puntoUsuario.estado === false),
     };
   }
 
@@ -1298,110 +1301,88 @@ export class VotacionComponent implements OnInit {
 
   /** Cargar y componer los datos de ambas tablas en un solo método */
   cargarResmenesDelPunto(idPunto: number): void {
-    forkJoin({
-      ponderado: this.puntoService.resumenPonderado(idPunto),
-      base: this.puntoService.resumenBase(idPunto),
-    }).subscribe({
-      next: ({ ponderado, base }) => {
-        this.resumenPonderado = ponderado;
-        this.resumenBase = base;
+    this.resultadoPunto = null;
+    this.actualizarResumenes(null);
 
-        // --- Fuentes con fallback seguro ---
-        const minNominal = ponderado?.minimos?.nominal ?? 0;
+    this.resultadoService
+      .getDataBy(`id_punto=${idPunto}`)
+      .subscribe({
+        next: (resultado) => {
+          this.resultadoPunto = resultado ?? null;
+          this.actualizarResumenes(this.resultadoPunto);
+        },
+        error: () => {
+          this.resultadoPunto = null;
+          this.actualizarResumenes(null);
+        },
+      });
+  }
 
-        const minPonderado = ponderado?.minimos?.ponderado ?? 0;
+  private actualizarResumenes(resultado: IResultado | null): void {
+    const punto = this.puntoSeleccionado;
 
-        const pFavor =
-          ponderado?.resultados?.ponderado?.a_favor ??
-          this.puntoSeleccionado?.p_afavor ??
-          0;
+    const minNominal = resultado?.n_mitad_miembros_presente ?? 0;
+    const minPonderado = resultado?.mitad_miembros_ponderado ?? 0;
 
-        const pContra =
-          ponderado?.resultados?.ponderado?.en_contra ??
-          this.puntoSeleccionado?.p_encontra ??
-          0;
+    const pFavor = punto?.p_afavor ?? 0;
+    const pContra = punto?.p_encontra ?? 0;
+    const pAbstencion = punto?.p_abstencion ?? 0;
 
-        const pAbstencion =
-          ponderado?.resultados?.ponderado?.abstencion ??
-          this.puntoSeleccionado?.p_abstencion ??
-          0;
+    const estadoPonderado =
+      resultado?.estado_ponderado ?? punto?.resultado ?? '---';
+    const estadoNominal = resultado?.estado_nominal ?? '---';
 
-        const estadoPonderado =
-          ponderado?.estados?.ponderado ??
-          this.puntoSeleccionado?.resultado ??
-          '---';
+    const nFavor = punto?.n_afavor ?? 0;
+    const nContra = punto?.n_encontra ?? 0;
+    const nAbstencion = punto?.n_abstencion ?? 0;
 
-        const estadoNominal = ponderado?.estados?.nominal ?? '---';
+    let nAusentes = resultado?.n_ausentes;
+    if (nAusentes == null) {
+      const total = resultado?.n_total;
+      if (total != null) {
+        const restante = total - (nFavor + nContra + nAbstencion);
+        nAusentes = Math.max(restante, 0);
+      } else {
+        nAusentes = 0;
+      }
+    }
 
-        // Votos nominales
-        const nFavor =
-          ponderado?.votos_resumen?.a_favor ??
-          ponderado?.resultados?.nominal?.a_favor ??
-          this.puntoSeleccionado?.n_afavor ??
-          0;
+    const nTotal =
+      resultado?.n_total ?? nFavor + nContra + nAbstencion + nAusentes;
 
-        const nContra =
-          ponderado?.votos_resumen?.en_contra ??
-          ponderado?.resultados?.nominal?.en_contra ??
-          this.puntoSeleccionado?.n_encontra ??
-          0;
+    this.uiResumen = {
+      minNominal,
+      minPonderado,
+      pFavor,
+      pContra,
+      pAbstencion,
+      estadoPonderado,
+      estadoNominal,
+      nFavor,
+      nContra,
+      nAbstencion,
+      nAusentes,
+      nTotal,
+    };
 
-        const nAbstencion =
-          ponderado?.votos_resumen?.abstencion ??
-          ponderado?.resultados?.nominal?.abstencion ??
-          this.puntoSeleccionado?.n_abstencion ??
-          0;
-
-        const nAusentes = ponderado?.votos_resumen?.ausentes ?? 0;
-
-        const nTotal =
-          ponderado?.votos_resumen?.total ??
-          nFavor + nContra + nAbstencion + nAusentes;
-
-        // --- Set único al view-model ---
-        this.uiResumen = {
-          minNominal,
-          minPonderado,
-          pFavor,
-          pContra,
-          pAbstencion,
-          estadoPonderado,
-          estadoNominal,
-          nFavor,
-          nContra,
-          nAbstencion,
-          nAusentes,
-          nTotal,
-        };
+    const dosTerciosPonderado = resultado?.dos_terceras_ponderado ?? 0;
+    const dosTerciosMiembros = resultado?.n_dos_terceras_miembros ?? 0;
+    this.resumenBase = {
+      resumen_excel: {
+        minimos: {
+          mitad_presentes_nominal: minNominal,
+          mitad_miembros_ponderado: minPonderado,
+          dos_tercios_ponderado: dosTerciosPonderado,
+          dos_tercios_miembros_nominal: dosTerciosMiembros,
+          mayoria_simple: minNominal,
+        },
       },
-      error: () => {
-        // Limpieza mínima en caso de error
-        this.resumenPonderado = null;
-        this.resumenBase = null;
-        this.uiResumen = {
-          minNominal: 0,
-          minPonderado: 0,
-          pFavor: 0,
-          pContra: 0,
-          pAbstencion: 0,
-          estadoPonderado: '---',
-          estadoNominal: '---',
-          nFavor: 0,
-          nContra: 0,
-          nAbstencion: 0,
-          nAusentes: 0,
-          nTotal: 0,
-        };
-      },
-    });
+    };
   }
 
   // (opcional) helper si necesitas mostrar el dirimente
   get requiereDirimente(): boolean {
-    return (
-      !!this.resumenPonderado?.estados?.requiere_voto_dirimente ||
-      !!this.puntoSeleccionado?.requiere_voto_dirimente
-    );
+    return !!this.puntoSeleccionado?.requiere_voto_dirimente;
   }
 
   // =====================
@@ -1767,3 +1748,4 @@ export class VotacionComponent implements OnInit {
     this.location.back();
   }
 }
+

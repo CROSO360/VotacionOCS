@@ -26,63 +26,78 @@
   <ul class="nav nav-tabs mt-3">
     <li class="nav-item">
       <a
-        class="nav-link"
+        class="nav-link d-flex align-items-center gap-2"
         [ngClass]="{ active: estadoActual === true }"
         (click)="cambiarGrupo(true)"
-        >Activas</a
       >
+        <span>Activas</span>
+        <span class="badge bg-secondary fs-7">{{ getSesionesPorEstado(true).length }}</span>
+      </a>
     </li>
     <li class="nav-item">
       <a
-        class="nav-link"
+        class="nav-link d-flex align-items-center gap-2"
         [ngClass]="{ active: estadoActual === false }"
         (click)="cambiarGrupo(false)"
-        >Finalizadas</a
       >
+        <span>Finalizadas</span>
+        <span class="badge bg-secondary fs-7">{{ getSesionesPorEstado(false).length }}</span>
+      </a>
     </li>
     <li class="nav-item">
       <a
-        class="nav-link"
+        class="nav-link d-flex align-items-center gap-2"
         [ngClass]="{ active: estadoActual === null }"
         (click)="cambiarGrupo(null)"
-        >Todas</a
       >
+        <span>Todas</span>
+        <span class="badge bg-secondary fs-7">{{ sesiones.length }}</span>
+      </a>
     </li>
   </ul>
   <!-- Filtro por tipo de sesión (ordinaria / extraordinaria / todas) -->
   <ul class="nav nav-tabs mt-3">
     <li class="nav-item">
       <a
-        class="nav-link"
+        class="nav-link d-flex align-items-center gap-2"
         [ngClass]="{ active: tipoSesionActual === 'ordinaria' }"
         (click)="cambiarTipoSesion('ordinaria')"
-        >Ordinarias</a
       >
+        <span>Ordinarias</span>
+        <span class="badge bg-secondary fs-7">{{ getSesionesPorTipo('ordinaria').length }}</span>
+      </a>
     </li>
     <li class="nav-item">
       <a
-        class="nav-link"
+        class="nav-link d-flex align-items-center gap-2"
         [ngClass]="{ active: tipoSesionActual === 'extraordinaria' }"
         (click)="cambiarTipoSesion('extraordinaria')"
-        >Extraordinarias</a
       >
+        <span>Extraordinarias</span>
+        <span class="badge bg-secondary fs-7">{{ getSesionesPorTipo('extraordinaria').length }}</span>
+      </a>
     </li>
     <li class="nav-item">
       <a
-        class="nav-link"
+        class="nav-link d-flex align-items-center gap-2"
         [ngClass]="{ active: tipoSesionActual === null }"
         (click)="cambiarTipoSesion(null)"
-        >Todas</a
       >
+        <span>Todas</span>
+        <span class="badge bg-secondary fs-7">{{ sesiones.length }}</span>
+      </a>
     </li>
   </ul>
+
 
   <!-- Lista de sesiones filtradas -->
   <div class="list-group mt-3">
     <div *ngFor="let sesion of sesionesFiltradas">
       <div
         class="list-group-item d-flex justify-content-between align-items-center"
-        [ngClass]="{ 'sesion-finalizada': !sesion.estado }"
+        [ngClass]="{ 
+          'sesion-finalizada': !sesion.estado
+        }"
       >
         <span> {{ sesion.codigo }} - {{ sesion.nombre }} </span>
         <span class="d-flex">
@@ -116,7 +131,7 @@
   <div class="mt-4">
     <button class="btn btn-outline-secondary me-2" (click)="goBack()">
       <i class="bi bi-arrow-left"></i>
-      Cancelar
+      Atrás
     </button>
 
     <button

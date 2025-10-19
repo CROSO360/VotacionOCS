@@ -1,33 +1,33 @@
-// =======================
+﻿// =======================
 // Interfaz: IPunto
-// Representa un punto del orden del día dentro de una sesión del OCS
+// Representa un punto del orden del dÃ­a dentro de una sesiÃ³n del OCS
 // =======================
 
 import { ISesion } from './ISesion';
 
 export interface IPunto {
   /**
-   * Identificador único del punto
+   * Identificador Ãºnico del punto
    */
   id_punto?: number;
 
   /**
-   * Sesión a la que pertenece el punto
+   * SesiÃ³n a la que pertenece el punto
    */
   sesion?: ISesion;
 
   /**
-   * Título o nombre del punto
+   * TÃ­tulo o nombre del punto
    */
   nombre?: string;
 
   /**
-   * Detalle o descripción del punto
+   * Detalle o descripciÃ³n del punto
    */
   detalle?: string;
 
   /**
-   * Orden del punto dentro de la sesión
+   * Orden del punto dentro de la sesiÃ³n
    */
   orden?: number;
 
@@ -37,21 +37,21 @@ export interface IPunto {
   es_administrativa?: boolean;
 
   // =======================
-  // Resultados en números absolutos
+  // Resultados en nÃºmeros absolutos
   // =======================
 
   /**
-   * Número de votos a favor
+   * NÃºmero de votos a favor
    */
   n_afavor?: number;
 
   /**
-   * Número de votos en contra
+   * NÃºmero de votos en contra
    */
   n_encontra?: number;
 
   /**
-   * Número de abstenciones
+   * NÃºmero de abstenciones
    */
   n_abstencion?: number;
 
@@ -79,6 +79,11 @@ export interface IPunto {
    */
   resultado?: string;
 
+  /**
+   * Indicates how the result was obtained (e.g., automatico, manual)
+   */
+  calculo_resultado?: string;
+
   tipo?: string;
 
   puntoReconsiderado?: IPunto;
@@ -86,7 +91,7 @@ export interface IPunto {
   requiere_voto_dirimente?: boolean;
 
   /**
-   * Indica si el punto está activo (según lógica de negocio)
+   * Indica si el punto estÃ¡ activo (segÃºn lÃ³gica de negocio)
    */
   estado?: boolean;
 
@@ -95,3 +100,4 @@ export interface IPunto {
    */
   status?: boolean;
 }
+

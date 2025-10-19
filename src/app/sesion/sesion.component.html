@@ -1,165 +1,222 @@
 <app-barra-superior></app-barra-superior>
 
-<!-- Contenedor principal encapsulado -->
-<div class="main-container my-5">
-  <!-- Título de la página -->
-  <h2 class="text-center">Puntos de la sesión {{ sesion?.nombre }}</h2>
-
-<!-- Bloque del código -->
-  <div *ngIf="sesion?.codigo" class="code-row mt-2">
-    <div
-      class="session-code-box"
-      (click)="toggleCodigo()"
-      (keydown.enter)="toggleCodigo()"
-      (keydown.space)="toggleCodigo()"
-      role="button"
-      tabindex="0"
-      [attr.aria-pressed]="showCodigo"
-      [attr.aria-label]="showCodigo ? 'Ocultar código de sesión' : 'Mostrar código de sesión'"
-      [class.visible]="showCodigo"
-    >
-      <span *ngIf="!showCodigo">Código de sesión</span>
-      <span *ngIf="showCodigo" class="code-text">{{ sesion?.codigo }}</span>
-    </div>
-  </div>
-
-
-
-  <app-boton-atras></app-boton-atras><br /><br />
-
-
-  <div class="buttons-container m-4">
-    <button
-      class="btn btn-outline-secondary"
-      (click)="irADocumentosSesion(idSesion!)"
-    >
-      <i class="bi bi-folder2-open me-1"></i>
-      Documentos
-    </button>
-    <!-- Botón: Agregar punto -->
-    <button
-      class="btn btn-success d-flex align-items-center"
-      type="button"
-      (click)="abrirCrearPunto()"
-      [disabled]="sesion?.estado === false"
-      aria-label="Agregar punto"
-    >
-      <i class="bi bi-plus-circle me-1"></i>
-      Agregar punto
-    </button>
-  </div>
-
-  <!-- Contenedor relativo -->
-  <div class="points-wrapper position-relative">
-    <!-- Overlay de bloqueo -->
-    <div
-      *ngIf="bloqueandoReordenamiento"
-      class="blocking-overlay d-flex justify-content-center align-items-center"
-    >
-      <span class="spinner-border text-primary" role="status"></span>
-    </div>
-
-    <!-- Contenedor con Scroll para los puntos -->
-    <div
-      class="points-container"
-      cdkDropList
-      [cdkDropListData]="puntos"
-      (cdkDropListDropped)="reordenar($event)"
-      (cdkDragStarted)="onDragStarted()"
-      (cdkDragEnded)="onDragEnded()"
-    >
-      <table class="points-table">
-        <tr
-          *ngFor="let punto of puntos; let i = index"
-          cdkDrag
-          [cdkDragData]="punto"
-          class="draggable-row"
-          [cdkDragDisabled]="!punto.status || !sesion.estado"
-        >
-          <!-- Drag Handle (solo si status es true) -->
-          <td
-            *ngIf="punto.status && sesion.estado"
-            class="drag-handle"
-            cdkDragHandle
-            title="Mover"
-          >
-            &#x2630;
-          </td>
-          <td *ngIf="!punto.status" class="drag-handle disabled-cell"></td>
-
-          <!-- Nombre del punto -->
-          <td class="point-name">{{ punto.nombre }}</td>
-
-          <!-- Botón fantasma -->
-          <td class="btn-container">{{ punto.orden }}</td>
-
-          <!-- Botón: Ver punto -->
-          <td class="btn-container">
-            <button
-              class="btn btn-punto"
-              type="button"
-              (click)="irAPunto(idSesion!, punto.id_punto!)"
-              aria-label="Punto"
+<!-- =======================
+   Contenedor principal del dashboard
+   ======================= -->
+<div class="session-container">
+  
+  <!-- =======================
+       Header de la sesión
+       ======================= -->
+  <div class="session-header">
+    <div class="header-content">
+      <h1 class="main-title">Sesión Activa</h1>
+      <div class="session-info">
+        <h2 class="session-name">{{ sesion?.nombre }}</h2>
+        <div class="session-code-section" *ngIf="sesion?.codigo">
+          <div class="code-container">
+            <div
+              class="session-code-box"
+              (click)="toggleCodigo()"
+              (keydown.enter)="toggleCodigo()"
+              (keydown.space)="toggleCodigo()"
+              role="button"
+              tabindex="0"
+              [attr.aria-pressed]="showCodigo"
+              [attr.aria-label]="showCodigo ? 'Ocultar código de sesión' : 'Mostrar código de sesión'"
+              [class.visible]="showCodigo"
             >
-              Ver punto
+              <i class="icon-code"></i>
+              <span *ngIf="!showCodigo">Código de sesión</span>
+              <span *ngIf="showCodigo" class="code-text">{{ sesion?.codigo }}</span>
+            </div>
+            <button
+              *ngIf="showCodigo"
+              class="copy-button"
+              (click)="copiarCodigo()"
+              [class.copied]="codigoCopiado"
+              [attr.aria-label]="codigoCopiado ? 'Código copiado' : 'Copiar código'"
+              title="Copiar código"
+            >
+              <i class="icon-copy" *ngIf="!codigoCopiado"></i>
+              <i class="icon-check" *ngIf="codigoCopiado"></i>
             </button>
-          </td>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 
-          <!-- Vista previa durante el arrastre -->
-          <ng-template cdkDragPreview>
-            <table class="points-table drag-preview-row">
-              <tr>
-                <td class="drag-handle">&#x2630;</td>
-                <td class="point-name">{{ punto.nombre }}</td>
-                <td class="btn-container">{{ punto.orden }}</td>
-                <td class="btn-container">
-                  <button class="btn btn-secondary">Ver punto</button>
+  <!-- =======================
+       Navegación y acciones
+       ======================= -->
+  <div class="navigation-section">
+    <app-boton-atras></app-boton-atras>
+    
+    <div class="action-buttons">
+      <button
+        class="action-button secondary"
+        (click)="irADocumentosSesion(idSesion!)"
+      >
+        <i class="icon-documents"></i>
+        <span>Documentos</span>
+      </button>
+      <button
+        class="action-button primary"
+        type="button"
+        (click)="abrirCrearPunto()"
+        [disabled]="sesion?.estado === false"
+        aria-label="Agregar punto"
+      >
+        <i class="icon-add"></i>
+        <span>Agregar punto</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- =======================
+       Sección de puntos
+       ======================= -->
+  <div class="points-section">
+    <div class="section-header">
+      <h3 class="section-title">
+        <i class="icon-points"></i>
+        Puntos de la Sesión
+      </h3>
+      <div class="section-actions">
+        <span class="points-count">{{ puntos.length }} punto(s)</span>
+        <button
+          *ngIf="puntos.length > 0"
+          class="fullscreen-button"
+          (click)="abrirPantallaCompleta()"
+          title="Ver todos los puntos en pantalla completa"
+          aria-label="Ver puntos en pantalla completa"
+        >
+          <i class="icon-fullscreen"></i>
+          <span>Pantalla completa</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Contenedor relativo -->
+    <div class="points-wrapper position-relative">
+      <!-- Overlay de bloqueo -->
+      <div
+        *ngIf="bloqueandoReordenamiento"
+        class="blocking-overlay d-flex justify-content-center align-items-center"
+      >
+        <span class="spinner-border text-primary" role="status"></span>
+      </div>
+
+      <!-- Contenedor con Scroll para los puntos -->
+      <div
+        class="points-container"
+        cdkDropList
+        [cdkDropListData]="puntos"
+        (cdkDropListDropped)="reordenar($event)"
+        (cdkDragStarted)="onDragStarted()"
+        (cdkDragEnded)="onDragEnded()"
+      >
+        <div class="points-table-wrapper" *ngIf="puntos.length > 0; else noPoints">
+          <table class="points-table">
+            <tbody>
+              <tr
+                *ngFor="let punto of puntos; let i = index"
+                cdkDrag
+                [cdkDragData]="punto"
+                class="point-row"
+                [cdkDragDisabled]="!punto.status || !sesion.estado"
+              >
+                <!-- Columna de número y arrastre -->
+                <td class="order-drag-cell">
+                  <div class="order-drag-container">
+                    <div
+                      *ngIf="punto.status && sesion.estado"
+                      class="drag-handle"
+                      cdkDragHandle
+                      title="Mover"
+                    >
+                      ⋮⋮
+                    </div>
+                    <div *ngIf="!punto.status" class="drag-handle disabled">
+                      ⋮⋮
+                    </div>
+                    <span class="order-number">{{ punto.orden }}</span>
+                  </div>
+                </td>
+
+                <!-- Columna de descripción -->
+                <td class="description-cell">
+                  {{ punto.nombre }}
+                </td>
+
+                <!-- Columna de acción -->
+                <td class="action-cell">
+                  <button
+                    class="point-button"
+                    type="button"
+                    (click)="irAPunto(idSesion!, punto.id_punto!)"
+                  >
+                    Ver punto
+                  </button>
                 </td>
               </tr>
-            </table>
-          </ng-template>
-        </tr>
-      </table>
+            </tbody>
+          </table>
+        </div>
+        
+        <!-- Mensaje cuando no hay puntos -->
+        <ng-template #noPoints>
+          <div class="no-points">
+            <i class="icon-empty"></i>
+            <h4>No hay puntos en esta sesión</h4>
+            <p>Agrega el primer punto para comenzar.</p>
+          </div>
+        </ng-template>
+      </div>
     </div>
   </div>
 
-  <!-- Botones al final -->
-  <div class="buttons-container my-4">
-    <button
-      class="btn btn-secondary"
-      (click)="irAAsistencia(idSesion!)"
-      aria-label="Asistencia"
-    >
-      Asistencia
-    </button>
-    <!--button
-      class="btn btn-secondary"
-      (click)="irADocumentosSesion(idSesion!)"
-      aria-label="Documentos sesión"
-    >
-      Documentos
-    </button-->
-    <button
-      class="btn btn-secondary"
-      (click)="irAVotacion(idSesion!)"
-      aria-label="Iniciar votación"
-    >
-      Votación
-    </button>
-    <button
-      class="btn btn-secondary"
-      (click)="irAResultados(idSesion!)"
-      aria-label="Ver resultados"
-    >
-      Ver resultados
-    </button>
+  <!-- =======================
+       Panel de acciones finales
+       ======================= -->
+  <div class="final-actions-panel">
+    <h3 class="panel-title">
+      <i class="icon-actions"></i>
+      Acciones de Sesión
+    </h3>
+    <div class="final-actions">
+      <button
+        class="final-action-button"
+        (click)="irAAsistencia(idSesion!)"
+        aria-label="Asistencia"
+      >
+        <i class="icon-attendance"></i>
+        <span>Asistencia</span>
+      </button>
+      <button
+        class="final-action-button"
+        (click)="irAVotacion(idSesion!)"
+        aria-label="Iniciar votación"
+      >
+        <i class="icon-vote"></i>
+        <span>Votación</span>
+      </button>
+      <button
+        class="final-action-button"
+        (click)="irAResultados(idSesion!)"
+        aria-label="Ver resultados"
+      >
+        <i class="icon-results"></i>
+        <span>Ver resultados</span>
+      </button>
+    </div>
   </div>
-  <br /><br />
 </div>
 
-<!-- =============================== -->
-<!-- Modal: Crear punto -->
-<!-- =============================== -->
+<!-- =======================
+     Modal: Crear punto
+     ======================= -->
 <div
   #crearPuntoModal
   class="modal fade custom-modal"
@@ -172,7 +229,10 @@
     <div class="modal-content">
       <!-- CABECERA -->
       <div class="modal-header">
-        <h1 class="modal-title fs-5" id="crearPuntoModalLabel">Crear punto</h1>
+        <h1 class="modal-title" id="crearPuntoModalLabel">
+          <i class="icon-add"></i>
+          Crear Punto
+        </h1>
         <button
           type="button"
           class="btn-close"
@@ -185,83 +245,211 @@
       <div class="modal-body">
         <form [formGroup]="crearPuntoForm" (ngSubmit)="crearPunto()">
           <!-- Campo: Nombre -->
-          <label for="nombre" class="form-label">Nombre:</label>
-          <input
-            type="text"
-            id="nombre"
-            class="form-control"
-            formControlName="nombre"
-            placeholder="Nombre del punto"
-          />
-          <div
-            *ngIf="
-              crearPuntoForm.get('nombre')?.invalid &&
-              crearPuntoForm.get('nombre')?.touched
-            "
-            class="text-danger"
-          >
-            El nombre es obligatorio.
+          <div class="form-group">
+            <label for="nombre" class="form-label">
+              <i class="icon-name"></i>
+              Nombre del punto
+            </label>
+            <input
+              type="text"
+              id="nombre"
+              class="form-control"
+              formControlName="nombre"
+              placeholder="Ingresa el nombre del punto"
+            />
+            <div
+              *ngIf="
+                crearPuntoForm.get('nombre')?.invalid &&
+                crearPuntoForm.get('nombre')?.touched
+              "
+              class="error-message"
+            >
+              El nombre es obligatorio.
+            </div>
           </div>
 
           <!-- Campo: Detalle -->
-          <label for="detalle" class="form-label">Detalle:</label>
-          <textarea
-            id="detalle"
-            class="form-control"
-            formControlName="detalle"
-            placeholder="Detalle del punto"
-            rows="4"
-          ></textarea>
+          <div class="form-group">
+            <label for="detalle" class="form-label">
+              <i class="icon-detail"></i>
+              Detalle del punto
+            </label>
+            <textarea
+              id="detalle"
+              class="form-control"
+              formControlName="detalle"
+              placeholder="Describe los detalles del punto"
+              rows="4"
+            ></textarea>
+            <div
+              *ngIf="
+                crearPuntoForm.get('detalle')?.invalid &&
+                crearPuntoForm.get('detalle')?.touched
+              "
+              class="error-message"
+            >
+              El detalle es obligatorio.
+            </div>
+          </div>
 
+          <!-- Campo: Calculo resultado -->
+          <label for="calculo_resultado" class="form-label">Tipo de cálculo:</label>
+          <select
+            formControlName="calculo_resultado"
+            id="calculo_resultado"
+            class="form-control capitalize-options"
+          >
+            <option value="" disabled>Selecciona un tipo</option>
+            <option
+              [value]="'mayoria_simple'"
+            >
+              Mayoría simple
+            </option>
+            <option
+              [value]="'mayoria_especial'"
+            >
+              Mayoría especial
+            </option>
+          </select>
           <div
             *ngIf="
-              crearPuntoForm.get('detalle')?.invalid &&
-              crearPuntoForm.get('detalle')?.touched
+              crearPuntoForm.get('calculo_resultado')?.invalid &&
+              crearPuntoForm.get('calculo_resultado')?.touched
             "
             class="text-danger"
           >
-            El detalle es obligatorio.
+            El tipo de cálculo es obligatorio.
           </div>
 
           <!-- Campo: Tema administrativa -->
-          <div class="form-check mt-3">
-            <input
-              type="checkbox"
-              id="es_administrativa"
-              class="form-check-input"
-              formControlName="es_administrativa"
-            />
-            <label for="es_administrativa" class="form-check-label">
-              Tema administrativo
-            </label>
+          <div class="form-group">
+            <div class="checkbox-container">
+              <input
+                type="checkbox"
+                id="es_administrativa"
+                class="form-check-input"
+                formControlName="es_administrativa"
+              />
+              <label for="es_administrativa" class="form-check-label">
+                <i class="icon-admin"></i>
+                Tema administrativo
+              </label>
+            </div>
           </div>
 
           <!-- PIE DEL MODAL -->
-          <div class="modal-footer mt-4">
+          <div class="modal-footer">
             <button
               type="button"
-              class="btn btn-secondary"
+              class="modal-button secondary"
               data-bs-dismiss="modal"
             >
-              Cancelar
+              <i class="icon-cancel"></i>
+              <span>Cancelar</span>
             </button>
             <button
               type="submit"
-              class="btn btn-primary d-flex align-items-center"
+              class="modal-button primary"
               [disabled]="crearPuntoForm.invalid || guardandoPunto"
             >
               <ng-container *ngIf="!guardandoPunto; else loadingGuardar">
-                <i class="bi bi-save me-2"></i>
-                Guardar cambios
+                <i class="icon-save"></i>
+                <span>Guardar punto</span>
               </ng-container>
               <ng-template #loadingGuardar>
-                <span class="spinner-border spinner-border-sm me-2"></span>
-                Guardando...
+                <span class="spinner-border spinner-border-sm"></span>
+                <span>Guardando...</span>
               </ng-template>
             </button>
           </div>
         </form>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- =======================
+     Modal: Pantalla completa de puntos
+     ======================= -->
+<div
+  #pantallaCompletaModal
+  class="modal fade fullscreen-modal"
+  id="pantallaCompletaModal"
+  tabindex="-1"
+  aria-labelledby="pantallaCompletaModalLabel"
+  aria-hidden="true"
+>
+  <div class="modal-dialog modal-fullscreen">
+    <div class="modal-content fullscreen-content">
+      <!-- CABECERA -->
+      <div class="modal-header fullscreen-header">
+        <h1 class="modal-title" id="pantallaCompletaModalLabel">
+          <i class="icon-points"></i>
+          Puntos de la Sesión - {{ sesion?.nombre }}
+        </h1>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+          aria-label="Cerrar"
+        ></button>
+      </div>
+
+      <!-- CUERPO -->
+      <div class="modal-body fullscreen-body">
+        <div class="fullscreen-points-container">
+          <div class="fullscreen-points-grid" *ngIf="puntos.length > 0">
+            <div
+              *ngFor="let punto of puntos; let i = index"
+              class="fullscreen-point-card"
+            >
+              <div class="fullscreen-point-content">
+                <div class="fullscreen-point-header">
+                  <h3 class="fullscreen-point-name">{{ punto.nombre }}</h3>
+                  <span class="fullscreen-point-order">#{{ punto.orden }}</span>
+                </div>
+                
+                <div class="fullscreen-point-number">
+                  <span class="point-number-badge">Punto {{ i + 1 }}</span>
+                </div>
+                
+                <div class="fullscreen-point-detail" *ngIf="punto.detalle">
+                  <p class="fullscreen-point-description">{{ punto.detalle }}</p>
+                </div>
+                
+                <div class="fullscreen-point-actions">
+                  <button
+                    class="fullscreen-point-button"
+                    type="button"
+                    (click)="verPuntoDesdePantallaCompleta(idSesion!, punto.id_punto!)"
+                    aria-label="Ver punto"
+                  >
+                    <span>Ver punto</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Mensaje cuando no hay puntos -->
+          <div *ngIf="puntos.length === 0" class="fullscreen-no-points">
+            <i class="icon-empty"></i>
+            <h4>No hay puntos en esta sesión</h4>
+            <p>Agrega el primer punto para comenzar.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Botón flotante de cerrar -->
+      <button
+        type="button"
+        class="fullscreen-close-button"
+        data-bs-dismiss="modal"
+        aria-label="Cerrar pantalla completa"
+      >
+        <i class="icon-close"></i>
+        <span>Cerrar</span>
+      </button>
     </div>
   </div>
 </div>

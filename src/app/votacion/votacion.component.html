@@ -1,4 +1,4 @@
-<app-barra-superior></app-barra-superior>
+﻿<app-barra-superior></app-barra-superior>
 
 <div class="container my-5">
   <!-- Botón para regresar al dashboard -->
@@ -321,10 +321,16 @@
         puntoSeleccionado?.n_afavor != null ||
         puntoSeleccionado?.n_encontra != null ||
         puntoSeleccionado?.n_abstencion != null ||
-        resolucionActual?.voto_manual
+        resolucionActual?.fuente_resultado
       ">
     Fuente:
-    {{ resolucionActual?.voto_manual ? 'Cálculo manual por Secretaría' : 'Cálculo automático del sistema' }}
+    {{
+      resolucionActual?.fuente_resultado === 'manual'
+        ? 'Cáculo manual por Secretaria'
+        : resolucionActual?.fuente_resultado === 'hibrido'
+        ? 'Cáculo híbrido (manual y automático)'
+        : 'Cáculo automático del sistema'
+    }}
   </p>
 
   <p class="text-muted text-end me-2 fst-italic" *ngIf="
@@ -1125,13 +1131,15 @@
           <!-- Fuente del resultado -->
           <p
             class="text-muted fst-italic mt-3"
-            *ngIf="resolucionActual?.voto_manual != null"
+            *ngIf="resolucionActual?.fuente_resultado"
           >
             Resuelto mediante:
             {{
-              resolucionActual?.voto_manual
-                ? "Cálculo manual por Secretaría"
-                : "Cálculo automático del sistema"
+              resolucionActual?.fuente_resultado === 'manual'
+                ? 'Cáculo manual por Secretaria'
+                : resolucionActual?.fuente_resultado === 'hibrido'
+                ? 'Cáculo híbrido (manual y automático)'
+                : 'Cáculo automático del sistema'
             }}
           </p>
 

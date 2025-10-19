@@ -299,4 +299,16 @@ export class SesionesComponent implements OnInit {
   goBack() {
     this.location.back();
   }
+
+  // =======================
+  // FUNCIONES PARA CONTADORES
+  // =======================
+
+  getSesionesPorEstado(estado: boolean): any[] {
+    return this.sesiones.filter(sesion => sesion.estado === estado);
+  }
+
+  getSesionesPorTipo(tipo: string): any[] {
+    return this.sesiones.filter(sesion => sesion.tipo === tipo);
+  }
 }

@@ -1,4 +1,4 @@
-<!-- Barra superior fija -->
+﻿<!-- Barra superior fija -->
 <app-barra-superior></app-barra-superior>
 
 <!-- Contenedor general -->
@@ -29,6 +29,35 @@
             class="form-control"
           ></textarea>
         </div>
+
+        <!-- Campo: Calculo resultado -->
+          <label for="calculo_resultado" class="form-label">Tipo de cálculo:</label>
+          <select
+            formControlName="calculo_resultado"
+            id="calculo_resultado"
+            class="form-control capitalize-options"
+          >
+            <option value="" disabled>Selecciona un tipo</option>
+            <option
+              [value]="'mayoria_simple'"
+            >
+              Mayoría simple
+            </option>
+            <option
+              [value]="'mayoria_especial'"
+            >
+              Mayoría especial
+            </option>
+          </select>
+          <div
+            *ngIf="
+              modificarPuntoForm.get('calculo_resultado')?.invalid &&
+              modificarPuntoForm.get('calculo_resultado')?.touched
+            "
+            class="text-danger"
+          >
+            El grupo de usuario es obligatorio.
+          </div>
 
         <div class="form-group">
           <label for="es_administrativa" class="form-label"
@@ -117,17 +146,18 @@
           ></textarea>
         </div>
 
-        <!-- Mostrar tipo de resolución (manual o automática) -->
+        <!-- Mostrar la fuente del resultado -->
         <p
           class="text-muted fst-italic mt-3"
-          *ngIf="resolucion?.voto_manual != null"
+          *ngIf="resolucion?.fuente_resultado"
         >
           Resuelto mediante:
-          {{
-            resolucion?.voto_manual
-              ? "Cálculo manual por Secretaría"
-              : "Cálculo automático del sistema"
-          }}
+          <ng-container [ngSwitch]="resolucion?.fuente_resultado">
+            <span *ngSwitchCase="'manual'">Cálculo manual por Secretaría</span>
+            <span *ngSwitchCase="'hibrido'">Cálculo híbrido (votos manuales y cálculo automático)</span>
+            <span *ngSwitchCase="'automatico'">Cálculo automático del sistema</span>
+            <span *ngSwitchDefault>Cálculo automático del sistema</span>
+          </ng-container>
         </p>
 
         <button
