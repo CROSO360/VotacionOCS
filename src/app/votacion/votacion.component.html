@@ -215,7 +215,7 @@
     <button
       class="btn btn-primary"
       (click)="abrirModalResultados('normal')"
-      *ngIf="!puntoSeleccionado.resultado"
+      *ngIf="!puntoSeleccionado.resultado && resolucionActual"
     >
       Calcular resultado
     </button><!-- *ngIf="resolucionActual && !puntoSeleccionado.resultado" -->
@@ -265,9 +265,9 @@
     </button>
 
     <!-- Mensaje de advertencia -->
-    <!--div *ngIf="!resolucionActual" class="text-danger mt-2 small">
+    <div *ngIf="!resolucionActual" class="text-danger mt-2 small">
       ⚠️ Debe crear una resolución antes de calcular el resultado.
-    </div-->
+    </div>
 
     <!--button class="btn btn-primary">Finalizar Punto</button-->
   </div>
