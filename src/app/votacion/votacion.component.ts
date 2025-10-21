@@ -1051,6 +1051,18 @@ export class VotacionComponent implements OnInit {
 
           if (resultadosVisible && this.modalResultadosRef) {
             this.reabrirResultadosTrasVotoManual = true;
+            const manualElement = document.getElementById('votoManualModal');
+            if (manualElement && this.modalResultadosRef) {
+              manualElement.addEventListener(
+                'hidden.bs.modal',
+                () => {
+                  this.modalResultadosRef?.show();
+                  this.reabrirResultadosTrasVotoManual = false;
+                },
+                { once: true }
+              );
+              this.cerrarModal('votoManualModal', this.votoManualForm, this.votoManualModalRef);
+            }
             this.modalResultadosRef.hide();
             setTimeout(mostrarVotoManual, 150);
           } else {
@@ -1325,7 +1337,7 @@ export class VotacionComponent implements OnInit {
           return;
         }
         this.pasoModalResultados = 2;
-        this.calcularResultadoAutomatico();
+        // this.calcularResultadoAutomatico();
       },
       onError: () => {
         this.aplicandoCambiosPendientes = false;
