@@ -1,4 +1,4 @@
-// =======================================
+﻿// =======================================
 // IMPORTACIONES
 // =======================================
 import { CommonModule } from '@angular/common';
@@ -200,6 +200,14 @@ export class VotacionComponent implements OnInit {
     sinvoto: 0,
   };
 
+  agrupadosPendientes: { grupo: string; usuarios: IPuntoUsuario[] }[] = [];
+  puntoUsuariosPendientes: IPuntoUsuario[] = [];
+  private puntoUsuariosPendientesIds = new Set<number>();
+  modalResultadosBloqueado = false;
+  aplicandoCambiosPendientes = false;
+  hayCambiosPendientes = false;
+  reabrirResultadosTrasVotoManual = false;
+
   // View-model para el template (tablas)
   uiResumen = {
     // Tabla 1
@@ -371,6 +379,7 @@ export class VotacionComponent implements OnInit {
 
         // Agrupar por grupoUsuario
         this.agrupadosPorGrupo = this.agruparPorGrupo(this.puntoUsuarios);
+        this.actualizarPendientesLocales();
       });
 
     console.log('puntosUsuarios cargados');
@@ -699,7 +708,11 @@ export class VotacionComponent implements OnInit {
   }
 
   // Guarda los cambios realizados en el tipo de asistencia
-  confirmarAsistencia(): void {
+  confirmarAsistencia(opciones?: {
+    onSuccess?: () => void;
+    onError?: () => void;
+    showToast?: boolean;
+  }): void {
     if (!this.idSesion) {
       this.toastr.warning('Sesión no válida.');
       return;
@@ -707,10 +720,8 @@ export class VotacionComponent implements OnInit {
 
     this.confirmandoAsistencia = true;
 
-    // ✅ usar la fuente completa (o solo cambios calculados contra un snapshot)
     const actualizaciones = (this.asistenciasOriginales ?? []).map((a) => ({
       id_asistencia: a.id_asistencia,
-      // normaliza por si hay null/undefined
       tipo_asistencia: (a.tipo_asistencia ?? 'ausente')
         .toString()
         .trim()
@@ -721,15 +732,16 @@ export class VotacionComponent implements OnInit {
       .guardarAsistencias(this.idSesion, actualizaciones)
       .subscribe({
         next: () => {
-          this.toastr.success(
-            'Asistencia actualizada y votos sincronizados',
-            'Éxito'
-          );
+          if (opciones?.showToast !== false) {
+            this.toastr.success(
+              'Asistencia actualizada y votos sincronizados',
+              'Éxito'
+            );
+          }
           this.confirmandoAsistencia = false;
           this.getPuntoUsuarios(this.puntoSeleccionado.id_punto);
           this.cargarResmenesDelPunto(this.puntoSeleccionado.id_punto);
 
-          // ✅ re-cargar del backend para evitar estado “optimista” desfasado
           this.asistenciaService
             .getAllDataBy(`sesion.id_sesion=${this.idSesion}`, [
               'usuario',
@@ -740,12 +752,14 @@ export class VotacionComponent implements OnInit {
               this.asistenciasOriginales = data;
               this.agruparNominaPorGrupo();
               this.actualizarContadores();
-              this.filtrarAsistenciasNomina(); // re-aplica búsqueda/filtros actuales
+              this.filtrarAsistenciasNomina();
+              opciones?.onSuccess?.();
             });
         },
         error: () => {
           this.toastr.error('Error al actualizar la asistencia', 'Error');
           this.confirmandoAsistencia = false;
+          opciones?.onError?.();
         },
       });
   }
@@ -1019,7 +1033,30 @@ export class VotacionComponent implements OnInit {
       next: (data) => {
         this.usuarioActual = data;
         setTimeout(() => {
-          this.votoManualModalRef?.show();
+          const resultadosEl = document.getElementById('modalResultados');
+          const resultadosVisible = resultadosEl?.classList.contains('show') ?? false;
+
+          const mostrarVotoManual = () => {
+            const modalElement = document.getElementById('votoManualModal');
+            if (modalElement) {
+              (modalElement as HTMLElement).style.zIndex = '1080';
+            }
+            const backdrops = document.querySelectorAll('.modal-backdrop');
+            if (backdrops.length) {
+              const backdrop = backdrops[backdrops.length - 1] as HTMLElement;
+              backdrop.style.zIndex = '1075';
+            }
+            this.votoManualModalRef?.show();
+          };
+
+          if (resultadosVisible && this.modalResultadosRef) {
+            this.reabrirResultadosTrasVotoManual = true;
+            this.modalResultadosRef.hide();
+            setTimeout(mostrarVotoManual, 150);
+          } else {
+            this.reabrirResultadosTrasVotoManual = false;
+            mostrarVotoManual();
+          }
         }, 0);
       },
       error: (error) => {
@@ -1066,6 +1103,18 @@ export class VotacionComponent implements OnInit {
     this.puntoUsuarioService.saveVote(votoData).subscribe({
       next: () => {
         this.toastr.success('Voto manual registrado correctamente', 'Éxito');
+        const puntoUsuarioActualizado = this.puntoUsuarios.find(
+          (pu: IPuntoUsuario) => pu.usuario?.id_usuario === idUsuario
+        );
+        if (puntoUsuarioActualizado?.id_punto_usuario) {
+          const actualizado: IPuntoUsuario = {
+            ...puntoUsuarioActualizado,
+            opcion: this.votoManualForm.value.opcion as string,
+            estado: true,
+          };
+          this.sincronizarPuntoUsuarioLocal(actualizado);
+          this.actualizarPendientesLocales();
+        }
         this.cerrarModal(
           'votoManualModal',
           this.votoManualForm,
@@ -1081,7 +1130,7 @@ export class VotacionComponent implements OnInit {
       },
       complete: () => {
         this.guardandoVotoManual = false;
-        this.resetForm(); // si lo necesitas aquí
+        this.resetForm();
       },
     });
   }
@@ -1097,6 +1146,7 @@ export class VotacionComponent implements OnInit {
         // Actualiza los datos del puntoUsuario en la base de datos (si es necesario)
         this.puntoUsuarioService.saveData(puntoUsuarioActual).subscribe(() => {
           this.puntoUsuarioActual = puntoUsuarioActual;
+          this.sincronizarPuntoUsuarioLocal(puntoUsuarioActual);
 
           // Actualiza la visualización del puntoUsuario
           this.actualizarVisualizacionPuntoUsuario(puntoUsuarioActual);
@@ -1160,6 +1210,157 @@ export class VotacionComponent implements OnInit {
     };
   }
 
+  private establecerPendientes(ids: number[]): void {
+    this.hayCambiosPendientes = false;
+    this.puntoUsuariosPendientesIds = new Set(
+      (ids ?? []).filter(
+        (id): id is number => typeof id === 'number' && Number.isFinite(id)
+      )
+    );
+    this.actualizarPendientesLocales();
+  }
+
+  private actualizarPendientesLocales(): void {
+    if (!this.puntoUsuariosPendientesIds.size) {
+      this.puntoUsuariosPendientes = [];
+      this.agrupadosPendientes = [];
+      this.actualizarEstadoBloqueoPendientes();
+      return;
+    }
+
+    const ids = this.puntoUsuariosPendientesIds;
+    const pendientes = (this.puntoUsuarios ?? []).filter((pu: IPuntoUsuario) => {
+      const id = pu?.id_punto_usuario;
+      return id != null && ids.has(id);
+    });
+
+    if (!pendientes.length) {
+      this.puntoUsuariosPendientesIds.clear();
+    }
+
+    this.puntoUsuariosPendientes = pendientes;
+    this.agrupadosPendientes = this.agruparPorGrupo(pendientes);
+    this.actualizarEstadoBloqueoPendientes();
+  }
+
+  private actualizarEstadoBloqueoPendientes(): void {
+    const tienePendientes =
+      this.puntoUsuariosPendientes.length > 0 ||
+      this.puntoUsuariosPendientesIds.size > 0;
+    this.modalResultadosBloqueado = tienePendientes || this.hayCambiosPendientes;
+  }
+
+  private obtenerAsistenciaPorUsuario(
+    idUsuario?: number
+  ): IAsistencia | undefined {
+    if (!idUsuario) return undefined;
+    return (this.asistenciasOriginales ?? []).find(
+      (a) => a.usuario?.id_usuario === idUsuario
+    );
+  }
+
+  marcarPendienteComo(
+    puntoUsuario: IPuntoUsuario,
+    tipo: 'presente' | 'ausente'
+  ): void {
+    const idUsuario = puntoUsuario?.usuario?.id_usuario;
+    if (!idUsuario) {
+      this.toastr.error(
+        'No se pudo identificar al usuario del punto.',
+        'Acción no disponible'
+      );
+      return;
+    }
+
+    const asistencia = this.obtenerAsistenciaPorUsuario(idUsuario);
+    if (!asistencia) {
+      this.toastr.error(
+        'No se encontró registro de asistencia para el usuario.',
+        'Acción no disponible'
+      );
+      return;
+    }
+
+    const tipoActual = this.norm(asistencia.tipo_asistencia);
+    if (tipoActual === tipo) {
+      puntoUsuario.estado = tipo === 'presente';
+      this.actualizarVisualizacionPuntoUsuario(puntoUsuario);
+      this.actualizarPendientesLocales();
+      return;
+    }
+
+    this.onCambioTipo(asistencia, tipo);
+    puntoUsuario.estado = tipo === 'presente';
+    this.hayCambiosPendientes = true;
+    this.actualizarVisualizacionPuntoUsuario(puntoUsuario);
+    this.actualizarPendientesLocales();
+  }
+
+  marcarTodosPendientesComo(tipo: 'presente' | 'ausente'): void {
+    const copia = [...this.puntoUsuariosPendientes];
+    copia.forEach((pu) => this.marcarPendienteComo(pu, tipo));
+  }
+
+  onPendienteCheckboxChange(
+    puntoUsuario: IPuntoUsuario,
+    checked: boolean
+  ): void {
+    const tipo = checked ? 'ausente' : 'presente';
+    this.marcarPendienteComo(puntoUsuario, tipo);
+  }
+
+  aplicarCambiosPendientes(): void {
+    if (this.aplicandoCambiosPendientes || this.confirmandoAsistencia) return;
+    this.aplicandoCambiosPendientes = true;
+
+    this.confirmarAsistencia({
+      onSuccess: () => {
+        this.aplicandoCambiosPendientes = false;
+        this.modalResultadosBloqueado = false;
+
+        this.hayCambiosPendientes = false;
+        this.actualizarPendientesLocales();
+        this.actualizarEstadoBloqueoPendientes();
+        if (this.pasoModalResultados !== 7) {
+          return;
+        }
+        this.pasoModalResultados = 2;
+        this.calcularResultadoAutomatico();
+      },
+      onError: () => {
+        this.aplicandoCambiosPendientes = false;
+        this.actualizarEstadoBloqueoPendientes();
+      },
+      showToast: false,
+    });
+  }
+
+  private limpiarPendientes(): void {
+    this.puntoUsuariosPendientesIds.clear();
+    this.puntoUsuariosPendientes = [];
+    this.agrupadosPendientes = [];
+    this.hayCambiosPendientes = false;
+    this.actualizarEstadoBloqueoPendientes();
+  }
+
+  private sincronizarPuntoUsuarioLocal(puntoActualizado: IPuntoUsuario): void {
+    const id = puntoActualizado?.id_punto_usuario;
+    if (!id) return;
+
+    const actualizarLista = (lista?: IPuntoUsuario[]) => {
+      if (!lista) return;
+      const existente = lista.find(
+        (item) => item?.id_punto_usuario === id
+      );
+      if (existente) {
+        Object.assign(existente, puntoActualizado);
+      }
+    };
+
+    actualizarLista(this.puntoUsuarios as IPuntoUsuario[]);
+    actualizarLista(this.puntoUsuariosPendientes);
+  }
+
   // Obtiene el nombre del usuario principal o reemplazo
   getNombreUsuario(puntoUsuario: IPuntoUsuario): string {
     return puntoUsuario.es_principal
@@ -1172,6 +1373,7 @@ export class VotacionComponent implements OnInit {
   // =====================
 
   calcularResultadoAutomatico() {
+    if (this.guardandoResultadoAutomatico) return;
     if (!this.puntoSeleccionado) return;
 
     this.guardandoResultadoAutomatico = true;
@@ -1187,6 +1389,7 @@ export class VotacionComponent implements OnInit {
           this.getPuntos();
           this.getResolucion(this.puntoSeleccionado.id_punto);
           this.pasoModalResultados = 1;
+          this.limpiarPendientes();
           this.cerrarModal(
             'modalResultados',
             undefined,
@@ -1194,8 +1397,24 @@ export class VotacionComponent implements OnInit {
           );
         },
         error: (err) => {
+          const codigo = err?.error?.code;
+          if (codigo === 'VOTOS_PENDIENTES') {
+            const idsPendientes =
+              err?.error?.data?.puntoUsuariosSinVoto ?? [];
+            this.guardandoResultadoAutomatico = false;
+            this.establecerPendientes(idsPendientes);
+            this.pasoModalResultados = 7;
+            this.modalResultadosBloqueado = true;
+            this.toastr.warning(
+              err?.error?.message ??
+                'Existen miembros habilitados sin voto registrado.',
+              'Votos pendientes'
+            );
+            return;
+          }
+
           this.toastr.error(
-            err.error.message,
+            err?.error?.message ?? 'Error al calcular el resultado',
             'Error al calcular el resultado'
           );
           this.guardandoResultadoAutomatico = false;
