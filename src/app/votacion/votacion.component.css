@@ -124,14 +124,12 @@
   pointer-events: auto;
 }
 
-/* Contenedor general: muestra 2 grupos por fila */
 .grid-grupos {
   display: flex;
   flex-wrap: wrap;
   gap: 15px;
 }
 
-/* Cada grupo */
 .grupo-block {
   flex: 1 1 32%;
   min-width: 280px;
@@ -143,7 +141,6 @@
   box-sizing: border-box;
 }
 
-/* Título del grupo */
 .grupo-titulo {
   font-weight: bold;
   font-size: 15px;
@@ -152,11 +149,17 @@
   padding-left: 8px;
 }
 
-/* Dentro del grupo: tarjetas alineadas horizontalmente */
 .grupo-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
   gap: 12px;
+}
+
+.pendientes-lista {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 15px;
+  align-items: start;
 }
 
 

@@ -149,11 +149,11 @@
         </div>
 
         <!-- Tarjetas de usuarios del grupo -->
-        <div class="grupo-grid">
-          <div
-            class="square d-flex align-items-center justify-content-between"
-            *ngFor="let puntoUsuario of grupo.usuarios"
-            [id]="puntoUsuario.id_punto_usuario"
+          <div class="grupo-grid">
+            <div
+              class="square d-flex align-items-center justify-content-between"
+              *ngFor="let puntoUsuario of grupo.usuarios"
+              [id]="puntoUsuario.id_punto_usuario"
             [ngClass]="getClassForPuntoUsuario(puntoUsuario, puntoSeleccionado)"
           >
             <!-- Nombre -->
@@ -1033,75 +1033,66 @@
             </div>
 
             <ng-container *ngIf="puntoUsuariosPendientes.length; else pendientesResueltos">
-              <div class="grid-grupos">
-                <div
-                  *ngFor="let grupo of agrupadosPendientes; trackBy: trackByGrupo"
-                  class="grupo-block"
-                >
-                  <div class="grupo-titulo">
-                    {{ getNombreGrupoFormateado(grupo.grupo) }}
-                  </div>
-
-                  <div class="grupo-grid">
-                    <div
-                      class="square d-flex align-items-center gap-3 pendiente-square"
-                      *ngFor="let puntoUsuario of grupo.usuarios"
-                      [ngClass]="getClassForPuntoUsuario(puntoUsuario, puntoSeleccionado)"
-                      [id]="'pendiente-' + puntoUsuario.id_punto_usuario"
-                    >
-                      <div class="d-flex align-items-center gap-3 flex-grow-1">
-                        <input
-                          type="checkbox"
-                          class="form-check-input"
-                          [checked]="puntoUsuario.estado === false"
-                          (change)="onPendienteCheckboxChange(puntoUsuario, $any($event.target).checked)"
-                          [disabled]="aplicandoCambiosPendientes"
-                        />
-                        <div class="d-flex flex-column">
-                          <span class="fw-semibold">{{ getNombreUsuario(puntoUsuario) }}</span>
-                          <small
-                            class="text-muted"
-                            *ngIf="puntoUsuario.usuario?.grupoUsuario?.nombre"
-                          >
-                            {{ puntoUsuario.usuario.grupoUsuario.nombre | titlecase }}
-                          </small>
-                          <span
-                            class="badge text-bg-secondary mt-1 align-self-start"
-                            *ngIf="!puntoUsuario.opcion"
-                          >
-                            Sin voto
-                          </span>
-                          <span
-                            class="badge text-bg-success mt-1 align-self-start"
-                            *ngIf="puntoUsuario.opcion === 'afavor'"
-                          >
-                            A favor
-                          </span>
-                          <span
-                            class="badge text-bg-danger mt-1 align-self-start"
-                            *ngIf="puntoUsuario.opcion === 'encontra'"
-                          >
-                            En contra
-                          </span>
-                          <span
-                            class="badge text-bg-warning text-dark mt-1 align-self-start"
-                            *ngIf="puntoUsuario.opcion === 'abstencion'"
-                          >
-                            Abstención
-                          </span>
-                        </div>
+              <div class="pendientes-lista">
+                <ng-container *ngFor="let grupo of agrupadosPendientes; trackBy: trackByGrupo">
+                  <div
+                    class="square d-flex align-items-center gap-3 pendiente-square"
+                    *ngFor="let puntoUsuario of grupo.usuarios"
+                    [ngClass]="getClassForPuntoUsuario(puntoUsuario, puntoSeleccionado)"
+                    [id]="'pendiente-' + puntoUsuario.id_punto_usuario"
+                  >
+                    <div class="d-flex align-items-center gap-3 flex-grow-1">
+                      <input
+                        type="checkbox"
+                        class="form-check-input"
+                        [checked]="puntoUsuario.estado === false"
+                        (change)="onPendienteCheckboxChange(puntoUsuario, $any($event.target).checked)"
+                        [disabled]="aplicandoCambiosPendientes"
+                      />
+                      <div class="d-flex flex-column">
+                        <span class="fw-semibold">{{ getNombreUsuario(puntoUsuario) }}</span>
+                        <small
+                          class="text-muted"
+                          *ngIf="puntoUsuario.usuario?.grupoUsuario?.nombre"
+                        >
+                          {{ puntoUsuario.usuario.grupoUsuario.nombre | titlecase }}
+                        </small>
+                        <span
+                          class="badge text-bg-secondary mt-1 align-self-start"
+                          *ngIf="!puntoUsuario.opcion"
+                        >
+                          Sin voto
+                        </span>
+                        <span
+                          class="badge text-bg-success mt-1 align-self-start"
+                          *ngIf="puntoUsuario.opcion === 'afavor'"
+                        >
+                          A favor
+                        </span>
+                        <span
+                          class="badge text-bg-danger mt-1 align-self-start"
+                          *ngIf="puntoUsuario.opcion === 'encontra'"
+                        >
+                          En contra
+                        </span>
+                        <span
+                          class="badge text-bg-warning text-dark mt-1 align-self-start"
+                          *ngIf="puntoUsuario.opcion === 'abstencion'"
+                        >
+                          Abstención
+                        </span>
                       </div>
-
-                      <button
-                        class="btn btn-outline-dark btn-sm ms-auto"
-                        (click)="abrirVotoManual(puntoUsuario.usuario.id_usuario)"
-                        [disabled]="aplicandoCambiosPendientes || puntoUsuario.estado === false"
-                      >
-                        &#x22EE;
-                      </button>
                     </div>
+
+                    <button
+                      class="btn btn-outline-dark btn-sm ms-auto"
+                      (click)="abrirVotoManual(puntoUsuario.usuario.id_usuario)"
+                      [disabled]="aplicandoCambiosPendientes || puntoUsuario.estado === false"
+                    >
+                      &#x22EE;
+                    </button>
                   </div>
-                </div>
+                </ng-container>
               </div>
             </ng-container>
 
