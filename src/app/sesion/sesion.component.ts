@@ -90,6 +90,20 @@ export class SesionComponent implements OnInit {
   showCodigo = false;
   codigoCopiado = false;
 
+  // =======================
+  // Propiedades para edición de nombres
+  // =======================
+  puntoEditando: IPunto | null = null;
+  nombreEditando: string = '';
+  nombreOriginal: string = '';
+  modalEdicionRef: any;
+  
+  // =======================
+  // Confirmación eliminación
+  // =======================
+  puntoAEliminar: IPunto | null = null;
+  eliminarModalRef: any;
+
   @ViewChild(CdkDropList) dropListRef!: CdkDropList<any>;
   @ViewChild(CdkDrag) dragRef!: CdkDrag<any>;
   @ViewChild('pantallaCompletaModal') pantallaCompletaModal!: any;
@@ -134,6 +148,9 @@ export class SesionComponent implements OnInit {
     const crearModalEl = document.getElementById('crearPuntoModal');
 
     if (crearModalEl) this.crearModalRef = new Modal(crearModalEl);
+
+    const eliminarModalEl = document.getElementById('confirmarEliminarModal');
+    if (eliminarModalEl) this.eliminarModalRef = new Modal(eliminarModalEl);
   }
 
   // =======================
@@ -261,6 +278,111 @@ export class SesionComponent implements OnInit {
         this.toastrService.error('Error al crear el punto.', error);
         this.guardandoPunto = false;
       },
+    });
+  }
+
+  // =======================
+  // Edición de nombres de puntos con modal
+  // =======================
+  abrirModalEdicion(punto: IPunto) {
+    if (!this.sesion?.estado) return;
+    
+    this.puntoEditando = punto;
+    this.nombreEditando = punto.nombre;
+    this.nombreOriginal = punto.nombre;
+    
+    // Abrir el modal
+    this.modalEdicionRef = new Modal(document.getElementById('modalEdicionNombre')!);
+    this.modalEdicionRef.show();
+    
+    // Enfocar el textarea después de que se abra el modal
+    setTimeout(() => {
+      const textarea = document.getElementById('nombrePuntoEdit') as HTMLTextAreaElement;
+      if (textarea) {
+        textarea.focus();
+        this.ajustarAlturaModal({ target: textarea });
+      }
+    }, 300);
+  }
+
+  cerrarModalEdicion() {
+    if (this.modalEdicionRef) {
+      this.modalEdicionRef.hide();
+    }
+    this.puntoEditando = null;
+    this.nombreEditando = '';
+    this.nombreOriginal = '';
+  }
+
+  guardarNombreEditado() {
+    if (!this.puntoEditando || this.nombreEditando.trim() === '') {
+      this.cerrarModalEdicion();
+      return;
+    }
+
+    if (this.nombreEditando.trim() === this.nombreOriginal) {
+      this.cerrarModalEdicion();
+      return;
+    }
+
+    // Actualizar el punto localmente
+    this.puntoEditando.nombre = this.nombreEditando.trim();
+    
+    // Llamar al servicio para actualizar en el backend
+    this.puntoService.saveData({
+      ...this.puntoEditando,
+      nombre: this.nombreEditando.trim()
+    }).subscribe({
+      next: () => {
+        this.toastrService.success('Nombre del punto actualizado correctamente');
+        this.cerrarModalEdicion();
+      },
+      error: (error) => {
+        // Revertir el cambio local si falla
+        this.puntoEditando!.nombre = this.nombreOriginal;
+        this.toastrService.error('Error al actualizar el nombre del punto');
+        this.cerrarModalEdicion();
+      }
+    });
+  }
+
+  ajustarAlturaModal(event: any) {
+    const textarea = event.target;
+    textarea.style.height = 'auto';
+    textarea.style.height = textarea.scrollHeight + 'px';
+  }
+
+  // =======================
+  // Eliminación de puntos
+  // =======================
+  confirmarEliminarPunto(punto: IPunto) {
+    if (!this.sesion?.estado) {
+      this.toastrService.warning('No se puede eliminar puntos en una sesión inactiva');
+      return;
+    }
+
+    this.puntoAEliminar = punto;
+    if (this.eliminarModalRef) this.eliminarModalRef.show();
+  }
+
+  cancelarEliminarPunto() {
+    this.puntoAEliminar = null;
+    if (this.eliminarModalRef) this.eliminarModalRef.hide();
+  }
+
+  ejecutarEliminacionPunto() {
+    if (!this.puntoAEliminar) return;
+
+    this.puntoService.deleteData(this.puntoAEliminar.id_punto!).subscribe({
+      next: () => {
+        this.toastrService.success('Punto eliminado correctamente');
+        this.getPuntos();
+        this.cancelarEliminarPunto();
+      },
+      error: (error) => {
+        const msg = error?.error?.message || 'Error al eliminar el punto';
+        this.toastrService.error(msg, 'Error');
+      }
     });
   }
 

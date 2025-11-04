@@ -8,6 +8,7 @@ import { CookieService } from 'ngx-cookie-service';
 import { filter, Subscription } from 'rxjs';
 import { PuntoService } from '../../services/punto.service';
 import { SesionService } from '../../services/sesion.service';
+import { PuntoSeleccionadoService } from '../../services/punto-seleccionado.service';
 import { ISesion } from '../../interfaces/ISesion';
 import { IPunto } from '../../interfaces/IPunto';
 
@@ -33,6 +34,7 @@ export class BarraSuperiorComponent implements OnInit, OnDestroy {
     private route: ActivatedRoute,
     private sesionService: SesionService,
     private puntoService: PuntoService,
+    private puntoSeleccionadoService: PuntoSeleccionadoService
   ) {}
 
   // ====== Estado usado en el HTML ======
@@ -44,16 +46,25 @@ export class BarraSuperiorComponent implements OnInit, OnDestroy {
   idSesionActual: number | null = null;
   sesion: ISesion = null; 
   puntos: IPunto[] = []; 
+  puntoSeleccionado: IPunto | null = null;
 
   cargandoSesion = false;
   cargandoPuntos = false;
 
   private subRouter?: Subscription;
+  private subPuntoSeleccionado?: Subscription;
 
   // ====== Estado de notificaciones ======
   mostrarNotificaciones = false;
   notificaciones: any[] = [];
   tieneNotificaciones = false;
+
+  // ====== Estado del tooltip ======
+  mostrarTooltipPunto = false;
+  textoTooltip = '';
+  tooltipX = 0;
+  tooltipY = 0;
+  private tooltipTimeout?: number;
 
   // ====== Ciclo de vida ======
   ngOnInit(): void {
@@ -61,10 +72,20 @@ export class BarraSuperiorComponent implements OnInit, OnDestroy {
     this.subRouter = this.router.events
       .pipe(filter((e) => e instanceof NavigationEnd))
       .subscribe(() => this.resolverContextoYDatos());
+    
+    // Suscribirse a los cambios del punto seleccionado
+    this.subPuntoSeleccionado = this.puntoSeleccionadoService.puntoSeleccionado$
+      .subscribe(punto => {
+        this.puntoSeleccionado = punto;
+      });
   }
 
   ngOnDestroy(): void {
     this.subRouter?.unsubscribe();
+    this.subPuntoSeleccionado?.unsubscribe();
+    if (this.tooltipTimeout) {
+      clearTimeout(this.tooltipTimeout);
+    }
   }
 
   // ====== Acciones de UI ======
@@ -197,5 +218,55 @@ private getFirstParamFromRouteTree(candidates: string[]): string | null {
   // ====== Métodos de notificaciones ======
   toggleNotifications() {
     this.mostrarNotificaciones = !this.mostrarNotificaciones;
+  }
+
+  // ====== Métodos del tooltip ======
+  mostrarTooltip(event: MouseEvent, texto: string) {
+    // Limpiar timeout anterior si existe
+    if (this.tooltipTimeout) {
+      clearTimeout(this.tooltipTimeout);
+    }
+
+    // Solo mostrar tooltip si el texto es largo (más de 30 caracteres)
+    if (texto.length <= 30) {
+      return;
+    }
+
+    // Configurar el tooltip después de 0.5 segundos
+    this.tooltipTimeout = window.setTimeout(() => {
+      this.textoTooltip = texto;
+      
+      // Mejorar el posicionamiento del tooltip
+      const rect = (event.target as HTMLElement).getBoundingClientRect();
+      const tooltipWidth = 400; // Ancho máximo del tooltip
+      const tooltipHeight = 80; // Altura estimada del tooltip
+      
+      // Posicionar a la derecha del elemento si hay espacio, sino a la izquierda
+      let x = rect.right + 15;
+      if (x + tooltipWidth > window.innerWidth) {
+        x = rect.left - tooltipWidth - 15;
+      }
+      
+      // Posicionar verticalmente centrado con el elemento
+      let y = rect.top + (rect.height / 2) - (tooltipHeight / 2);
+      
+      // Ajustar si se sale de la pantalla verticalmente
+      if (y < 10) y = 10;
+      if (y + tooltipHeight > window.innerHeight - 10) {
+        y = window.innerHeight - tooltipHeight - 10;
+      }
+      
+      this.tooltipX = x;
+      this.tooltipY = y;
+      this.mostrarTooltipPunto = true;
+    }, 1000);
+  }
+
+  ocultarTooltip() {
+    if (this.tooltipTimeout) {
+      clearTimeout(this.tooltipTimeout);
+      this.tooltipTimeout = undefined;
+    }
+    this.mostrarTooltipPunto = false;
   }
 }

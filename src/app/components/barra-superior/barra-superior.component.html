@@ -104,8 +104,16 @@
                 <li *ngIf="cargandoPuntos" class="px-2 py-1 text-muted small">Cargando...</li>
                 <li *ngIf="!cargandoPuntos && puntos.length === 0" class="px-2 py-1 text-muted small">Sin puntos</li>
                 <li *ngFor="let p of puntos">
-                  <button class="sidebar-sublink" (click)="ir('/punto/' + idSesionActual + '/' + p.id_punto)">
-                    <i class="bi bi-dot me-1"></i>{{ p.nombre }}
+                  <button 
+                    class="sidebar-sublink" 
+                    [class.punto-activo]="puntoSeleccionado?.id_punto === p.id_punto"
+                    (click)="ir('/punto/' + idSesionActual + '/' + p.id_punto)"
+                    (mouseenter)="mostrarTooltip($event, p.nombre)"
+                    (mouseleave)="ocultarTooltip()">
+                    <i class="bi bi-dot me-1" 
+                       [class.bi-circle-fill]="puntoSeleccionado?.id_punto === p.id_punto"
+                       [class.bi-dot]="puntoSeleccionado?.id_punto !== p.id_punto"></i>{{ p.nombre }}
+                    <span *ngIf="puntoSeleccionado?.id_punto === p.id_punto" class="badge bg-primary ms-2">Activo</span>
                   </button>
                 </li>
               </ul>
@@ -126,6 +134,21 @@
          Popup de notificaciones
          ======================= -->
     <div class="notification-overlay" *ngIf="mostrarNotificaciones" (click)="toggleNotifications()"></div>
+
+    <!-- =======================
+         Tooltip para títulos de puntos
+         ======================= -->
+    <div 
+      class="punto-tooltip" 
+      *ngIf="mostrarTooltipPunto" 
+      [style.left.px]="tooltipX" 
+      [style.top.px]="tooltipY">
+      <div class="tooltip-content">
+        <i class="bi bi-info-circle me-2"></i>
+        <span class="tooltip-text">{{ textoTooltip }}</span>
+      </div>
+      <div class="tooltip-arrow"></div>
+    </div>
     
     <div class="notification-popup" *ngIf="mostrarNotificaciones">
       <div class="notification-header">

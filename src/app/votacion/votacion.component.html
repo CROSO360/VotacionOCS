@@ -7,20 +7,34 @@
   <h2 class="text-center">{{ sesion?.nombre }}</h2>
 
     <!-- Bloque del código -->
-  <div *ngIf="sesion?.codigo" class="code-row mt-2">
-    <div
-      class="session-code-box"
-      (click)="toggleCodigo()"
-      (keydown.enter)="toggleCodigo()"
-      (keydown.space)="toggleCodigo()"
-      role="button"
-      tabindex="0"
-      [attr.aria-pressed]="showCodigo"
-      [attr.aria-label]="showCodigo ? 'Ocultar código de sesión' : 'Mostrar código de sesión'"
-      [class.visible]="showCodigo"
-    >
-      <span *ngIf="!showCodigo">Código de sesión</span>
-      <span *ngIf="showCodigo" class="code-text">{{ sesion?.codigo }}</span>
+  <div *ngIf="sesion?.codigo" class="session-code-section mt-2">
+    <div class="code-container">
+      <div
+        class="session-code-box"
+        (click)="toggleCodigo()"
+        (keydown.enter)="toggleCodigo()"
+        (keydown.space)="toggleCodigo()"
+        role="button"
+        tabindex="0"
+        [attr.aria-pressed]="showCodigo"
+        [attr.aria-label]="showCodigo ? 'Ocultar código de sesión' : 'Mostrar código de sesión'"
+        [class.visible]="showCodigo"
+      >
+        <i class="icon-code"></i>
+        <span *ngIf="!showCodigo">Código de sesión</span>
+        <span *ngIf="showCodigo" class="code-text">{{ sesion?.codigo }}</span>
+      </div>
+      <button
+        *ngIf="showCodigo"
+        class="copy-button"
+        (click)="copiarCodigo()"
+        [class.copied]="codigoCopiado"
+        [attr.aria-label]="codigoCopiado ? 'Código copiado' : 'Copiar código'"
+        title="Copiar código"
+      >
+        <i class="icon-copy" *ngIf="!codigoCopiado"></i>
+        <i class="icon-check" *ngIf="codigoCopiado"></i>
+      </button>
     </div>
   </div>
 
@@ -65,18 +79,28 @@
     </ng-template>
   </div>
 
-  <!-- Agrega este código donde quieras que aparezca el combo de puntos -->
-  Punto:
-  <select [(ngModel)]="puntoSeleccionado" (ngModelChange)="onPuntoChange()">
-    <option *ngFor="let punto of puntos" [ngValue]="punto">
-      {{ punto.nombre }}
-    </option>
-  </select>
+  <!-- Selector de puntos -->
+  <div class="punto-select-container">
+    <label for="puntoSelect" class="form-label fw-semibold mb-2">
+      <i class="bi bi-list-ul me-2"></i>Punto:
+    </label>
+    <select 
+      id="puntoSelect"
+      [(ngModel)]="puntoSeleccionado" 
+      (ngModelChange)="onPuntoChange()"
+      class="form-select"
+    >
+      <option *ngFor="let punto of puntos" [ngValue]="punto">
+        {{ punto.nombre }}
+      </option>
+    </select>
+  </div>
 
+  <!-- Descripción del punto seleccionado -->
   <div *ngFor="let punto of puntos">
-    <p *ngIf="punto.id_punto == puntoSeleccionado.id_punto">
+    <div *ngIf="punto.id_punto == puntoSeleccionado.id_punto" class="punto-descripcion">
       {{ punto.detalle }}
-    </p>
+    </div>
     <button
       class="btn btn-secondary mb-3 d-flex align-items-center"
       [disabled]="cambiandoEstadoPunto"
@@ -125,7 +149,7 @@
       data-bs-toggle="modal"
       data-bs-target="#modalResolucion"
     >
-      Ver resolución
+      {{ resolucionActual ? 'Ver resolución' : 'Crear resolución' }}
     </button>
 
     <!-- Botón Nómina -->
@@ -136,6 +160,20 @@
       (click)="ngOnInit()"
     >
       Nómina
+    </button>
+  </div>
+
+  <!-- Botón de pantalla completa para votación -->
+  <div class="d-flex justify-content-end mb-3">
+    <button
+      class="btn btn-outline-primary d-flex align-items-center"
+      data-bs-toggle="modal"
+      data-bs-target="#modalVotacionPantallaCompleta"
+      title="Ver votación en pantalla completa"
+      aria-label="Ver votación en pantalla completa"
+    >
+      <i class="bi bi-arrows-fullscreen me-2"></i>
+      <span>Pantalla completa</span>
     </button>
   </div>
 
@@ -303,7 +341,7 @@
       </tr>
       <tr class="table-active">
         <td class="fw-bold">Resultado sitema</td>
-        <td class="text-end fw-bold">{{ puntoSeleccionado.resultado }}</td>
+        <td class="text-end fw-bold">{{ puntoSeleccionado?.resultado }}</td>
       </tr>
       <tr class="table-active">
         <td class="fw-bold">Estado Ponderado</td>
@@ -428,9 +466,9 @@
 
 <p class="text-muted text-end me-2 fst-italic">
    Resuelve por {{
-   puntoSeleccionado.calculo_resultado === 'mayoria_simple'
+   puntoSeleccionado?.calculo_resultado === 'mayoria_simple'
    ? 'Mayoría Simple'
-   : puntoSeleccionado.calculo_resultado === 'mayoria_especial'
+   : puntoSeleccionado?.calculo_resultado === 'mayoria_especial'
    ? 'Mayoría Especial'
    :'Indefinido'
   }} 
@@ -854,7 +892,7 @@
           (click)="confirmarAsistencia()"
           [disabled]="
             sesion?.estado === false ||
-            nomina.length === 0 ||
+            asistenciasOriginales?.length === 0 ||
             confirmandoAsistencia
           "
         >
@@ -889,7 +927,9 @@
     <div class="modal-content">
       <!-- Encabezado -->
       <div class="modal-header">
-        <h5 class="modal-title" id="modalResultadosLabel">Resultado del punto</h5>
+        <h5 class="modal-title" id="modalResultadosLabel">
+          {{ grupoSeleccionadoParaResolver ? 'Resultado del grupo' : 'Resultado del punto' }}
+        </h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
       </div>
 
@@ -898,17 +938,19 @@
         <ng-container [ngSwitch]="pasoModalResultados">
           <!-- Paso 1 -->
           <div *ngSwitchCase="1">
-            <p>¿Cómo desea obtener el resultado de este punto?</p>
+            <p>¿Cómo desea obtener el resultado {{ grupoSeleccionadoParaResolver ? 'de este grupo' : 'de este punto' }}?</p>
             <div class="d-grid gap-2">
               <button class="btn btn-outline-primary" (click)="irAPasoConfirmarAutomatico()">Calcular automáticamente</button>
-              <button class="btn btn-outline-secondary" (click)="irAPasoManual()" *ngIf="!puntoSeleccionado.requiere_voto_dirimente">Asignar resultado manualmente</button>
-              <button class="btn btn-outline-success" (click)="irAPasoHibrido()" *ngIf="!puntoSeleccionado.requiere_voto_dirimente">Asignar votos rápido y calcular ponderado</button>
+              <button class="btn btn-outline-secondary" (click)="irAPasoManual()" *ngIf="!grupoSeleccionadoParaResolver && !puntoSeleccionado?.requiere_voto_dirimente">Asignar resultado manualmente</button>
+              <button class="btn btn-outline-secondary" (click)="irAPasoManual()" *ngIf="grupoSeleccionadoParaResolver">Asignar resultado manualmente</button>
+              <button class="btn btn-outline-success" (click)="irAPasoHibrido()" *ngIf="!grupoSeleccionadoParaResolver && !puntoSeleccionado?.requiere_voto_dirimente">Asignar votos rápido y calcular ponderado</button>
+              <button class="btn btn-outline-success" (click)="irAPasoHibrido()" *ngIf="grupoSeleccionadoParaResolver">Asignar votos rápido y calcular ponderado</button>
             </div>
           </div>
 
           <!-- Paso 2 -->
           <div *ngSwitchCase="2">
-            <p>El sistema calculará automáticamente el resultado del punto según los votos emitidos. ¿Desea continuar?</p>
+            <p>El sistema calculará automáticamente el resultado {{ grupoSeleccionadoParaResolver ? 'del grupo' : 'del punto' }} según los votos emitidos. ¿Desea continuar?</p>
           </div>
 
           <!-- Paso 3 -->
@@ -1213,7 +1255,7 @@
       <!-- Encabezado -->
       <div class="modal-header">
         <h1 class="modal-title fs-5" id="modalResolucionLabel">
-          Resolución del punto
+          {{ resolucionActual ? 'Ver resolución' : 'Crear resolución' }}
         </h1>
         <button
           type="button"
@@ -1226,74 +1268,179 @@
       <!-- Cuerpo -->
       <div class="modal-body">
         <!-- Estado inicial sin resolución -->
-        <div *ngIf="!resolucionActual && !modoCreacionResolucion">
-          <button
-            class="btn btn-secondary"
-            (click)="modoCreacionResolucion = true; resolucionForm.reset()"
-          >
-            Nueva resolución
-          </button>
+        <div *ngIf="!resolucionActual && !modoCreacionResolucion" class="text-center py-5">
+          <div class="empty-state">
+            <i class="bi bi-file-text display-1 text-muted mb-3"></i>
+            <h4 class="text-muted mb-3">No hay resolución creada</h4>
+            <p class="text-muted mb-4">Crea una resolución para este punto de la sesión</p>
+            <button
+              class="btn btn-primary btn-lg"
+              (click)="modoCreacionResolucion = true; resolucionForm.reset()"
+            >
+              <i class="bi bi-plus-circle me-2"></i>
+              Crear resolución
+            </button>
+          </div>
         </div>
 
-        <!-- Formulario -->
+        <!-- Vista de resolución existente -->
+        <div *ngIf="resolucionActual && !modoCreacionResolucion" class="resolucion-view">
+          <!-- Información del punto -->
+          <div class="punto-info mb-4">
+            <div class="info-header">
+              <h5 class="info-label">
+                <i class="bi bi-list-ul me-2"></i>
+                Punto de la sesión
+              </h5>
+            </div>
+            <div class="info-content">
+              <h4 class="punto-titulo">{{ puntoSeleccionado?.nombre }}</h4>
+              <p class="punto-detalle text-muted" *ngIf="puntoSeleccionado?.detalle">
+                {{ puntoSeleccionado.detalle }}
+              </p>
+            </div>
+          </div>
+
+          <!-- Información de la resolución -->
+          <div class="resolucion-info mb-4">
+            <div class="info-header">
+              <h5 class="info-label">
+                <i class="bi bi-file-text me-2"></i>
+                Resolución
+              </h5>
+            </div>
+            <div class="info-content">
+              <h3 class="resolucion-nombre">{{ resolucionActual.nombre }}</h3>
+              <div class="resolucion-descripcion">
+                <p class="resolucion-texto">{{ resolucionActual.descripcion }}</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Información del método de resolución -->
+          <div class="metodo-info mb-4" *ngIf="resolucionActual?.fuente_resultado">
+            <div class="info-header">
+              <h5 class="info-label">
+                <i class="bi bi-calculator me-2"></i>
+                Método de resolución
+              </h5>
+            </div>
+              <div class="info-content">
+                <div class="metodo-badge">
+                  <span class="badge" [ngClass]="{
+                    'bg-warning': resolucionActual.fuente_resultado === 'manual',
+                    'bg-info': resolucionActual.fuente_resultado === 'hibrido',
+                    'bg-success': resolucionActual.fuente_resultado === 'automatico' || !resolucionActual.fuente_resultado
+                  }">
+                    <i class="bi me-1" [ngClass]="{
+                      'bi-person-gear': resolucionActual.fuente_resultado === 'manual',
+                      'bi-gear-fill': resolucionActual.fuente_resultado === 'hibrido',
+                      'bi-cpu': resolucionActual.fuente_resultado === 'automatico' || !resolucionActual.fuente_resultado
+                    }"></i>
+                    {{
+                      resolucionActual.fuente_resultado === 'manual'
+                        ? "Cálculo manual por Secretaría"
+                        : resolucionActual.fuente_resultado === 'hibrido'
+                        ? "Cálculo híbrido (manual y automático)"
+                        : "Cálculo automático del sistema"
+                    }}
+                  </span>
+                </div>
+              </div>
+          </div>
+
+          <!-- Botones de acción -->
+          <div class="resolucion-actions d-flex gap-2 justify-content-end">
+            <button
+              type="button"
+              class="btn btn-outline-primary"
+              (click)="modoCreacionResolucion = true"
+              [disabled]="sesion?.estado === false"
+            >
+              <i class="bi bi-pencil me-2"></i>
+              Editar resolución
+            </button>
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-bs-dismiss="modal"
+            >
+              <i class="bi bi-x-circle me-2"></i>
+              Cerrar
+            </button>
+          </div>
+        </div>
+
+        <!-- Formulario de creación/edición -->
         <form
-          *ngIf="modoCreacionResolucion || resolucionActual"
+          *ngIf="modoCreacionResolucion"
           [formGroup]="resolucionForm"
           (ngSubmit)="resolucionActual ? editarResolucion() : crearResolucion()"
+          class="resolucion-form"
         >
+          <!-- Información del punto (solo en modo creación) -->
+          <div class="punto-info mb-4" *ngIf="!resolucionActual">
+            <div class="info-header">
+              <h5 class="info-label">
+                <i class="bi bi-list-ul me-2"></i>
+                Punto de la sesión
+              </h5>
+            </div>
+            <div class="info-content">
+              <h4 class="punto-titulo">{{ puntoSeleccionado?.nombre }}</h4>
+              <p class="punto-detalle text-muted" *ngIf="puntoSeleccionado?.detalle">
+                {{ puntoSeleccionado.detalle }}
+              </p>
+            </div>
+          </div>
+
           <!-- Campo: Nombre -->
-          <div class="form-group mt-3">
-            <label for="nombre">Nombre:</label>
+          <div class="form-group mb-4">
+            <label for="nombre" class="form-label fw-semibold">
+              <i class="bi bi-tag me-2"></i>
+              Nombre de la resolución
+            </label>
             <input
               id="nombre"
               type="text"
               formControlName="nombre"
-              class="form-control"
-              placeholder="Título de la resolución"
+              class="form-control form-control-lg"
+              placeholder="Ingrese el título de la resolución"
               [disabled]="sesion?.estado === false"
             />
+            <div class="form-text">Título descriptivo de la resolución</div>
           </div>
 
           <!-- Campo: Descripción -->
-          <div class="form-group mt-2">
-            <label for="descripcion">Descripción:</label>
+          <div class="form-group mb-4">
+            <label for="descripcion" class="form-label fw-semibold">
+              <i class="bi bi-file-text me-2"></i>
+              Descripción de la resolución
+            </label>
             <textarea
               id="descripcion"
               formControlName="descripcion"
-              rows="3"
+              rows="6"
               class="form-control"
-              placeholder="Descripción detallada..."
+              placeholder="Describa detalladamente la resolución..."
               [disabled]="sesion?.estado === false"
             ></textarea>
+            <div class="form-text">Descripción completa y detallada de la resolución</div>
           </div>
 
-          <!-- Fuente del resultado -->
-          <p
-            class="text-muted fst-italic mt-3"
-            *ngIf="resolucionActual?.fuente_resultado"
-          >
-            Resuelto mediante:
-            {{
-              resolucionActual?.fuente_resultado === 'manual'
-                ? 'Cáculo manual por Secretaria'
-                : resolucionActual?.fuente_resultado === 'hibrido'
-                ? 'Cáculo híbrido (manual y automático)'
-                : 'Cáculo automático del sistema'
-            }}
-          </p>
-
           <!-- Footer del formulario -->
-          <div class="modal-footer px-0 mt-4">
+          <div class="form-actions d-flex gap-2 justify-content-end">
             <button
               type="button"
-              class="btn btn-secondary"
-              (click)="cerrarModal('modalResolucion', resolucionForm)"
+              class="btn btn-outline-secondary"
+              (click)="modoCreacionResolucion = false; resolucionForm.reset()"
             >
+              <i class="bi bi-arrow-left me-2"></i>
               Cancelar
             </button>
             <button
               type="submit"
-              class="btn btn-primary d-flex align-items-center"
+              class="btn btn-primary"
               [disabled]="
                 guardandoResolucion ||
                 !formularioResolucionModificado() ||
@@ -1304,7 +1451,7 @@
                 *ngIf="!guardandoResolucion; else cargandoResolucion"
               >
                 <i class="bi bi-check-circle me-2"></i>
-                Confirmar cambios
+                {{ resolucionActual ? 'Actualizar resolución' : 'Crear resolución' }}
               </ng-container>
               <ng-template #cargandoResolucion>
                 <span class="spinner-border spinner-border-sm me-2"></span>
@@ -1326,7 +1473,7 @@
   aria-labelledby="modalGruposLabel"
   aria-hidden="true"
 >
-  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+  <div class="modal-dialog modal-lg" [ngClass]="{ 'modal-xl': pantallaGrupo === 2, 'modal-dialog-scrollable': pantallaGrupo !== 2 }">
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title" id="modalGruposLabel">
@@ -1355,27 +1502,67 @@
 
           <div *ngFor="let grupo of grupos" class="mb-3 border rounded p-3">
             <div class="d-flex justify-content-between align-items-center">
-              <strong>{{ grupo.nombre }}</strong>
-              <button
-                *ngIf="sesion?.estado === true && sesion?.fase === 'activa'"
-                class="btn btn-sm btn-outline-primary d-flex align-items-center"
-                [disabled]="estadoCargaGrupo.get(grupo.id_grupo!)"
-                (click)="cambiarEstadoGrupo(grupo)"
-              >
-                <ng-container
-                  *ngIf="
-                    !estadoCargaGrupo.get(grupo.id_grupo!);
-                    else cargandoGrupo
-                  "
+              <strong class="grupo-nombre-truncate" [attr.title]="grupo.nombre">{{ grupo.nombre }}</strong>
+              <div class="d-flex align-items-center gap-2">
+                <button
+                  *ngIf="sesion?.estado === true && sesion?.fase === 'activa'"
+                  class="btn btn-sm btn-outline-primary d-flex align-items-center"
+                  [disabled]="estadoCargaGrupo.get(grupo.id_grupo!)"
+                  (click)="cambiarEstadoGrupo(grupo)"
                 >
-                  <i class="bi bi-toggle-on me-2"></i>
-                  {{ grupo.estado ? "Deshabilitar" : "Habilitar" }}
-                </ng-container>
-                <ng-template #cargandoGrupo>
-                  <span class="spinner-border spinner-border-sm me-2"></span>
-                  Procesando...
-                </ng-template>
-              </button>
+                  <ng-container
+                    *ngIf="
+                      !estadoCargaGrupo.get(grupo.id_grupo!);
+                      else cargandoGrupo
+                    "
+                  >
+                    <i class="bi bi-toggle-on me-2"></i>
+                    {{ grupo.estado ? "Deshabilitar" : "Habilitar" }}
+                  </ng-container>
+                  <ng-template #cargandoGrupo>
+                    <span class="spinner-border spinner-border-sm me-2"></span>
+                    Procesando...
+                  </ng-template>
+                </button>
+                <button
+                  class="btn btn-sm btn-outline-secondary"
+                  [disabled]="!(sesion?.estado === true && sesion?.fase === 'activa')"
+                  title="Editar grupo"
+                  (click)="editarGrupo(grupo)"
+                >
+                  <i class="bi bi-pencil"></i>
+                </button>
+                <button
+                  class="btn btn-sm btn-outline-danger"
+                  [disabled]="!(sesion?.estado === true && sesion?.fase === 'activa')"
+                  title="Eliminar grupo"
+                  (click)="eliminarGrupo(grupo)"
+                >
+                  <i class="bi bi-trash"></i>
+                </button>
+                  
+                <button
+                *ngIf="grupo.status===false"
+                  class="btn btn-sm btn-outline-success"
+                  [disabled]="true"
+                  title="Resolver grupo"
+                  (click)="abrirModalResultadosGrupo(grupo)"
+                >
+                  <i class="bi bi-calculator me-1"></i>
+                  Grupo resuelto
+                </button>
+
+                <button
+                *ngIf="grupo.status===true"
+                  class="btn btn-sm btn-outline-success"
+                  [disabled]="!(sesion?.estado === true && sesion?.fase === 'activa')"
+                  title="Resolver grupo"
+                  (click)="abrirModalResultadosGrupo(grupo)"
+                >
+                  <i class="bi bi-calculator me-1"></i>
+                  Resolver Grupo
+                </button>
+              </div>
             </div>
 
             <div class="mt-2">
@@ -1392,7 +1579,7 @@
         <!-- ========================= -->
         <!-- PANTALLA 2: CREAR GRUPO -->
         <!-- ========================= -->
-        <div *ngIf="pantallaGrupo === 2">
+        <div *ngIf="pantallaGrupo === 2" class="crear-grupo-card">
           <form
             [formGroup]="grupoForm"
             (ngSubmit)="crearGrupoDesdeFormulario()"
@@ -1410,35 +1597,38 @@
 
             <div class="form-group mb-3">
               <label>Puntos a agrupar (mínimo 2)</label>
-              <div *ngFor="let punto of puntos" class="form-check">
+              <div *ngFor="let punto of puntos" class="form-check punto-grupo-item" [class.punto-resuelto]="!!punto.resultado">
                 <input
                   type="checkbox"
                   class="form-check-input"
                   [value]="punto"
                   (change)="onSeleccionPuntoGrupo(punto, $event)"
                   [checked]="grupoForm.value.puntos?.includes(punto)"
+                  [disabled]="!!punto.resultado"
                   id="puntoCheckbox{{ punto.id_punto }}"
                 />
                 <label
-                  class="form-check-label"
+                  class="form-check-label punto-nombre-truncate"
                   [for]="'puntoCheckbox' + punto.id_punto"
+                  [attr.title]="punto.nombre"
                 >
                   {{ punto.nombre }}
                 </label>
+                <span *ngIf="punto.resultado" class="badge bg-secondary ms-2">Resuelto</span>
               </div>
             </div>
 
             <div class="d-flex justify-content-between">
               <button
                 type="button"
-                class="btn btn-secondary"
+                class="btn btn-secondary btn-cancel-grupo"
                 (click)="volverAGestionGrupos()"
               >
                 Cancelar
               </button>
               <button
                 type="submit"
-                class="btn btn-success d-flex align-items-center"
+                class="btn btn-success btn-sm d-flex align-items-center"
                 [disabled]="grupoForm.value.puntos?.length < 2 || creandoGrupo"
                 (click)="crearGrupoDesdeFormulario()"
               >
@@ -1468,6 +1658,312 @@
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
           Cerrar
         </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- =============================== -->
+<!-- Modal: Pantalla Completa de Votación -->
+<!-- =============================== -->
+<div
+  class="modal fade"
+  id="modalVotacionPantallaCompleta"
+  tabindex="-1"
+  aria-labelledby="modalVotacionPantallaCompletaLabel"
+  aria-hidden="true"
+>
+  <div class="modal-dialog modal-fullscreen">
+    <div class="modal-content fullscreen-content">
+      <!-- Encabezado -->
+      <div class="modal-header fullscreen-header">
+        <h1 class="modal-title" id="modalVotacionPantallaCompletaLabel">
+          <i class="bi bi-people me-2"></i>
+          Votación - {{ sesion?.nombre }} - {{ puntoSeleccionado?.nombre }}
+        </h1>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+          aria-label="Cerrar"
+        ></button>
+      </div>
+
+      <!-- Cuerpo -->
+      <div class="modal-body fullscreen-body">
+        <div class="fullscreen-votacion-container">
+          <div class="fullscreen-grid-grupos">
+            <div *ngFor="let grupo of agrupadosPorGrupo" class="fullscreen-grupo-block">
+              <!-- Encabezado del grupo -->
+              <div class="fullscreen-grupo-titulo">
+                {{ getNombreGrupoFormateado(grupo.grupo) }}
+              </div>
+
+              <!-- Tarjetas de usuarios del grupo -->
+              <div class="fullscreen-grupo-grid">
+                <div
+                  class="fullscreen-square d-flex align-items-center justify-content-between"
+                  *ngFor="let puntoUsuario of grupo.usuarios"
+                  [id]="puntoUsuario.id_punto_usuario"
+                  [ngClass]="getClassForPuntoUsuario(puntoUsuario, puntoSeleccionado)"
+                >
+                  <!-- Nombre -->
+                  <div class="fullscreen-nombre-usuario">{{ getNombreUsuario(puntoUsuario) }}</div>
+                  <div *ngIf="!puntoUsuario.es_principal" class="fullscreen-reemplazo-info">
+                    Reemplazo de {{ puntoUsuario.usuario?.nombre }}
+                  </div>
+
+                  <!-- Botón Razonado + Dropdown -->
+                  <div class="d-flex align-items-center gap-3">
+                    <button
+                      class="btn btn-secondary btn-sm btn-razonado"
+                      [ngClass]="{
+                        noRazonado: puntoUsuario.es_razonado === false,
+                        razonado: puntoUsuario.es_razonado === true
+                      }"
+                    >
+                      Razonado
+                    </button>
+
+                    <div
+                      class="custom-dropdown"
+                      *ngIf="
+                        sesion?.fase === 'activa' &&
+                        sesion?.estado === true &&
+                        puntoUsuario.estado !== false
+                      "
+                    >
+                      <button
+                        *ngIf="!puntoSeleccionado.resultado"
+                        class="custom-dropdown-toggle btn btn-outline-dark btn-sm"
+                        (click)="abrirVotoManual(puntoUsuario.usuario.id_usuario)"
+                      >
+                        &#x22EE;
+                      </button>
+                      <button
+                        *ngIf="
+                          puntoSeleccionado.requiere_voto_dirimente &&
+                          puntoUsuario.usuario.grupoUsuario.nombre === 'rector'
+                        "
+                        class="custom-dropdown-toggle btn btn-outline-dark btn-sm"
+                        (click)="abrirVotoManual(puntoUsuario.usuario.id_usuario)"
+                      >
+                        &#x22EE;
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- =============================== -->
+<!-- Modal: Resultados de Grupo (Separado) -->
+<!-- =============================== -->
+<div
+  class="modal fade"
+  id="modalResultadosGrupo"
+  tabindex="-1"
+  aria-labelledby="modalResultadosGrupoLabel"
+  aria-hidden="true"
+>
+  <div
+    class="modal-dialog modal-dialog-scrollable modal-dialog-centered"
+    [ngClass]="{ 'modal-xl': pasoModalResultadosGrupo === 5 || pasoModalResultadosGrupo === 7 }"
+  >
+    <div class="modal-content">
+      <!-- Encabezado -->
+      <div class="modal-header">
+        <h5 class="modal-title" id="modalResultadosGrupoLabel">
+          Resultado del grupo
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+
+      <!-- Cuerpo -->
+      <div class="modal-body" #hibridoScrollGrupo>
+        <ng-container [ngSwitch]="pasoModalResultadosGrupo">
+          <!-- Paso 1 -->
+          <div *ngSwitchCase="1">
+            <p>¿Cómo desea obtener el resultado de este grupo?</p>
+            <div class="d-grid gap-2">
+              <button class="btn btn-outline-primary" (click)="irAPasoConfirmarAutomaticoGrupo()">Calcular automáticamente</button>
+              <button class="btn btn-outline-secondary" (click)="irAPasoManualGrupo()">Asignar resultado manualmente</button>
+              <button class="btn btn-outline-success" (click)="irAPasoHibridoGrupo()">Asignar votos rápido y calcular ponderado</button>
+            </div>
+          </div>
+
+          <!-- Paso 2: Confirmar automático -->
+          <div *ngSwitchCase="2">
+            <p>El sistema calculará automáticamente el resultado del grupo según los votos emitidos. ¿Desea continuar?</p>
+          </div>
+
+          <!-- Paso 3: Selección manual -->
+          <div *ngSwitchCase="3">
+            <label for="resultadoManualGrupo">Seleccione el resultado manual:</label>
+            <select id="resultadoManualGrupo" class="form-select mt-2 mb-3" [(ngModel)]="resultadoManualSeleccionado">
+              <option value="aprobada">Aprobada</option>
+              <option value="rechazada">Rechazada</option>
+              <option value="pendiente">Pendiente</option>
+            </select>
+          </div>
+
+          <!-- Paso 4: Confirmar manual -->
+          <div *ngSwitchCase="4">
+            <p>
+              Se asignará el resultado manual:
+              <strong>{{ resultadoManualSeleccionado | titlecase }}</strong>. Este resultado se registrará como ingreso manual por parte de la Secretaría.
+            </p>
+          </div>
+
+          <!-- Paso 5: Híbrido -->
+          <div *ngSwitchCase="5" class="paso-hibrido-expandido">
+            <p>Revise o modifique los votos antes de calcular el resultado:</p>
+
+            <input type="text" class="form-control mb-3" placeholder="Buscar por nombre..." [(ngModel)]="busquedaVotoHibrido" (ngModelChange)="actualizarBusquedaVotoHibrido($event)" />
+
+            <ul class="nav nav-tabs mb-3">
+              <li class="nav-item">
+                <a class="nav-link" [class.active]="filtroVotoHibrido === 'todos'" (click)="filtroVotoHibrido = 'todos'; agruparYFiltrarVotosHibridos()">
+                  Todos <span class="badge bg-secondary ms-1">{{ contadoresHibrido.todos }}</span>
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" [class.active]="filtroVotoHibrido === 'afavor'" (click)="filtroVotoHibrido = 'afavor'; agruparYFiltrarVotosHibridos()">
+                  A favor <span class="badge bg-success ms-1">{{ contadoresHibrido.afavor }}</span>
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" [class.active]="filtroVotoHibrido === 'encontra'" (click)="filtroVotoHibrido = 'encontra'; agruparYFiltrarVotosHibridos()">
+                  En contra <span class="badge bg-danger ms-1">{{ contadoresHibrido.encontra }}</span>
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" [class.active]="filtroVotoHibrido === 'abstencion'" (click)="filtroVotoHibrido = 'abstencion'; agruparYFiltrarVotosHibridos()">
+                  Abstención <span class="badge bg-warning text-dark ms-1">{{ contadoresHibrido.abstencion }}</span>
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" [class.active]="filtroVotoHibrido === 'sinvoto'" (click)="filtroVotoHibrido = 'sinvoto'; agruparYFiltrarVotosHibridos()">
+                  Sin votar <span class="badge bg-secondary ms-1">{{ contadoresHibrido.sinvoto }}</span>
+                </a>
+              </li>
+            </ul>
+
+            <div class="row gy-3">
+              <div class="col-12 col-md-6 col-lg-4" *ngFor="let grupo of agrupadosVotosHibridos">
+                <div class="p-2 border rounded shadow-sm h-100">
+                  <h6 class="mb-3 border-start border-3 ps-2 text-primary">
+                    {{ getNombreGrupoFormateado(grupo.grupo) }}
+                  </h6>
+
+                  <div *ngFor="let voto of grupo.usuarios" class="voto-hibrido-item mb-2"
+                       [ngClass]="{
+                         'voto-afavor': voto.opcion === 'afavor',
+                         'voto-encontra': voto.opcion === 'encontra',
+                         'voto-abstencion': voto.opcion === 'abstencion',
+                         'voto-sinvoto': !voto.opcion
+                       }">
+                    <div class="d-flex justify-content-between align-items-center">
+                      <span>{{ getNombreUsuario(voto) }}</span>
+                      <select class="form-select form-select-sm" style="width: auto; min-width: 120px;"
+                              [(ngModel)]="voto.opcion"
+                              (change)="onCambioOpcionHibrido()">
+                        <option [value]="null">Sin voto</option>
+                        <option value="afavor">A favor</option>
+                        <option value="encontra">En contra</option>
+                        <option value="abstencion">Abstención</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Paso 6: Confirmar híbrido -->
+          <div *ngSwitchCase="6">
+            <p>Se calculará el resultado ponderado con los votos configurados. ¿Desea continuar?</p>
+          </div>
+
+          <!-- Paso 7: Votos pendientes -->
+          <div *ngSwitchCase="7">
+            <p class="text-warning">
+              <strong>Hay votos pendientes</strong>
+            </p>
+            <p>Existen miembros habilitados sin voto registrado. Debe gestionar estos casos antes de continuar.</p>
+            <!-- Aquí puedes agregar la lista de pendientes si es necesario -->
+          </div>
+        </ng-container>
+      </div>
+
+      <!-- Footer -->
+      <div class="modal-footer justify-content-between" *ngIf="pasoModalResultadosGrupo !== 1 && pasoModalResultadosGrupo !== 7">
+        <ng-container [ngSwitch]="pasoModalResultadosGrupo">
+
+          <!-- Paso 2: Confirmar automático -->
+          <ng-container *ngSwitchCase="2">
+            <button class="btn btn-secondary" (click)="volverAlPasoInicialGrupo()">Atrás</button>
+            <button class="btn btn-success d-flex align-items-center"
+                    (click)="calcularResultadoGrupoAutomatico()"
+                    [disabled]="guardandoResultadoAutomatico">
+              <ng-container *ngIf="!guardandoResultadoAutomatico; else cargandoAuto">
+                <i class="bi bi-calculator me-2"></i> Confirmar
+              </ng-container>
+              <ng-template #cargandoAuto>
+                <span class="spinner-border spinner-border-sm me-2"></span> Calculando...
+              </ng-template>
+            </button>
+          </ng-container>
+
+          <!-- Paso 3: Selección manual -->
+          <ng-container *ngSwitchCase="3">
+            <button class="btn btn-secondary" (click)="volverAlPasoInicialGrupo()">Atrás</button>
+            <button class="btn btn-primary" (click)="irAPasoConfirmacionGrupo()">Continuar</button>
+          </ng-container>
+
+          <!-- Paso 4: Confirmar manual -->
+          <ng-container *ngSwitchCase="4">
+            <button class="btn btn-secondary" (click)="volverAlPasoManualGrupo()">Atrás</button>
+            <button class="btn btn-success d-flex align-items-center"
+                    (click)="calcularResultadoGrupoManual()"
+                    [disabled]="guardandoResultadoManual">
+              <ng-container *ngIf="!guardandoResultadoManual; else cargandoManual">
+                <i class="bi bi-check2-circle me-2"></i> Confirmar
+              </ng-container>
+              <ng-template #cargandoManual>
+                <span class="spinner-border spinner-border-sm me-2"></span> Guardando...
+              </ng-template>
+            </button>
+          </ng-container>
+
+          <!-- Paso 5: Híbrido -->
+          <ng-container *ngSwitchCase="5">
+            <button class="btn btn-secondary" (click)="volverAlPasoInicialGrupo()">Atrás</button>
+            <button class="btn btn-primary" (click)="irAPasoConfirmarHibridoGrupo()">Continuar</button>
+          </ng-container>
+
+          <!-- Paso 6: Confirmar híbrido -->
+          <ng-container *ngSwitchCase="6">
+            <button class="btn btn-secondary" (click)="volverAPasoHibridoGrupo()">Atrás</button>
+            <button class="btn btn-success d-flex align-items-center"
+                    (click)="calcularResultadoGrupoHibrido()"
+                    [disabled]="guardandoResultadoHibrido">
+              <ng-container *ngIf="!guardandoResultadoHibrido; else cargandoHibrido">
+                <i class="bi bi-calculator me-2"></i> Confirmar
+              </ng-container>
+              <ng-template #cargandoHibrido>
+                <span class="spinner-border spinner-border-sm me-2"></span> Calculando...
+              </ng-template>
+            </button>
+          </ng-container>
+        </ng-container>
       </div>
     </div>
   </div>

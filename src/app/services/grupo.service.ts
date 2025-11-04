@@ -51,7 +51,7 @@ export class GrupoService {
   }
 
   deleteData(id: number): Observable<any> {
-    return this.http.post(`${this.baseURL}/grupo/delete/${id}`, {});
+    return this.http.post(`${this.baseURL}/grupo/eliminar/${id}`, {});
   }
 
   agruparPuntos(data: {
@@ -61,4 +61,19 @@ export class GrupoService {
   }): Observable<IGrupo> {
     return this.http.post<IGrupo>(`${this.baseURL}/grupo/agrupar`, data);
   }
+
+  /**
+   * Calcula el resultado de un grupo de puntos
+   * @param data Objeto con idGrupo, modoCalculo, idUsuario, opciones y votos (si aplica)
+   */
+  calcularResultadoGrupo(data: {
+    idGrupo: number;
+    modoCalculo: string;
+    idUsuario: number;
+    opciones: any;
+    votos?: any[];
+  }): Observable<any> {
+    return this.http.post<any>(`${this.baseURL}/grupo/calcular-resultados`, data);
+  }
+
 }

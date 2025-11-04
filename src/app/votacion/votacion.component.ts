@@ -21,7 +21,8 @@ import {
 import { BarraSuperiorComponent } from '../components/barra-superior/barra-superior.component';
 import { Location } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
-import { forkJoin, Observable } from 'rxjs';
+import { forkJoin, Observable, of, firstValueFrom } from 'rxjs';
+import { switchMap, catchError } from 'rxjs/operators';
 import { jwtDecode } from 'jwt-decode';
 
 //servicios
@@ -52,6 +53,8 @@ import { FooterComponent } from '../components/footer/footer.component';
 import { data } from 'jquery';
 import { ResultadoService } from '../services/resultado.service';
 import { IResultado } from '../interfaces/IResultado';
+import { PuntoSeleccionadoService } from '../services/punto-seleccionado.service';
+import { IPuntoGrupo } from '../interfaces/IPuntoGrupo';
 
 @Component({
   selector: 'app-votacion',
@@ -89,7 +92,8 @@ export class VotacionComponent implements OnInit {
     private resolucionService: ResolucionService,
     private resultadoService: ResultadoService,
     private cookieService: CookieService,
-    private grupoService: GrupoService
+    private grupoService: GrupoService,
+    private puntoSeleccionadoService: PuntoSeleccionadoService
   ) {}
 
   // =======================================
@@ -133,6 +137,7 @@ export class VotacionComponent implements OnInit {
   miembrosOCS: IUsuario[] = [];
 
   pasoModalResultados: number = 1;
+  pasoModalResultadosGrupo: number = 1; // Pasos para el modal de grupos (separado)
 
   resultadoManualSeleccionado: 'aprobada' | 'rechazada' | 'pendiente' =
     'aprobada';
@@ -145,6 +150,7 @@ export class VotacionComponent implements OnInit {
 
   votoManualModalRef: any;
   modalResultadosRef: Modal | null = null;
+  modalResultadosGrupoRef: Modal | null = null;
 
   // Estado de los resúmenes
   resultadoPunto: IResultado | null = null;
@@ -185,6 +191,7 @@ export class VotacionComponent implements OnInit {
   cargandoReconsideracion: boolean = false;
 
   showCodigo = false;
+  codigoCopiado = false;
 
   agrupadosPorGrupo: { grupo: string; usuarios: IPuntoUsuario[] }[] = [];
 
@@ -226,6 +233,12 @@ export class VotacionComponent implements OnInit {
     nAusentes: 0,
     nTotal: 0,
   };
+
+  puntoGrupo: IPuntoGrupo = {
+    id_punto_grupo: 12,
+  }
+
+  grupoSeleccionadoParaResolver: IGrupo | undefined;
 
   private norm = (v: any) =>
     (v ?? 'ausente').toString().trim().toLowerCase() as 'presente' | 'ausente';
@@ -303,6 +316,8 @@ export class VotacionComponent implements OnInit {
           );
 
           this.puntoSeleccionado = puntoRecuperado ?? this.puntos[0];
+          // Actualizar el servicio al inicializar
+          this.puntoSeleccionadoService.setPuntoSeleccionado(this.puntoSeleccionado);
           this.onPuntoChange();
         }
       },
@@ -350,6 +365,8 @@ export class VotacionComponent implements OnInit {
       );
 
       this.puntoSeleccionado = puntoRecuperado ?? this.puntos[0];
+      // Actualizar el servicio al cargar puntos
+      this.puntoSeleccionadoService.setPuntoSeleccionado(this.puntoSeleccionado);
       this.onPuntoChange(); // Se encarga de cargar puntoUsuarios y resolución
     });
   }
@@ -433,6 +450,22 @@ export class VotacionComponent implements OnInit {
     this.showCodigo = !this.showCodigo;
   }
 
+  copiarCodigo(): void {
+    if (this.sesion?.codigo) {
+      navigator.clipboard.writeText(this.sesion.codigo).then(() => {
+        this.codigoCopiado = true;
+        this.toastr.success('Código copiado al portapapeles');
+        
+        // Resetear el estado después de 2 segundos
+        setTimeout(() => {
+          this.codigoCopiado = false;
+        }, 2000);
+      }).catch(() => {
+        this.toastr.error('Error al copiar el código');
+      });
+    }
+  }
+
   // =====================
   // Métodos de administración de puntos
   // =====================
@@ -442,6 +475,9 @@ export class VotacionComponent implements OnInit {
         'puntoSeleccionadoId',
         this.puntoSeleccionado.id_punto.toString()
       );
+
+      // Actualizar el servicio compartido para notificar al navbar
+      this.puntoSeleccionadoService.setPuntoSeleccionado(this.puntoSeleccionado);
 
       this.getPuntoUsuarios(this.puntoSeleccionado.id_punto);
       this.getResolucion(this.puntoSeleccionado.id_punto);
@@ -457,6 +493,8 @@ export class VotacionComponent implements OnInit {
       id_punto: punto.id_punto,
       estado: nuevoEstado,
     };
+
+    
 
     this.puntoService.saveData(puntoData).subscribe({
       next: () => {
@@ -508,6 +546,42 @@ export class VotacionComponent implements OnInit {
     });
   }
 
+  editarGrupo(grupo: IGrupo) {
+    if (!grupo?.id_grupo) return;
+    const nombreActual = grupo.nombre || '';
+    const nuevoNombre = prompt('Editar nombre del grupo:', nombreActual);
+    if (nuevoNombre == null) return; // cancelado
+    const nombre = nuevoNombre.trim();
+    if (!nombre || nombre === nombreActual) return;
+
+    const data: IGrupo = { id_grupo: grupo.id_grupo, nombre } as IGrupo;
+    this.grupoService.saveData(data).subscribe({
+      next: () => {
+        grupo.nombre = nombre;
+        this.toastr.success('Grupo actualizado', 'Éxito');
+      },
+      error: (e) => {
+        this.toastr.error('No se pudo actualizar el grupo', `error: ${e?.message ?? 'desconocido'}`);
+      },
+    });
+  }
+
+  eliminarGrupo(grupo: IGrupo) {
+    if (!grupo?.id_grupo) return;
+    const ok = confirm(`¿Eliminar el grupo "${grupo.nombre}"? Esta acción no se puede deshacer.`);
+    if (!ok) return;
+
+    this.grupoService.deleteData(grupo.id_grupo).subscribe({
+      next: () => {
+        this.toastr.success('Grupo eliminado', 'Éxito');
+        this.getGruposDeSesion();
+      },
+      error: (e) => {
+        this.toastr.error('No se pudo eliminar el grupo', `error: ${e?.error.message ?? 'desconocido'}`);
+      },
+    });
+  }
+
   crearGrupoDesdeFormulario() {
     const puntosSeleccionados = this.grupoForm.value.puntos;
     if (!puntosSeleccionados || puntosSeleccionados.length < 2) {
@@ -531,8 +605,8 @@ export class VotacionComponent implements OnInit {
         this.grupoForm.reset();
         this.creandoGrupo = false;
       },
-      error: () => {
-        this.toastr.error('Error al crear el grupo');
+      error: (e) => {
+        this.toastr.error('Error al crear el grupo', `error: ${e?.message ?? 'desconocido'}`);
         this.creandoGrupo = false;
       },
     });
@@ -1026,54 +1100,92 @@ export class VotacionComponent implements OnInit {
   }
 
   abrirVotoManual(idUsuario: number) {
+    if (this.guardandoVotoManual) return; // Evitar múltiples llamadas
+    
     this.usuarioActual = undefined;
     const query = `id_usuario=${idUsuario}`;
 
     this.usuarioService.getDataBy(query).subscribe({
       next: (data) => {
         this.usuarioActual = data;
+        
+        // Usar setTimeout más largo para dar tiempo a que Angular procese los cambios
         setTimeout(() => {
-          const resultadosEl = document.getElementById('modalResultados');
-          const resultadosVisible = resultadosEl?.classList.contains('show') ?? false;
+          try {
+            const resultadosEl = document.getElementById('modalResultados');
+            const resultadosVisible = resultadosEl?.classList.contains('show') ?? false;
+            const pantallaCompletaEl = document.getElementById('modalVotacionPantallaCompleta');
+            const pantallaCompletaVisible = pantallaCompletaEl?.classList.contains('show') ?? false;
 
-          const mostrarVotoManual = () => {
-            const modalElement = document.getElementById('votoManualModal');
-            if (modalElement) {
-              (modalElement as HTMLElement).style.zIndex = '1080';
-            }
-            const backdrops = document.querySelectorAll('.modal-backdrop');
-            if (backdrops.length) {
-              const backdrop = backdrops[backdrops.length - 1] as HTMLElement;
-              backdrop.style.zIndex = '1075';
-            }
-            this.votoManualModalRef?.show();
-          };
+            const mostrarVotoManual = () => {
+              const modalElement = document.getElementById('votoManualModal');
+              if (!modalElement) {
+                console.error('No se encontró el elemento del modal de voto manual');
+                return;
+              }
 
-          if (resultadosVisible && this.modalResultadosRef) {
-            this.reabrirResultadosTrasVotoManual = true;
-            const manualElement = document.getElementById('votoManualModal');
-            if (manualElement && this.modalResultadosRef) {
-              manualElement.addEventListener(
-                'hidden.bs.modal',
-                () => {
-                  this.modalResultadosRef?.show();
-                  this.reabrirResultadosTrasVotoManual = false;
-                },
-                { once: true }
-              );
-              this.cerrarModal('votoManualModal', this.votoManualForm, this.votoManualModalRef);
+              // Configurar z-index alto para que aparezca sobre otros modales
+              (modalElement as HTMLElement).style.zIndex = '1090';
+              
+              // Asegurar que el backdrop también tenga z-index correcto
+              setTimeout(() => {
+                const backdrops = document.querySelectorAll('.modal-backdrop');
+                if (backdrops.length) {
+                  const backdrop = backdrops[backdrops.length - 1] as HTMLElement;
+                  if (backdrop) {
+                    backdrop.style.zIndex = '1085';
+                  }
+                }
+              }, 10);
+              
+              if (!this.votoManualModalRef) {
+                this.votoManualModalRef = new Modal(modalElement, {
+                  backdrop: true,
+                  keyboard: true,
+                  focus: false // Evitar problemas con el focus de Bootstrap
+                });
+              }
+              
+              try {
+                this.votoManualModalRef.show();
+              } catch (e) {
+                console.error('Error al mostrar modal de voto manual:', e);
+                // Intentar mostrar el modal de forma manual como fallback
+                modalElement.classList.add('show');
+                modalElement.style.display = 'block';
+                modalElement.setAttribute('aria-hidden', 'false');
+                document.body.classList.add('modal-open');
+              }
+            };
+
+            // Si hay modal de resultados abierto, cerrarlo temporalmente
+            if (resultadosVisible && this.modalResultadosRef) {
+              this.reabrirResultadosTrasVotoManual = true;
+              this.modalResultadosRef.hide();
+              setTimeout(mostrarVotoManual, 200);
+            } 
+            // Si hay modal de pantalla completa, no cerrarlo, solo mostrar el voto manual encima
+            else if (pantallaCompletaVisible) {
+              this.reabrirResultadosTrasVotoManual = false;
+              // Dar un poco más de tiempo cuando viene de pantalla completa
+              setTimeout(mostrarVotoManual, 100);
+            } 
+            // Ningún modal especial abierto, mostrar directamente
+            else {
+              this.reabrirResultadosTrasVotoManual = false;
+              mostrarVotoManual();
             }
-            this.modalResultadosRef.hide();
-            setTimeout(mostrarVotoManual, 150);
-          } else {
-            this.reabrirResultadosTrasVotoManual = false;
-            mostrarVotoManual();
+          } catch (e) {
+            console.error('Error al abrir modal de voto manual:', e);
+            this.toastr.error('Error al abrir el formulario de voto manual', 'Error');
+            this.guardandoVotoManual = false;
           }
-        }, 0);
+        }, 100);
       },
       error: (error) => {
         console.error('Error al cargar usuario para voto manual', error);
         this.toastr.error('Error al cargar usuario', 'Error');
+        this.guardandoVotoManual = false;
       },
     });
   }
@@ -1099,7 +1211,7 @@ export class VotacionComponent implements OnInit {
 
   // Registra el voto manual del usuario seleccionado
   votoManual(idUsuario: number) {
-    if (!this.puntoSeleccionado) return;
+    if (!this.puntoSeleccionado || this.guardandoVotoManual) return;
 
     const votoData = {
       idUsuario: idUsuario,
@@ -1112,37 +1224,74 @@ export class VotacionComponent implements OnInit {
 
     this.guardandoVotoManual = true;
 
+    // Detectar si viene desde pantalla completa
+    const pantallaCompletaEl = document.getElementById('modalVotacionPantallaCompleta');
+    const desdePantallaCompleta = pantallaCompletaEl?.classList.contains('show') ?? false;
+
     this.puntoUsuarioService.saveVote(votoData).subscribe({
       next: () => {
         this.toastr.success('Voto manual registrado correctamente', 'Éxito');
-        const puntoUsuarioActualizado = this.puntoUsuarios.find(
-          (pu: IPuntoUsuario) => pu.usuario?.id_usuario === idUsuario
-        );
-        if (puntoUsuarioActualizado?.id_punto_usuario) {
-          const actualizado: IPuntoUsuario = {
-            ...puntoUsuarioActualizado,
-            opcion: this.votoManualForm.value.opcion as string,
-            estado: true,
-          };
-          this.sincronizarPuntoUsuarioLocal(actualizado);
-          this.actualizarPendientesLocales();
+        
+        // Cerrar modal primero para evitar conflictos
+        this.cerrarModal('votoManualModal', this.votoManualForm, this.votoManualModalRef);
+        
+        // Si viene desde pantalla completa, actualizar solo los datos locales sin recargar todo
+        if (desdePantallaCompleta) {
+          // Actualización ligera sin recargar todo para evitar congelamiento
+          setTimeout(() => {
+            const puntoUsuarioActualizado = this.puntoUsuarios.find(
+              (pu: IPuntoUsuario) => pu.usuario?.id_usuario === idUsuario
+            );
+            if (puntoUsuarioActualizado?.id_punto_usuario) {
+              const actualizado: IPuntoUsuario = {
+                ...puntoUsuarioActualizado,
+                opcion: this.votoManualForm.value.opcion as string,
+                estado: true,
+              };
+              this.sincronizarPuntoUsuarioLocal(actualizado);
+              this.actualizarPendientesLocales();
+            }
+          }, 100);
+        } else {
+          // Para casos normales, hacer la actualización completa
+          const puntoUsuarioActualizado = this.puntoUsuarios.find(
+            (pu: IPuntoUsuario) => pu.usuario?.id_usuario === idUsuario
+          );
+          if (puntoUsuarioActualizado?.id_punto_usuario) {
+            const actualizado: IPuntoUsuario = {
+              ...puntoUsuarioActualizado,
+              opcion: this.votoManualForm.value.opcion as string,
+              estado: true,
+            };
+            this.sincronizarPuntoUsuarioLocal(actualizado);
+            this.actualizarPendientesLocales();
+          }
         }
-        this.cerrarModal(
-          'votoManualModal',
-          this.votoManualForm,
-          this.votoManualModalRef
-        );
+        
+        // Si había un modal de resultados, reabrirlo (solo si no viene de pantalla completa)
+        if (!desdePantallaCompleta && this.reabrirResultadosTrasVotoManual && this.modalResultadosRef) {
+          setTimeout(() => {
+            try {
+              this.modalResultadosRef?.show();
+              this.reabrirResultadosTrasVotoManual = false;
+            } catch (e) {
+              console.warn('Error al reabrir modal de resultados:', e);
+            }
+          }, 200);
+        }
+        
+        this.guardandoVotoManual = false;
       },
       error: (err) => {
-        this.toastr.error(
-          'Error al registrar el voto manual',
-          err.error.message
-        );
+        // Siempre resetear el flag primero
         this.guardandoVotoManual = false;
+        
+        const mensajeError = err?.error?.message ?? 'Error al registrar el voto manual';
+        this.toastr.error(mensajeError, 'Error');
       },
       complete: () => {
+        // Asegurar que el flag esté en false
         this.guardandoVotoManual = false;
-        this.resetForm();
       },
     });
   }
@@ -1384,139 +1533,832 @@ export class VotacionComponent implements OnInit {
   // Calculo de resultados
   // =====================
 
-  calcularResultadoAutomatico() {
-    if (this.guardandoResultadoAutomatico) return;
-    if (!this.puntoSeleccionado) return;
+  /**
+   * Valida que un grupo tenga puntos válidos para calcular resultados
+   */
+  private validarGrupoParaCalculo(grupo: IGrupo): { valido: boolean; puntos: IPunto[]; mensaje?: string } {
+    if (!grupo?.id_grupo) {
+      return { valido: false, puntos: [], mensaje: 'El grupo no es válido' };
+    }
+
+    const puntosDelGrupo = grupo.puntoGrupos?.map(pg => pg.punto).filter(p => p && p.id_punto) || [];
+    
+    if (puntosDelGrupo.length === 0) {
+      return { valido: false, puntos: [], mensaje: 'El grupo no tiene puntos asignados' };
+    }
+
+    // Validar que todos los puntos tengan ID válido
+    const puntosInvalidos = puntosDelGrupo.filter(p => !p.id_punto);
+    if (puntosInvalidos.length > 0) {
+      return { valido: false, puntos: [], mensaje: 'Algunos puntos del grupo no tienen ID válido' };
+    }
+
+    return { valido: true, puntos: puntosDelGrupo };
+  }
+
+  /**
+   * Replica el resultado de un punto a otros puntos del grupo
+   * Replica tanto la tabla resultado como los campos del punto relacionados
+   */
+  private replicarResultadoAPuntos(
+    puntoOrigenId: number,
+    puntosDestino: IPunto[]
+  ): Observable<any> {
+    const puntosDestinoIds = puntosDestino
+      .map(p => p.id_punto)
+      .filter(id => id !== puntoOrigenId && id != null);
+
+    if (puntosDestinoIds.length === 0) {
+      // No hay puntos para replicar, retornar exitoso
+      return of(null);
+    }
+
+    // Obtener tanto el resultado como el punto origen para replicar toda la información
+    return forkJoin({
+      resultado: this.puntoService.getResultados(puntoOrigenId),
+      punto: this.puntoService.getDataById(puntoOrigenId.toString())
+    }).pipe(
+      switchMap(({ resultado, punto }) => {
+        if (!resultado || !resultado.id_punto) {
+          throw new Error('No se pudo obtener el resultado del punto calculado');
+        }
+        if (!punto || !punto.id_punto) {
+          throw new Error('No se pudo obtener el punto calculado');
+        }
+
+        // Preparar los resultados para replicar
+        const resultadosParaReplicar: any[] = puntosDestinoIds.map(idPunto => {
+          const resultadoReplicado = { ...resultado };
+          resultadoReplicado.id_punto = idPunto;
+          // Remover campos que no deben copiarse
+          delete resultadoReplicado.id_resultado;
+          return resultadoReplicado;
+        });
+
+        // Preparar los puntos para actualizar con los campos de resultado
+        const puntosParaActualizar: any[] = puntosDestinoIds.map(idPunto => ({
+          id_punto: idPunto,
+          resultado: punto.resultado,
+          n_afavor: punto.n_afavor,
+          n_encontra: punto.n_encontra,
+          n_abstencion: punto.n_abstencion,
+          p_afavor: punto.p_afavor,
+          p_encontra: punto.p_encontra,
+          p_abstencion: punto.p_abstencion,
+          calculo_resultado: punto.calculo_resultado
+        }));
+
+        // Guardar resultados en batch y actualizar puntos individualmente en paralelo
+        const actualizacionesPuntos = puntosParaActualizar.map(p => 
+          this.puntoService.saveData(p)
+        );
+
+        // Ejecutar todas las operaciones en paralelo
+        return forkJoin({
+          resultados: this.resultadoService.saveManyData(resultadosParaReplicar),
+          puntos: forkJoin(actualizacionesPuntos)
+        });
+      }),
+      catchError((err) => {
+        console.error('Error al replicar resultados:', err);
+        throw err;
+      })
+    );
+  }
+
+  /**
+   * Calcula el resultado automático de un grupo
+   * Como todos los puntos tienen los mismos votos, calcula el resultado del primer punto
+   * y luego aplica el mismo cálculo a todos los demás puntos del grupo
+   */
+  async calcularResultadoGrupoAutomatico() {
+
+    if (this.guardandoResultadoAutomatico || !this.grupoSeleccionadoParaResolver) return;
+
+
+
+    // Validar el grupo
+
+    const validacion = this.validarGrupoParaCalculo(this.grupoSeleccionadoParaResolver);
+
+    if (!validacion.valido) {
+
+      this.toastr.error(validacion.mensaje || 'Error al validar el grupo', 'Error');
+
+      return;
+
+    }
+
+
+
+    if (!this.usuario?.id_usuario) {
+
+      this.toastr.error('No se pudo identificar al usuario', 'Error');
+
+      return;
+
+    }
+
+
+
+    const puntosDelGrupo = validacion.puntos;
+
+    const puntosIds = puntosDelGrupo.map((p) => p.id_punto!).filter((id) => id != null);
+
+    if (puntosIds.length === 0) {
+
+      this.toastr.error('No hay puntos válidos en el grupo', 'Error');
+
+      return;
+
+    }
+
+
+
+    const idGrupo = this.grupoSeleccionadoParaResolver.id_grupo;
+
+    if (!idGrupo) {
+
+      this.toastr.error('No se pudo identificar el grupo seleccionado', 'Error');
+
+      return;
+
+    }
+
+
 
     this.guardandoResultadoAutomatico = true;
 
-    this.puntoService
-      .calcularResultados(
-        this.puntoSeleccionado.id_punto,
-        this.usuario.id_usuario
-      )
-      .subscribe({
-        next: () => {
-          this.toastr.success('Resultado calculado correctamente', 'Éxito');
-          this.getPuntos();
-          this.getResolucion(this.puntoSeleccionado.id_punto);
-          this.pasoModalResultados = 1;
-          this.limpiarPendientes();
-          this.cerrarModal(
-            'modalResultados',
-            undefined,
-            this.modalResultadosRef
-          );
-        },
-        error: (err) => {
-          const codigo = err?.error?.code;
-          if (codigo === 'VOTOS_PENDIENTES') {
-            const idsPendientes =
-              err?.error?.data?.puntoUsuariosSinVoto ?? [];
-            this.guardandoResultadoAutomatico = false;
-            this.establecerPendientes(idsPendientes);
-            this.pasoModalResultados = 7;
-            this.modalResultadosBloqueado = true;
-            this.toastr.warning(
-              err?.error?.message ??
-                'Existen miembros habilitados sin voto registrado.',
-              'Votos pendientes'
-            );
-            return;
-          }
 
-          this.toastr.error(
-            err?.error?.message ?? 'Error al calcular el resultado',
-            'Error al calcular el resultado'
-          );
-          this.guardandoResultadoAutomatico = false;
+
+    try {
+
+      const payload = {
+
+        idGrupo,
+
+        modoCalculo: 'automatico',
+
+        idUsuario: this.usuario.id_usuario,
+
+        opciones: {
+
+          recalcularVotos: true,
+
         },
-        complete: () => {
-          this.guardandoResultadoAutomatico = false;
-        },
-      });
+
+      };
+
+
+
+      await firstValueFrom(this.grupoService.calcularResultadoGrupo(payload));
+
+
+
+      this.pasoModalResultadosGrupo = 1;
+
+      this.getPuntos();
+
+      this.getResolucion(this.puntoSeleccionado.id_punto);
+
+      this.limpiarPendientes();
+
+      this.toastr.success('Resultado del grupo calculado correctamente', 'Éxito');
+
+      this.cerrarModal('modalResultadosGrupo', undefined, this.modalResultadosGrupoRef);
+
+
+
+      setTimeout(() => {
+
+        this.getGruposDeSesion();
+
+      }, 300);
+
+    } catch (err: any) {
+
+      console.error('Error al calcular resultado del grupo:', err);
+
+      const codigo = err?.error?.code;
+
+      const mensajeError = err?.error?.message ?? 'Error al calcular el resultado del grupo';
+
+
+
+      if (codigo === 'VOTOS_PENDIENTES') {
+
+        const idsPendientes = err?.error?.data?.puntoUsuariosSinVoto ?? [];
+
+        this.establecerPendientes(idsPendientes);
+
+        this.pasoModalResultadosGrupo = 7;
+
+        this.modalResultadosBloqueado = true;
+
+        this.toastr.warning(
+
+          mensajeError ?? 'Existen miembros habilitados sin voto registrado.',
+
+          'Votos pendientes'
+
+        );
+
+      } else {
+
+        this.pasoModalResultadosGrupo = 1;
+
+        this.modalResultadosBloqueado = false;
+
+        this.limpiarPendientes();
+
+        this.toastr.error(mensajeError, 'Error al calcular el resultado');
+
+      }
+
+    } finally {
+
+      this.guardandoResultadoAutomatico = false;
+
+    }
+
   }
 
-  calcularResultadoManual() {
+  async calcularResultadoAutomatico() {
+
+    if (this.guardandoResultadoAutomatico) return;
+
+
+
+    if (this.grupoSeleccionadoParaResolver) {
+
+      await this.calcularResultadoGrupoAutomatico();
+
+      return;
+
+    }
+
+
+
     if (!this.puntoSeleccionado || !this.usuario?.id_usuario) return;
+
+
+
+    this.guardandoResultadoAutomatico = true;
+
+
+
+    try {
+
+      await firstValueFrom(
+
+        this.puntoService.calcularResultados(
+
+          this.puntoSeleccionado.id_punto,
+
+          this.usuario.id_usuario
+
+        )
+
+      );
+
+
+
+      this.toastr.success('Resultado calculado correctamente', 'Éxito');
+
+      this.getPuntos();
+
+      this.getResolucion(this.puntoSeleccionado.id_punto);
+
+      this.pasoModalResultados = 1;
+
+      this.limpiarPendientes();
+
+      this.cerrarModal(
+
+        'modalResultados',
+
+        undefined,
+
+        this.modalResultadosRef
+
+      );
+
+    } catch (err: any) {
+
+      const codigo = err?.error?.code;
+
+      if (codigo === 'VOTOS_PENDIENTES') {
+
+        const idsPendientes = err?.error?.data?.puntoUsuariosSinVoto ?? [];
+
+        this.establecerPendientes(idsPendientes);
+
+        this.pasoModalResultados = 7;
+
+        this.modalResultadosBloqueado = true;
+
+        this.toastr.warning(
+
+          err?.error?.message ?? 'Existen miembros habilitados sin voto registrado.',
+
+          'Votos pendientes'
+
+        );
+
+      } else {
+
+        this.toastr.error(
+
+          err?.error?.message ?? 'Error al calcular el resultado',
+
+          'Error al calcular el resultado'
+
+        );
+
+      }
+
+    } finally {
+
+      this.guardandoResultadoAutomatico = false;
+
+    }
+
+  }
+
+  /**
+   * Calcula el resultado manual de un grupo
+   * Aplica el mismo resultado manual a todos los puntos del grupo
+   */
+  async calcularResultadoGrupoManual() {
+
+    if (this.guardandoResultadoManual || !this.grupoSeleccionadoParaResolver) return;
+
+
+
+    if (!this.resultadoManualSeleccionado || !this.usuario?.id_usuario) {
+
+      this.toastr.error('Debe seleccionar un resultado y estar autenticado', 'Error');
+
+      return;
+
+    }
+
+
+
+    const validacion = this.validarGrupoParaCalculo(this.grupoSeleccionadoParaResolver);
+
+    if (!validacion.valido) {
+
+      this.toastr.error(validacion.mensaje || 'Error al validar el grupo', 'Error');
+
+      return;
+
+    }
+
+
+
+    const puntosDelGrupo = validacion.puntos;
+
+    const puntosIds = puntosDelGrupo.map((p) => p.id_punto!).filter((id) => id != null);
+
+    if (puntosIds.length === 0) {
+
+      this.toastr.error('No hay puntos válidos en el grupo', 'Error');
+
+      return;
+
+    }
+
+
+
+    const idGrupo = this.grupoSeleccionadoParaResolver.id_grupo;
+
+    if (!idGrupo) {
+
+      this.toastr.error('No se pudo identificar el grupo seleccionado', 'Error');
+
+      return;
+
+    }
+
+
 
     this.guardandoResultadoManual = true;
 
-    const data = {
-      id_punto: this.puntoSeleccionado.id_punto,
-      id_usuario: this.usuario.id_usuario,
-      resultado: this.resultadoManualSeleccionado,
-    };
 
-    this.puntoService.calcularResultadosManual(data).subscribe({
-      next: () => {
-        this.toastr.success('Resultado manual guardado correctamente', 'Éxito');
-        this.getPuntos();
-        this.getResolucion(this.puntoSeleccionado.id_punto);
-        this.pasoModalResultados = 1;
 
-        this.guardandoResultadoManual = false;
-        this.cerrarModal('modalResultados', undefined, this.modalResultadosRef);
-      },
-      error: () => {
-        this.toastr.error('Error al guardar resultado manual', 'Error');
-        console.log(this.resultadoManualSeleccionado);
-        console.log(this.usuario?.id_usuario);
-        console.log(this.puntoSeleccionado?.id_punto);
-        this.guardandoResultadoManual = false;
-      },
-    });
+    try {
+
+      const payload = {
+
+        idGrupo,
+
+        modoCalculo: 'manual',
+
+        idUsuario: this.usuario.id_usuario,
+
+        opciones: {
+
+          overrideResultado: this.resultadoManualSeleccionado,
+
+        },
+
+      };
+
+
+
+      await firstValueFrom(this.grupoService.calcularResultadoGrupo(payload));
+
+
+
+      this.pasoModalResultadosGrupo = 1;
+
+      this.getPuntos();
+
+      this.getResolucion(this.puntoSeleccionado.id_punto);
+
+      this.toastr.success('Resultado manual del grupo guardado correctamente', 'Éxito');
+
+      this.cerrarModal('modalResultadosGrupo', undefined, this.modalResultadosGrupoRef);
+
+
+
+      setTimeout(() => {
+
+        this.getGruposDeSesion();
+
+      }, 300);
+
+    } catch (err: any) {
+
+      console.error('Error al guardar resultado manual del grupo:', err);
+
+      const mensajeError = err?.error?.message ?? 'Error al guardar resultado manual del grupo';
+
+      this.toastr.error(mensajeError, 'Error');
+
+    } finally {
+
+      this.guardandoResultadoManual = false;
+
+    }
+
   }
 
-  async calcularResultadoHibrido() {
-    if (!this.puntoSeleccionado) return;
+  async calcularResultadoManual() {
+
+    if (this.grupoSeleccionadoParaResolver) {
+
+      await this.calcularResultadoGrupoManual();
+
+      return;
+
+    }
+
+
+
+    if (!this.puntoSeleccionado || !this.usuario?.id_usuario) return;
+
+
+
+    this.guardandoResultadoManual = true;
+
+
+
+    const data = {
+
+      id_punto: this.puntoSeleccionado.id_punto,
+
+      id_usuario: this.usuario.id_usuario,
+
+      resultado: this.resultadoManualSeleccionado,
+
+    };
+
+
+
+    try {
+
+      await firstValueFrom(this.puntoService.calcularResultadosManual(data));
+
+
+
+      this.toastr.success('Resultado manual guardado correctamente', 'Éxito');
+
+      this.getPuntos();
+
+      this.getResolucion(this.puntoSeleccionado.id_punto);
+
+      this.pasoModalResultados = 1;
+
+      this.cerrarModal('modalResultados', undefined, this.modalResultadosRef);
+
+    } catch (err: any) {
+
+      this.toastr.error(
+
+        err?.error?.message ?? 'Error al guardar resultado manual',
+
+        'Error al guardar resultado manual'
+
+      );
+
+      console.log(this.resultadoManualSeleccionado);
+
+      console.log(this.usuario?.id_usuario);
+
+      console.log(this.puntoSeleccionado?.id_punto);
+
+    } finally {
+
+      this.guardandoResultadoManual = false;
+
+    }
+
+  }
+
+  /**
+   * Calcula el resultado híbrido de un grupo
+   * Aplica el mismo cálculo híbrido a todos los puntos del grupo
+   */
+  async calcularResultadoGrupoHibrido() {
+
+    if (this.guardandoResultadoHibrido || !this.grupoSeleccionadoParaResolver) return;
+
+
+
+    const validacion = this.validarGrupoParaCalculo(this.grupoSeleccionadoParaResolver);
+
+    if (!validacion.valido) {
+
+      this.toastr.error(validacion.mensaje || 'Error al validar el grupo', 'Error');
+
+      return;
+
+    }
+
+
+
+    if (!this.usuario?.id_usuario) {
+
+      this.toastr.error('No se pudo identificar al usuario', 'Error');
+
+      return;
+
+    }
+
+
 
     const puntosUnicos = new Set(this.votosHibridos.map((v) => v.punto));
+
     if (puntosUnicos.size > 1) {
-      console.warn('❌ Hay múltiples puntos en los votos:', puntosUnicos);
-      this.toastr.error('Los votos contienen puntos inconsistentes');
+
+      this.toastr.error('Los votos contienen puntos inconsistentes', 'Error');
+
       return;
+
     }
+
+
+
+    if (!this.votosHibridos || this.votosHibridos.length === 0) {
+
+      this.toastr.error('Debe configurar los votos híbridos', 'Error');
+
+      return;
+
+    }
+
+
+
+    const puntosDelGrupo = validacion.puntos;
+
+    const puntosIds = puntosDelGrupo.map((p) => p.id_punto!).filter((id) => id != null);
+
+    if (puntosIds.length === 0) {
+
+      this.toastr.error('No hay puntos válidos en el grupo', 'Error');
+
+      return;
+
+    }
+
+
+
+    const idGrupo = this.grupoSeleccionadoParaResolver.id_grupo;
+
+    if (!idGrupo) {
+
+      this.toastr.error('No se pudo identificar el grupo seleccionado', 'Error');
+
+      return;
+
+    }
+
+
+
+    const votosParaGrupo = puntosIds.flatMap((idPunto) =>
+
+      this.votosHibridos.map((v) => ({
+
+        idUsuario: v.idUsuario,
+
+        votante: v.votante,
+
+        codigo: v.codigo,
+
+        punto: idPunto,
+
+        opcion: v.opcion,
+
+        es_razonado: !!v.es_razonado,
+
+      }))
+
+    );
+
+
 
     this.guardandoResultadoHibrido = true;
 
-    this.puntoService
-      .calcularResultadosHibrido(
-        this.puntoSeleccionado.id_punto,
-        this.votosHibridos
-      )
-      .subscribe({
-        next: () => {
-          this.toastr.success('Resultado calculado correctamente');
-          this.getPuntos();
-          this.getResolucion(this.puntoSeleccionado.id_punto);
-          this.pasoModalResultados = 1;
-          this.cerrarModal(
-            'modalResultados',
-            undefined,
-            this.modalResultadosRef
-          );
-          //console.table(this.votosHibridos, ['idUsuario', 'punto', 'opcion']);
+
+
+    try {
+
+      const payload = {
+
+        idGrupo,
+
+        modoCalculo: 'hibrido',
+
+        idUsuario: this.usuario.id_usuario,
+
+        votos: votosParaGrupo,
+
+        opciones: {
+
+          recalcularVotos: true,
+
         },
-        error: (err) => {
-          this.toastr.error(
-            'Error al calcular el resultado híbrido',
-            err.error.message
-          );
-          //console.table(this.votosHibridos, ['idUsuario', 'punto', 'opcion']);
-          this.guardandoResultadoHibrido = false;
-        },
-        complete: () => {
-          this.guardandoResultadoHibrido = false;
-        },
-      });
+
+      };
+
+
+
+      await firstValueFrom(this.grupoService.calcularResultadoGrupo(payload));
+
+
+
+      this.pasoModalResultadosGrupo = 1;
+
+      this.getPuntos();
+
+      this.getResolucion(this.puntoSeleccionado.id_punto);
+
+      this.toastr.success('Resultado híbrido del grupo calculado correctamente', 'Éxito');
+
+      this.cerrarModal('modalResultadosGrupo', undefined, this.modalResultadosGrupoRef);
+
+
+
+      setTimeout(() => {
+
+        this.getGruposDeSesion();
+
+      }, 300);
+
+    } catch (err: any) {
+
+      console.error('Error al calcular resultado híbrido del grupo:', err);
+
+      const mensajeError = err?.error?.message ?? 'Error al calcular el resultado híbrido del grupo';
+
+      this.toastr.error(mensajeError, 'Error');
+
+    } finally {
+
+      this.guardandoResultadoHibrido = false;
+
+    }
+
   }
+
+  async calcularResultadoHibrido() {
+
+    if (this.grupoSeleccionadoParaResolver) {
+
+      await this.calcularResultadoGrupoHibrido();
+
+      return;
+
+    }
+
+
+
+    if (!this.puntoSeleccionado) return;
+
+
+
+    const puntosUnicos = new Set(this.votosHibridos.map((v) => v.punto));
+
+    if (puntosUnicos.size > 1) {
+
+      console.warn('? Hay múltiples puntos en los votos:', puntosUnicos);
+
+      this.toastr.error('Los votos contienen puntos inconsistentes');
+
+      return;
+
+    }
+
+
+
+    this.guardandoResultadoHibrido = true;
+
+
+
+    try {
+
+      await firstValueFrom(
+
+        this.puntoService.calcularResultadosHibrido(
+
+          this.puntoSeleccionado.id_punto,
+
+          this.votosHibridos
+
+        )
+
+      );
+
+
+
+      this.toastr.success('Resultado calculado correctamente');
+
+      this.getPuntos();
+
+      this.getResolucion(this.puntoSeleccionado.id_punto);
+
+      this.pasoModalResultados = 1;
+
+      this.cerrarModal(
+
+        'modalResultados',
+
+        undefined,
+
+        this.modalResultadosRef
+
+      );
+
+    } catch (err: any) {
+
+      this.toastr.error(
+
+        'Error al calcular el resultado híbrido',
+
+        err?.error?.message
+
+      );
+
+    } finally {
+
+      this.guardandoResultadoHibrido = false;
+
+    }
+
+  }
+
+  //RESULTADO RECIBE 3 VALORES: 'automatica', 'manual', 'hibrida'
+  /*calculoPorGrupo(grupo: IGrupo, resultado: string): void {
+    if (!grupo?.id_grupo) return;
+    
+    const grupoData: any = {
+      id_grupo: grupo.id_grupo,
+      resultado: resultado
+    };
+    
+    this.grupoService.saveData(grupoData).subscribe({
+      next: () => {
+        this.toastr.success('Resultado del grupo guardado correctamente', 'Éxito');
+        this.getGruposDeSesion();
+        this.cerrarModal('modalResultados', undefined, this.modalResultadosRef);
+      },
+      error: (err) => {
+        this.toastr.error(
+          err?.error?.message ?? 'Error al guardar el resultado del grupo',
+          'Error'
+        );
+      },
+    });
+  }*/
 
   abrirModalResultados(tipo: 'normal' | 'dirimente' = 'normal'): void {
     this.pasoModalResultados = 1;
     this.resultadoManualSeleccionado = null;
     this.busquedaVotoHibrido = '';
     this.filtroVotoHibrido = 'todos';
+    this.grupoSeleccionadoParaResolver = undefined; // Asegurar que no hay grupo seleccionado
     this.agruparYFiltrarVotosHibridos();
 
     if (this.modalResultadosRef) {
@@ -1528,6 +2370,39 @@ export class VotacionComponent implements OnInit {
         this.modalResultadosRef.show();
       }
     }
+  }
+
+  abrirModalResultadosGrupo(grupo: IGrupo): void {
+    if (!grupo?.id_grupo) return;
+    
+    this.grupoSeleccionadoParaResolver = grupo;
+    this.pasoModalResultadosGrupo = 1;
+    this.resultadoManualSeleccionado = null;
+    this.busquedaVotoHibrido = '';
+    this.filtroVotoHibrido = 'todos';
+    this.agruparYFiltrarVotosHibridos();
+
+    // Usar el modal separado para grupos con manejo seguro de Bootstrap
+    setTimeout(() => {
+      try {
+        if (this.modalResultadosGrupoRef) {
+          this.modalResultadosGrupoRef.show();
+        } else {
+          const modalElement = document.getElementById('modalResultadosGrupo');
+          if (modalElement) {
+            this.modalResultadosGrupoRef = new Modal(modalElement, {
+              backdrop: true,
+              keyboard: true,
+              focus: false // Evitar el focus automático que causa problemas
+            });
+            this.modalResultadosGrupoRef.show();
+          }
+        }
+      } catch (e) {
+        console.error('Error al abrir modal de grupos:', e);
+        this.toastr.error('Error al abrir el modal de resultados del grupo', 'Error');
+      }
+    }, 50);
   }
 
   /** Cargar y componer los datos de ambas tablas en un solo método */
@@ -1842,30 +2717,54 @@ export class VotacionComponent implements OnInit {
   }
 
   cerrarModal(modalId: string, form?: FormGroup, modalRef?: any) {
-    const modalElement = document.getElementById(modalId);
-    if (modalElement) {
-      const modalInstance = modalRef;
-      if (modalInstance) {
-        modalInstance.hide();
-      } else {
-        modalElement.classList.remove('show');
-        modalElement.style.display = 'none';
-        modalElement.setAttribute('aria-hidden', 'true');
-        modalElement.removeAttribute('aria-modal');
-        modalElement.removeAttribute('role');
+    try {
+      const modalElement = document.getElementById(modalId);
+      if (modalElement) {
+        const modalInstance = modalRef;
+        if (modalInstance) {
+          modalInstance.hide();
+        } else {
+          modalElement.classList.remove('show');
+          modalElement.style.display = 'none';
+          modalElement.setAttribute('aria-hidden', 'true');
+          modalElement.removeAttribute('aria-modal');
+          modalElement.removeAttribute('role');
+        }
       }
+
+      // Solo remover modal-open del body si no hay otros modales abiertos
+      const modalesAbiertos = document.querySelectorAll('.modal.show');
+      if (modalesAbiertos.length <= 1) {
+        document.body.classList.remove('modal-open');
+        document.body.style.overflow = '';
+        document.body.style.paddingRight = '';
+      }
+
+      // Remover backdrops, pero solo si no hay otros modales abiertos
+      if (modalesAbiertos.length <= 1) {
+        const backdrops = document.getElementsByClassName('modal-backdrop');
+        while (backdrops[0]) {
+          backdrops[0].parentNode?.removeChild(backdrops[0]);
+        }
+      } else {
+        // Si hay otros modales, solo remover el último backdrop
+        const backdrops = document.getElementsByClassName('modal-backdrop');
+        if (backdrops.length > 0) {
+          const ultimoBackdrop = backdrops[backdrops.length - 1];
+          ultimoBackdrop.parentNode?.removeChild(ultimoBackdrop);
+        }
+      }
+
+      if (form) form.reset();
+      
+      // Limpiar grupo seleccionado si se cierra el modal de resultados o de grupos
+      if (modalId === 'modalResultados' || modalId === 'modalResultadosGrupo') {
+        this.grupoSeleccionadoParaResolver = undefined;
+        this.pasoModalResultadosGrupo = 1;
+      }
+    } catch (e) {
+      console.warn(`Error al cerrar modal ${modalId}:`, e);
     }
-
-    document.body.classList.remove('modal-open');
-    document.body.style.overflow = '';
-    document.body.style.paddingRight = '';
-
-    const backdrops = document.getElementsByClassName('modal-backdrop');
-    while (backdrops[0]) {
-      backdrops[0].parentNode?.removeChild(backdrops[0]);
-    }
-
-    if (form) form.reset(); // ✅ solo el form
   }
 
   // Alterna la visibilidad del dropdown asociado a un puntoUsuario específico
@@ -1936,7 +2835,180 @@ export class VotacionComponent implements OnInit {
     this.pasoModalResultados = 5;
   }
 
+  // =====================
+  // Métodos de navegación para el modal de GRUPOS (separado)
+  // =====================
+  irAPasoConfirmarAutomaticoGrupo() {
+    this.pasoModalResultadosGrupo = 2;
+  }
+
+  irAPasoManualGrupo() {
+    this.pasoModalResultadosGrupo = 3;
+  }
+
+  irAPasoConfirmacionGrupo() {
+    this.pasoModalResultadosGrupo = 4;
+  }
+
+  volverAlPasoInicialGrupo() {
+    this.pasoModalResultadosGrupo = 1;
+  }
+
+  volverAlPasoManualGrupo() {
+    this.pasoModalResultadosGrupo = 3;
+  }
+
+  irAPasoConfirmarHibridoGrupo() {
+    this.pasoModalResultadosGrupo = 6;
+  }
+
+  volverAPasoHibridoGrupo() {
+    this.pasoModalResultadosGrupo = 5;
+  }
+
+  irAPasoHibridoGrupo() {
+    if (!this.grupoSeleccionadoParaResolver) return;
+    
+    const puntosDelGrupo = this.grupoSeleccionadoParaResolver.puntoGrupos
+      ?.map(pg => pg.punto)
+      .filter(p => p) || [];
+    
+    if (puntosDelGrupo.length === 0 || !puntosDelGrupo[0]?.id_punto) {
+      this.toastr.error('El grupo no tiene puntos asignados', 'Error');
+      return;
+    }
+    
+    const primerPuntoId = puntosDelGrupo[0].id_punto;
+    const esAdmin = puntosDelGrupo[0]?.es_administrativa || false;
+    
+    const query = `punto.id_punto=${primerPuntoId}`;
+    const relations = [
+      `usuario`,
+      `usuario.usuarioReemplazo`,
+      `usuario.grupoUsuario`,
+    ];
+
+    this.puntoUsuarioService
+      .getAllDataBy(query, relations)
+      .subscribe((data) => {
+        const puntoUsuariosGrupo = data.sort((a, b) => {
+          return a.estado === b.estado ? 0 : a.estado ? -1 : 1;
+        });
+        
+        if (!puntoUsuariosGrupo?.length) {
+          this.toastr.warning('No hay votos disponibles para configurar', 'Advertencia');
+          this.pasoModalResultadosGrupo = 5;
+          return;
+        }
+        
+        const asistenciaMap = new Map<number, string>(
+          (this.nomina || []).map((a: any) => [
+            a.usuario?.id_usuario,
+            (a.tipo_asistencia ?? 'ausente').toString().trim().toLowerCase(),
+          ])
+        );
+
+        this.votosHibridos = puntoUsuariosGrupo.map((pu) => {
+          const u = pu.usuario;
+          const grupoUsuario = (u?.grupoUsuario?.nombre || '').toLowerCase();
+
+          const esPresente = asistenciaMap.get(u.id_usuario) === 'presente';
+          const esRector = grupoUsuario === 'rector';
+          const esTrabajador = grupoUsuario === 'trabajador';
+
+          const habilitado = esPresente && !esRector && !(esAdmin && esTrabajador);
+
+          return {
+            idUsuario: u.id_usuario,
+            votante: this.usuario.id_usuario,
+            punto: primerPuntoId,
+            opcion: habilitado ? 'afavor' : null,
+            es_razonado: false,
+            habilitado,
+            usuario: { ...u },
+          };
+        });
+
+        this.agruparYFiltrarVotosHibridos();
+        this.pasoModalResultadosGrupo = 5;
+      });
+  }
+
   irAPasoHibrido() {
+    // Para grupos, preparar votos híbridos igual que un punto individual
+    if (this.grupoSeleccionadoParaResolver) {
+      // Los puntos del grupo tienen los mismos votos, usamos el primer punto como referencia
+      const puntosDelGrupo = this.grupoSeleccionadoParaResolver.puntoGrupos
+        ?.map(pg => pg.punto)
+        .filter(p => p) || [];
+      
+      if (puntosDelGrupo.length === 0 || !puntosDelGrupo[0]?.id_punto) {
+        this.toastr.error('El grupo no tiene puntos asignados', 'Error');
+        return;
+      }
+      
+      const primerPuntoId = puntosDelGrupo[0].id_punto;
+      const esAdmin = puntosDelGrupo[0]?.es_administrativa || false;
+      
+      // Cargar puntoUsuarios del primer punto del grupo (tienen los mismos votos que todos)
+      // Usamos la misma lógica que para puntos individuales
+      const query = `punto.id_punto=${primerPuntoId}`;
+      const relations = [
+        `usuario`,
+        `usuario.usuarioReemplazo`,
+        `usuario.grupoUsuario`,
+      ];
+
+      this.puntoUsuarioService
+        .getAllDataBy(query, relations)
+        .subscribe((data) => {
+          // Ordenar primero por estado (activos arriba)
+          const puntoUsuariosGrupo = data.sort((a, b) => {
+            return a.estado === b.estado ? 0 : a.estado ? -1 : 1;
+          });
+          
+          if (!puntoUsuariosGrupo?.length) {
+            this.toastr.warning('No hay votos disponibles para configurar', 'Advertencia');
+            this.pasoModalResultados = 5;
+            return;
+          }
+          
+          // Mapa de asistencia
+          const asistenciaMap = new Map<number, string>(
+            (this.nomina || []).map((a: any) => [
+              a.usuario?.id_usuario,
+              (a.tipo_asistencia ?? 'ausente').toString().trim().toLowerCase(),
+            ])
+          );
+
+          this.votosHibridos = puntoUsuariosGrupo.map((pu) => {
+            const u = pu.usuario;
+            const grupoUsuario = (u?.grupoUsuario?.nombre || '').toLowerCase();
+
+            const esPresente = asistenciaMap.get(u.id_usuario) === 'presente';
+            const esRector = grupoUsuario === 'rector';
+            const esTrabajador = grupoUsuario === 'trabajador';
+
+            // regla: presente ∧ !rector ∧ !(administrativa ∧ trabajador)
+            const habilitado = esPresente && !esRector && !(esAdmin && esTrabajador);
+
+            return {
+              idUsuario: u.id_usuario,
+              votante: this.usuario.id_usuario,
+              punto: primerPuntoId, // Usamos el primer punto del grupo (todos tienen los mismos votos)
+              opcion: habilitado ? 'afavor' : null,
+              es_razonado: false,
+              habilitado,
+              usuario: { ...u },
+            };
+          });
+          
+          this.agruparYFiltrarVotosHibridos();
+          this.pasoModalResultados = 5;
+        });
+      return;
+    }
+    
     if (!this.puntoUsuarios?.length) return;
 
     // mapa rápido: id_usuario -> 'presente' | 'ausente'
@@ -1979,4 +3051,3 @@ export class VotacionComponent implements OnInit {
     this.location.back();
   }
 }
-

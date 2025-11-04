@@ -125,13 +125,13 @@
                 cdkDrag
                 [cdkDragData]="punto"
                 class="point-row"
-                [cdkDragDisabled]="!punto.status || !sesion.estado"
+                [cdkDragDisabled]="!punto.status || !sesion?.estado"
               >
                 <!-- Columna de número y arrastre -->
                 <td class="order-drag-cell">
                   <div class="order-drag-container">
                     <div
-                      *ngIf="punto.status && sesion.estado"
+                      *ngIf="punto.status && sesion?.estado"
                       class="drag-handle"
                       cdkDragHandle
                       title="Mover"
@@ -141,24 +141,42 @@
                     <div *ngIf="!punto.status" class="drag-handle disabled">
                       ⋮⋮
                     </div>
-                    <span class="order-number">{{ punto.orden }}</span>
+                    <span class="order-number" style="cursor: default;">{{ punto.orden }}</span>
                   </div>
                 </td>
 
                 <!-- Columna de descripción -->
                 <td class="description-cell">
-                  {{ punto.nombre }}
+                  <div class="punto-nombre-container">
+                    <span 
+                      class="punto-nombre-display"
+                      (dblclick)="abrirModalEdicion(punto)"
+                      title="Doble click para editar">
+                      {{ punto.nombre }}
+                    </span>
+                  </div>
                 </td>
 
                 <!-- Columna de acción -->
                 <td class="action-cell">
-                  <button
-                    class="point-button"
-                    type="button"
-                    (click)="irAPunto(idSesion!, punto.id_punto!)"
-                  >
-                    Ver punto
-                  </button>
+                  <div class="action-buttons-container">
+                    <button
+                      class="point-button"
+                      type="button"
+                      (click)="irAPunto(idSesion!, punto.id_punto!)"
+                    >
+                      Ver punto
+                    </button>
+                    <button
+                      class="delete-button"
+                      type="button"
+                      (click)="confirmarEliminarPunto(punto)"
+                      title="Eliminar punto"
+                      [disabled]="!sesion?.estado"
+                    >
+                      <i class="bi bi-trash"></i>
+                    </button>
+                  </div>
                 </td>
               </tr>
             </tbody>
@@ -453,5 +471,108 @@
     </div>
   </div>
 </div>
+
+<!-- =======================
+     Modal de edición de nombre
+     ======================= -->
+<div 
+  class="modal fade" 
+  id="modalEdicionNombre" 
+  tabindex="-1" 
+  aria-labelledby="modalEdicionNombreLabel" 
+  aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="modalEdicionNombreLabel">
+          <i class="bi bi-pencil-square me-2"></i>
+          Editar nombre del punto
+        </h5>
+        <button 
+          type="button" 
+          class="btn-close" 
+          (click)="cerrarModalEdicion()"
+          aria-label="Cerrar">
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-3">
+          <label for="nombrePuntoEdit" class="form-label">Nombre del punto:</label>
+          <textarea
+            id="nombrePuntoEdit"
+            class="form-control nombre-edit-textarea"
+            [(ngModel)]="nombreEditando"
+            (input)="ajustarAlturaModal($event)"
+            rows="4"
+            placeholder="Escribe el nombre del punto aquí..."
+            #nombreInput
+          ></textarea>
+          <div class="form-text">
+            <i class="bi bi-info-circle me-1"></i>
+            Puedes usar múltiples líneas para títulos largos.
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button 
+          type="button" 
+          class="btn btn-secondary" 
+          (click)="cerrarModalEdicion()">
+          <i class="bi bi-x-circle me-1"></i>
+          Cancelar
+        </button>
+        <button 
+          type="button" 
+          class="btn btn-primary" 
+          (click)="guardarNombreEditado()"
+          [disabled]="!nombreEditando.trim()">
+          <i class="bi bi-check-circle me-1"></i>
+          Guardar cambios
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- =======================
+     Modal: Confirmar eliminación de punto
+     ======================= -->
+<div
+  id="confirmarEliminarModal"
+  class="modal fade"
+  tabindex="-1"
+  aria-labelledby="confirmarEliminarModalLabel"
+  aria-hidden="true"
+>
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="confirmarEliminarModalLabel">
+          <i class="bi bi-exclamation-triangle me-2"></i>
+          Confirmar eliminación
+        </h5>
+        <button type="button" class="btn-close" (click)="cancelarEliminarPunto()" aria-label="Cerrar"></button>
+      </div>
+      <div class="modal-body">
+        <p>
+          ¿Seguro que deseas eliminar el punto
+          <span
+            class="punto-nombre-eliminar"
+            [attr.title]="puntoAEliminar?.nombre || ''"
+          >{{ puntoAEliminar?.nombre }}</span>?
+        </p>
+        <p class="mb-0 text-muted">Esta acción no se puede deshacer.</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="cancelarEliminarPunto()">
+          Cancelar
+        </button>
+        <button type="button" class="btn btn-danger" (click)="ejecutarEliminacionPunto()">
+          Eliminar
+        </button>
+      </div>
+    </div>
+  </div>
+  </div>
 
 <app-footer></app-footer>

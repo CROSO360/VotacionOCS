@@ -1,3 +1,74 @@
+/* =======================
+   Gestión/Creación de grupos: mejoras sutiles
+   ======================= */
+.grupo-nombre-truncate {
+  max-width: 50ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.crear-grupo-card {
+  background-color: #f8f9fa; /* gris muy suave */
+  border: 1px solid #e9ecef;
+  border-radius: 10px;
+  padding: 1.5rem; /* un poco más amplia */
+  box-shadow: 0 2px 10px rgba(0,0,0,0.04);
+  font-size: 1.02rem; /* sensación de 2% más grande sin desbordes */
+}
+
+.crear-grupo-card .form-check {
+  padding: 0.25rem 0.5rem;
+  border-radius: 6px;
+}
+
+.crear-grupo-card .form-check:hover {
+  background-color: rgba(0,0,0,0.03);
+}
+
+/* Modal Grupos: ver todo el contenido sin scroll interno en crear */
+#modalGrupos .modal-body {
+  overflow: visible;
+  max-height: none;
+}
+
+/* Botón cancelar un poco más abajo */
+.btn-cancel-grupo {
+  margin-top: 3%;
+}
+
+/* Modal de resultados debe estar por encima del modal de grupos */
+#modalResultados {
+  z-index: 1080 !important;
+}
+
+#modalResultados + .modal-backdrop {
+  z-index: 1075 !important;
+}
+/* =======================
+   Selección de puntos para grupos: estilos de nombres largos y resueltos
+   ======================= */
+.punto-grupo-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.punto-grupo-item .form-check-input {
+  flex: 0 0 auto;
+}
+
+.punto-grupo-item .punto-nombre-truncate {
+  flex: 1 1 auto;
+  min-width: 0; /* necesario para que ellipsis funcione en flex */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.punto-grupo-item.punto-resuelto .form-check-input:disabled + .punto-nombre-truncate {
+  color: #6c757d; /* texto atenuado para resueltos */
+}
 .grid-container {
   display: grid;
   grid-template-columns: repeat(5, 1fr); /* 5 columnas iguales */
@@ -187,11 +258,77 @@ button:hover {
 
 
 select {
-  padding: 8px;
+  padding: 8px 12px; /* Más padding horizontal para mejor apariencia */
   font-size: 16px;
   border: 1px solid #ccc;
   border-radius: 4px;
   margin-bottom: 10px;
+  max-width: 100%; /* Asegurar que no exceda el ancho del contenedor */
+  width: 100%; /* Usar todo el ancho disponible */
+  box-sizing: border-box; /* Incluir padding en el cálculo del ancho */
+  word-wrap: break-word; /* Para nombres largos */
+  overflow-wrap: break-word; /* Compatibilidad */
+  background-color: #fff; /* Fondo blanco */
+  cursor: pointer; /* Cursor pointer para indicar que es clickeable */
+}
+
+/* Contenedor del select de puntos */
+.punto-select-container {
+  margin-bottom: 1rem;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+/* Label del selector de puntos */
+.punto-select-container .form-label {
+  display: flex;
+  align-items: center; /* Alinear verticalmente el icono con el texto */
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+}
+
+.punto-select-container .form-label i {
+  margin-right: 0.5rem; /* Espacio entre icono y texto */
+  font-size: 1rem; /* Tamaño del icono */
+}
+
+.punto-select-container select {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0; /* Permitir que se reduzca */
+  padding-right: 2rem; /* Espacio para el icono de expansión */
+  text-overflow: ellipsis; /* Puntos suspensivos para texto largo */
+  overflow: hidden; /* Ocultar texto que se desborda */
+  white-space: nowrap; /* Evitar salto de línea en el select */
+}
+
+/* Descripción del punto */
+.punto-descripcion {
+  margin-top: 0.5rem;
+  padding: 1rem 0.75rem; /* Más padding vertical, menos horizontal */
+  background-color: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  word-break: break-word;
+  max-width: 100%;
+  box-sizing: border-box;
+  white-space: pre-wrap; /* Mantener saltos de línea */
+  text-align: center; /* Centrar el texto */
+  display: flex;
+  align-items: flex-start; /* Alinear al inicio verticalmente */
+  justify-content: center; /* Centrar horizontalmente */
+  min-height: 50px; /* Reducir altura mínima */
+  padding-top: 0.5rem; /* Menos espacio arriba */
+}
+
+
+.punto-descripcion + button {
+  margin-top: 2% !important;
 }
 
 
@@ -435,38 +572,109 @@ select {
 }
 
 
-.code-row {
+/* =======================
+   Código de sesión mejorado
+   ======================= */
+.session-code-section {
   display: flex;
   justify-content: center;
 }
 
+.code-container {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
 .session-code-box {
-  display: inline-block;
-  padding: .5rem .9rem;
-  border: 1px solid #e1e1e1;
-  border-radius: .5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.25rem;
   background: #f8f9fa;
+  border: 1px solid #e1e1e1;
+  border-radius: 12px;
   cursor: pointer;
   user-select: none;
-  transition: background .15s ease, border-color .15s ease, box-shadow .15s ease;
+  transition: all 0.2s ease;
   min-width: 180px;
   text-align: center;
   font-weight: 500;
   line-height: 1.2;
+}
 
-  &:hover { background: #f1f3f5; }
-  &:focus-visible { outline: 2px solid #6c757d; outline-offset: 2px; }
+.session-code-box:hover {
+  background: #f1f3f5;
+  border-color: #dc3545;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15), 0 2px 6px rgba(0, 0, 0, 0.1);
+  transform: translateY(-1px);
 }
 
 .session-code-box.visible {
   background: #ffffff;
-  border-color: #d0d0d0;
-  box-shadow: 0 1px 4px rgba(0,0,0,.08);
+  border-color: #dc3545;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.12), 0 1px 4px rgba(0, 0, 0, 0.08);
 }
 
 .code-text {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
-  letter-spacing: .04em;
+  font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+  color: #dc3545;
+}
+
+/* =======================
+   Botón de copiar código
+   ======================= */
+.copy-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: #f8f9fa;
+  border: 1px solid #e1e1e1;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: #6c757d;
+  font-size: 14px;
+}
+
+.copy-button:hover {
+  background: #dc3545;
+  border-color: #dc3545;
+  color: white;
+  transform: scale(1.05);
+  box-shadow: 0 3px 8px rgba(220, 53, 69, 0.3);
+}
+
+.copy-button.copied {
+  background: #28a745;
+  border-color: #28a745;
+  color: white;
+  transform: scale(1.1);
+  box-shadow: 0 3px 8px rgba(40, 167, 69, 0.4);
+}
+
+.copy-button:active {
+  transform: scale(0.95);
+}
+
+/* Iconos para el código */
+.icon-code::before {
+  content: "🔑";
+  font-size: 16px;
+}
+
+.icon-copy::before {
+  content: "📋";
+  font-size: 14px;
+}
+
+.icon-check::before {
+  content: "✅";
+  font-size: 14px;
 }
 
 /* Hace las tablas más compactas sin perder legibilidad */
@@ -481,5 +689,454 @@ select {
 @media (min-width: 768px) {
   .resultados-container {
     height: 100%;
+  }
+}
+
+/* =============================== */
+/* Estilos para el modal de resolución */
+/* =============================== */
+
+/* Estado vacío */
+.empty-state {
+  padding: 2rem;
+}
+
+.empty-state .display-1 {
+  font-size: 4rem;
+  opacity: 0.3;
+}
+
+/* Vista de resolución */
+.resolucion-view {
+  padding: 1rem 0;
+}
+
+/* Información del punto */
+.punto-info {
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border: 1px solid #dee2e6;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.info-header {
+  margin-bottom: 1rem;
+}
+
+.info-label {
+  color: #495057;
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 0;
+  display: flex;
+  align-items: center;
+}
+
+.info-content {
+  margin-left: 0;
+  width: 100%;
+  box-sizing: border-box;
+  overflow: hidden; /* Evitar desbordamiento */
+}
+
+.punto-titulo {
+  color: #212529;
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin: 0 0 0.5rem 0;
+  line-height: 1.3;
+}
+
+.punto-detalle {
+  font-size: 0.95rem;
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* Información de la resolución */
+.resolucion-info {
+  background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+  border: 1px solid #90caf9;
+  border-radius: 12px;
+  padding: 2rem; /* Aumenté el padding para más espacio general */
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  margin-bottom: 1.5rem; /* Espacio adicional abajo */
+}
+
+.resolucion-nombre {
+  color: #1565c0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0 0 1.5rem 0; /* Aumenté el margen inferior */
+  line-height: 1.4; /* Mejoré el line-height */
+  padding: 0.5rem 0; /* Agregué padding vertical */
+  word-wrap: break-word; /* Para títulos largos */
+  overflow-wrap: break-word; /* Compatibilidad */
+  word-break: break-word; /* Forzar salto de línea si es necesario */
+}
+
+.resolucion-descripcion {
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 8px;
+  padding: 1.5rem; /* Aumenté el padding para más espacio */
+  border-left: 4px solid #2196f3;
+  max-height: 400px; /* Aumenté la altura máxima para más espacio */
+  overflow-y: auto; /* Scroll vertical cuando sea necesario */
+  overflow-x: hidden; /* Evitar scroll horizontal */
+  width: 100%; /* Asegurar ancho completo */
+  box-sizing: border-box; /* Incluir padding en el cálculo del ancho */
+  margin-bottom: 1rem; /* Espacio adicional abajo */
+}
+
+/* Estilos para el scrollbar */
+.resolucion-descripcion::-webkit-scrollbar {
+  width: 6px;
+}
+
+.resolucion-descripcion::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 3px;
+}
+
+.resolucion-descripcion::-webkit-scrollbar-thumb {
+  background: rgba(33, 150, 243, 0.6);
+  border-radius: 3px;
+}
+
+.resolucion-descripcion::-webkit-scrollbar-thumb:hover {
+  background: rgba(33, 150, 243, 0.8);
+}
+
+.resolucion-texto {
+  color: #424242;
+  font-size: 1rem;
+  line-height: 1.8; /* Aumenté el line-height para más espacio entre líneas */
+  margin: 0;
+  padding: 0.5rem 0; /* Agregué padding vertical para más espacio */
+  white-space: pre-wrap;
+  word-wrap: break-word; /* Ajustar palabras largas */
+  overflow-wrap: break-word; /* Compatibilidad adicional */
+  word-break: break-word; /* Forzar salto de línea en palabras largas */
+  hyphens: auto; /* Agregar guiones automáticos */
+  max-width: 100%; /* Asegurar que no exceda el ancho del contenedor */
+}
+
+/* Información del método */
+.metodo-info {
+  background: linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%);
+  border: 1px solid #ce93d8;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.metodo-badge {
+  display: flex;
+  align-items: center;
+}
+
+.metodo-badge .badge {
+  font-size: 0.875rem;
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Estilos específicos para cada tipo de método */
+.metodo-badge .badge.bg-warning {
+  background-color: #ffc107 !important;
+  color: #000 !important;
+}
+
+.metodo-badge .badge.bg-info {
+  background-color: #0dcaf0 !important;
+  color: #000 !important;
+}
+
+.metodo-badge .badge.bg-success {
+  background-color: #198754 !important;
+  color: #fff !important;
+}
+
+/* Botones de acción */
+.resolucion-actions {
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #dee2e6;
+}
+
+.resolucion-actions .btn {
+  padding: 0.75rem 1.5rem;
+  font-weight: 600;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.resolucion-actions .btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Formulario de resolución */
+.resolucion-form {
+  padding: 1rem 0;
+}
+
+.resolucion-form .form-group {
+  margin-bottom: 1.5rem;
+}
+
+.resolucion-form .form-label {
+  color: #495057;
+  font-size: 0.95rem;
+  margin-bottom: 0.75rem;
+  display: flex;
+  align-items: center;
+}
+
+.resolucion-form .form-control {
+  border: 2px solid #e9ecef;
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  font-size: 1rem;
+  transition: all 0.2s ease;
+}
+
+.resolucion-form .form-control:focus {
+  border-color: #0d6efd;
+  box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.15);
+}
+
+.resolucion-form .form-control-lg {
+  font-size: 1.1rem;
+  padding: 1rem 1.25rem;
+}
+
+.resolucion-form .form-text {
+  color: #6c757d;
+  font-size: 0.875rem;
+  margin-top: 0.5rem;
+}
+
+/* Acciones del formulario */
+.form-actions {
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #dee2e6;
+}
+
+.form-actions .btn {
+  padding: 0.75rem 1.5rem;
+  font-weight: 600;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.form-actions .btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .punto-info,
+  .resolucion-info,
+  .metodo-info {
+    padding: 1rem;
+  }
+  
+  .punto-titulo {
+    font-size: 1.1rem;
+  }
+  
+  .resolucion-nombre {
+    font-size: 1.25rem;
+  }
+  
+  .resolucion-actions,
+  .form-actions {
+    flex-direction: column;
+  }
+  
+  .resolucion-actions .btn,
+  .form-actions .btn {
+    width: 100%;
+    margin-bottom: 0.5rem;
+  }
+}
+
+/* =======================
+   Pantalla Completa de Votación
+   ======================= */
+
+.fullscreen-content {
+  background: white;
+  min-height: 100vh;
+}
+
+.fullscreen-header {
+  background: linear-gradient(135deg, var(--primary-red) 0%, #C10512 100%);
+  color: white;
+  border-bottom: none;
+  padding: 1.5rem 2rem;
+}
+
+.fullscreen-header .modal-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.fullscreen-header .btn-close {
+  filter: none;
+  opacity: 0.8;
+  color: black;
+}
+
+.fullscreen-header .btn-close:hover {
+  opacity: 1;
+  color: black;
+}
+
+.fullscreen-body {
+  padding: 2rem;
+  background: white;
+  overflow-y: auto;
+  max-height: calc(100vh - 120px);
+}
+
+.fullscreen-votacion-container {
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.fullscreen-grid-grupos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  padding: 1rem 0;
+  justify-content: center;
+}
+
+.fullscreen-grupo-block {
+  flex: 1 1 32%;
+  min-width: 280px;
+  max-width: 420px;
+  background-color: #fafafa;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 10px;
+  box-sizing: border-box;
+}
+
+.fullscreen-grupo-titulo {
+  font-weight: bold;
+  font-size: 15px;
+  margin-bottom: 10px;
+  border-left: 4px solid #007bff;
+  padding-left: 8px;
+  color: #333;
+  background: none;
+  border-radius: 0;
+  text-align: left;
+  box-shadow: none;
+}
+
+.fullscreen-grupo-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.fullscreen-square {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  padding: 10px 15px;
+  background-color: #fff;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+  transition: box-shadow 0.2s ease-in-out;
+  position: relative;
+  margin-bottom: 8px;
+}
+
+.fullscreen-square:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.fullscreen-nombre-usuario {
+  font-weight: 500;
+  color: #333;
+  flex: 1;
+  margin-right: 1rem;
+}
+
+.fullscreen-reemplazo-info {
+  font-size: 0.85rem;
+  color: var(--text-light);
+  font-style: italic;
+  margin-top: 0.25rem;
+}
+
+/* Estados de voto para pantalla completa - iguales a los originales */
+.fullscreen-square.afavor {
+  background-color: green;
+}
+
+.fullscreen-square.encontra {
+  background-color: red;
+}
+
+.fullscreen-square.abstencion {
+  background-color: orange;
+}
+
+/* Responsive para pantalla completa */
+@media (max-width: 1200px) {
+  .fullscreen-grid-grupos {
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 1.5rem;
+  }
+  
+  .fullscreen-grupo-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .fullscreen-body {
+    padding: 1rem;
+  }
+  
+  .fullscreen-grid-grupos {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  
+  .fullscreen-grupo-block {
+    padding: 1rem;
+  }
+  
+  .fullscreen-grupo-titulo {
+    font-size: 1rem;
+    padding: 0.75rem 1rem;
+  }
+  
+  .fullscreen-square {
+    padding: 0.75rem 1rem;
+    min-height: 70px;
+  }
+  
+  .fullscreen-nombre-usuario {
+    font-size: 0.9rem;
   }
 }

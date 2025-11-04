@@ -1,4 +1,20 @@
 /* =======================
+   Modal Confirmar Eliminación: manejo de títulos largos
+   ======================= */
+#confirmarEliminarModal .modal-body {
+  word-break: break-word;
+}
+
+#confirmarEliminarModal .punto-nombre-eliminar {
+  display: -webkit-box;
+  -webkit-line-clamp: 3; /* mostrar hasta 3 líneas */
+  line-clamp: 3; /* estándar */
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  max-width: 100%;
+  font-weight: 600;
+}
+/* =======================
    Variables de colores (minimalista)
    ======================= */
 :root {
@@ -1310,5 +1326,215 @@
     right: 1rem;
     padding: 0.75rem 1.5rem;
     font-size: 0.9rem;
+  }
+}
+
+/* =======================
+   Estilos para edición de nombres y eliminación
+   ======================= */
+
+/* Contenedor del nombre del punto */
+.punto-nombre-container {
+  width: 100%;
+  position: relative;
+}
+
+/* Nombre del punto en modo visualización */
+.punto-nombre-display {
+  display: block;
+  width: 100%;
+  padding: 0.5rem;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+  border: 2px solid transparent;
+  background: transparent;
+}
+
+.punto-nombre-display:hover {
+  background-color: rgba(0, 123, 255, 0.1);
+  border-color: rgba(0, 123, 255, 0.3);
+}
+
+/* Estilos para el modal de edición */
+.nombre-edit-textarea {
+  min-height: 120px;
+  max-height: 400px;
+  font-size: 1.1rem;
+  line-height: 1.6;
+  resize: vertical;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  white-space: pre-wrap;
+  border: 2px solid #dee2e6;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.nombre-edit-textarea:focus {
+  border-color: #007bff;
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
+  outline: none;
+}
+
+/* Modal personalizado */
+.modal-lg {
+  max-width: 800px;
+}
+
+.modal-header {
+  background: linear-gradient(135deg, #007bff, #0056b3);
+  color: white;
+  border-bottom: none;
+  border-radius: 8px 8px 0 0;
+}
+
+.modal-title {
+  font-weight: 600;
+  font-size: 1.2rem;
+}
+
+.btn-close {
+  filter: invert(1);
+}
+
+.modal-body {
+  padding: 2rem;
+}
+
+.modal-footer {
+  border-top: 1px solid #dee2e6;
+  padding: 1rem 2rem;
+}
+
+/* Botones del modal */
+.modal-footer .btn {
+  padding: 0.75rem 1.5rem;
+  font-weight: 500;
+  border-radius: 6px;
+}
+
+.modal-footer .btn-primary {
+  background: linear-gradient(135deg, #007bff, #0056b3);
+  border: none;
+}
+
+.modal-footer .btn-primary:hover {
+  background: linear-gradient(135deg, #0056b3, #004085);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
+}
+
+.modal-footer .btn-secondary {
+  background: #6c757d;
+  border: none;
+}
+
+.modal-footer .btn-secondary:hover {
+  background: #5a6268;
+  transform: translateY(-1px);
+}
+
+
+/* Contenedor de botones de acción */
+.action-buttons-container {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+/* Botón de eliminar */
+.delete-button {
+  background: linear-gradient(135deg, #dc3545, #c82333);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  height: 36px;
+  font-size: 0.9rem;
+}
+
+.delete-button:hover:not(:disabled) {
+  background: linear-gradient(135deg, #c82333, #a71e2a);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
+}
+
+.delete-button:disabled {
+  background: #6c757d;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.delete-button i {
+  font-size: 0.9rem;
+}
+
+/* Cursor normal para números de orden */
+.order-number {
+  cursor: default !important;
+  user-select: none;
+}
+
+/* Efecto hover mejorado para el drag handle */
+.drag-handle {
+  cursor: grab;
+  transition: all 0.2s ease;
+}
+
+.drag-handle:hover {
+  background-color: rgba(0, 123, 255, 0.1);
+  border-radius: 4px;
+}
+
+.drag-handle:active {
+  cursor: grabbing;
+}
+
+/* Responsive para botones de acción */
+@media (max-width: 768px) {
+  .action-buttons-container {
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+  
+  .delete-button {
+    min-width: 32px;
+    height: 32px;
+    font-size: 0.8rem;
+  }
+  
+  .punto-nombre-input {
+    font-size: 1rem;
+    padding: 0.75rem 1rem;
+    min-width: 400px;
+  }
+}
+
+/* Estilos adicionales para mejor experiencia de edición */
+.punto-nombre-input::placeholder {
+  color: #6c757d;
+  font-style: italic;
+}
+
+/* Animación de entrada para el input */
+.punto-nombre-input {
+  animation: inputExpand 0.3s ease-out;
+}
+
+@keyframes inputExpand {
+  from {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
   }
 }
