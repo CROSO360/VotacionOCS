@@ -10,7 +10,7 @@
        ======================= -->
   <div class="session-header">
     <div class="header-content">
-      <h1 class="main-title">Sesión Activa</h1>
+      <h1 class="main-title">Sesión {{sesion?.fase}}</h1>
       <div class="session-info">
         <h2 class="session-name">{{ sesion?.nombre }}</h2>
         <div class="session-code-section" *ngIf="sesion?.codigo">
