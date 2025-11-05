@@ -172,7 +172,7 @@
                       type="button"
                       (click)="confirmarEliminarPunto(punto)"
                       title="Eliminar punto"
-                      [disabled]="!sesion?.estado"
+                      [disabled]="sesion?.fase !== 'pendiente'"
                     >
                       <i class="bi bi-trash"></i>
                     </button>

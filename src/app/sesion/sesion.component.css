@@ -479,7 +479,7 @@
 }
 
 .drag-handle {
-  cursor: move;
+  cursor: grab !important;
   font-size: 14px;
   color: #666;
   user-select: none;
@@ -491,11 +491,16 @@
 .drag-handle:hover {
   color: #333;
   background-color: #f0f0f0;
+  cursor: grab !important;
+}
+
+.drag-handle:active {
+  cursor: grabbing !important;
 }
 
 .drag-handle.disabled {
   opacity: 0.3;
-  cursor: not-allowed;
+  cursor: not-allowed !important;
 }
 
 .point-content {
@@ -863,10 +868,20 @@
   align-items: center;
   gap: 0.75rem;
   padding: 0.75rem;
+  cursor: grabbing !important;
 }
 
 .cdk-drop-list-dragging .point-row {
   transition: transform 0.2s;
+}
+
+/* Asegurar que el CDK no sobrescriba el cursor en las filas */
+.cdk-drag:not(.cdk-drag-preview) {
+  cursor: default !important;
+}
+
+.cdk-drag:not(.cdk-drag-preview) td {
+  cursor: default !important;
 }
 
 .cdk-drag-placeholder {
@@ -882,7 +897,57 @@
 
 /* Estilos para la fila de arrastre */
 .point-row {
-  cursor: move;
+  cursor: default;
+}
+
+/* Asegurar cursor normal en todas las celdas excepto el drag-handle */
+.point-row td {
+  cursor: default !important;
+}
+
+.point-row .description-cell {
+  cursor: default !important;
+}
+
+.point-row .action-cell {
+  cursor: default !important;
+}
+
+.point-row .order-drag-cell {
+  cursor: default !important;
+}
+
+.point-row .order-drag-container {
+  cursor: default !important;
+}
+
+.point-row .order-number {
+  cursor: default !important;
+}
+
+.point-row .punto-nombre-container {
+  cursor: default !important;
+}
+
+.point-row .punto-nombre-display {
+  cursor: text !important;
+}
+
+.point-row .action-buttons-container {
+  cursor: default !important;
+}
+
+/* Solo el drag-handle debe tener cursor de arrastre */
+.point-row .drag-handle {
+  cursor: grab !important;
+}
+
+.point-row .drag-handle:hover {
+  cursor: grab !important;
+}
+
+.point-row .drag-handle:active {
+  cursor: grabbing !important;
 }
 
 .point-row.cdk-drag-preview {
@@ -894,6 +959,7 @@
   border: 1px solid var(--primary-red);
   border-radius: 8px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  cursor: grabbing;
 }
 
 .points-wrapper {
@@ -1484,17 +1550,18 @@
 
 /* Efecto hover mejorado para el drag handle */
 .drag-handle {
-  cursor: grab;
+  cursor: grab !important;
   transition: all 0.2s ease;
 }
 
 .drag-handle:hover {
   background-color: rgba(0, 123, 255, 0.1);
   border-radius: 4px;
+  cursor: grab !important;
 }
 
 .drag-handle:active {
-  cursor: grabbing;
+  cursor: grabbing !important;
 }
 
 /* Responsive para botones de acción */

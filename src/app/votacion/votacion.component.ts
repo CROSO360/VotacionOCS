@@ -139,7 +139,7 @@ export class VotacionComponent implements OnInit {
   pasoModalResultados: number = 1;
   pasoModalResultadosGrupo: number = 1; // Pasos para el modal de grupos (separado)
 
-  resultadoManualSeleccionado: 'aprobada' | 'rechazada' | 'pendiente' =
+  resultadoManualSeleccionado: 'aprobada' | 'rechazada' | 'pendiente' | null =
     'aprobada';
 
   modoCreacionResolucion = false;
@@ -339,6 +339,26 @@ export class VotacionComponent implements OnInit {
     if (modalResultadosEl) {
       this.modalResultadosRef = new Modal(modalResultadosEl);
     }
+
+    // Agregar listener para el modal de grupos para limpiar el estado del body cuando se cierra
+    const modalResultadosGrupoEl = document.getElementById('modalResultadosGrupo');
+    if (modalResultadosGrupoEl) {
+      modalResultadosGrupoEl.addEventListener('hidden.bs.modal', () => {
+        // Limpiar el estado del body cuando el modal se cierra
+        setTimeout(() => {
+          const modalesAbiertos = document.querySelectorAll('.modal.show');
+          if (modalesAbiertos.length === 0) {
+            document.body.classList.remove('modal-open');
+            document.body.style.overflow = '';
+            document.body.style.paddingRight = '';
+            const backdrops = document.getElementsByClassName('modal-backdrop');
+            while (backdrops[0]) {
+              backdrops[0].parentNode?.removeChild(backdrops[0]);
+            }
+          }
+        }, 100);
+      });
+    }
   }
 
   // =====================
@@ -485,7 +505,29 @@ export class VotacionComponent implements OnInit {
     }
   }
 
+  /**
+   * Verifica si un punto pertenece a algún grupo
+   */
+  puntoPerteneceAGrupo(puntoId: number): boolean {
+    if (!puntoId || !this.grupos || this.grupos.length === 0) {
+      return false;
+    }
+    
+    return this.grupos.some(grupo => 
+      grupo.puntoGrupos?.some(pg => pg.punto?.id_punto === puntoId)
+    );
+  }
+
   cambiarEstadoPunto(punto: IPunto) {
+    // Verificar si el punto pertenece a un grupo
+    if (this.puntoPerteneceAGrupo(punto.id_punto)) {
+      this.toastr.warning(
+        'Este punto pertenece a un grupo. Debe habilitar/deshabilitar desde la gestión de grupos.',
+        'Acción no permitida'
+      );
+      return;
+    }
+
     this.cambiandoEstadoPunto = true;
 
     const nuevoEstado = !punto.estado;
@@ -1496,6 +1538,32 @@ export class VotacionComponent implements OnInit {
     });
   }
 
+  aplicarCambiosPendientesGrupo(): void {
+    if (this.aplicandoCambiosPendientes || this.confirmandoAsistencia) return;
+    this.aplicandoCambiosPendientes = true;
+
+    this.confirmarAsistencia({
+      onSuccess: () => {
+        this.aplicandoCambiosPendientes = false;
+        this.modalResultadosBloqueado = false;
+
+        this.hayCambiosPendientes = false;
+        this.actualizarPendientesLocales();
+        this.actualizarEstadoBloqueoPendientes();
+        if (this.pasoModalResultadosGrupo !== 7) {
+          return;
+        }
+        this.pasoModalResultadosGrupo = 2;
+        // Volver al paso 2 para recalcular automáticamente el grupo
+      },
+      onError: () => {
+        this.aplicandoCambiosPendientes = false;
+        this.actualizarEstadoBloqueoPendientes();
+      },
+      showToast: false,
+    });
+  }
+
   private limpiarPendientes(): void {
     this.puntoUsuariosPendientesIds.clear();
     this.puntoUsuariosPendientes = [];
@@ -1714,6 +1782,15 @@ export class VotacionComponent implements OnInit {
       await firstValueFrom(this.grupoService.calcularResultadoGrupo(payload));
 
 
+
+      // Deshabilitar el grupo después de resolverlo exitosamente
+      if (idGrupo) {
+        const grupoData = {
+          id_grupo: idGrupo,
+          status: false, // Marcar como resuelto
+        };
+        await firstValueFrom(this.grupoService.saveData(grupoData));
+      }
 
       this.pasoModalResultadosGrupo = 1;
 
@@ -1971,6 +2048,15 @@ export class VotacionComponent implements OnInit {
 
 
 
+      // Deshabilitar el grupo después de resolverlo exitosamente
+      if (idGrupo) {
+        const grupoData = {
+          id_grupo: idGrupo,
+          status: false, // Marcar como resuelto
+        };
+        await firstValueFrom(this.grupoService.saveData(grupoData));
+      }
+
       this.pasoModalResultadosGrupo = 1;
 
       this.getPuntos();
@@ -2209,6 +2295,15 @@ export class VotacionComponent implements OnInit {
 
 
 
+      // Deshabilitar el grupo después de resolverlo exitosamente
+      if (idGrupo) {
+        const grupoData = {
+          id_grupo: idGrupo,
+          status: false, // Marcar como resuelto
+        };
+        await firstValueFrom(this.grupoService.saveData(grupoData));
+      }
+
       this.pasoModalResultadosGrupo = 1;
 
       this.getPuntos();
@@ -2375,6 +2470,9 @@ export class VotacionComponent implements OnInit {
   abrirModalResultadosGrupo(grupo: IGrupo): void {
     if (!grupo?.id_grupo) return;
     
+    // Cerrar el modal de grupos si está abierto
+    this.cerrarModal('modalGrupos');
+    
     this.grupoSeleccionadoParaResolver = grupo;
     this.pasoModalResultadosGrupo = 1;
     this.resultadoManualSeleccionado = null;
@@ -2383,6 +2481,7 @@ export class VotacionComponent implements OnInit {
     this.agruparYFiltrarVotosHibridos();
 
     // Usar el modal separado para grupos con manejo seguro de Bootstrap
+    // Esperar un poco más para asegurar que el modal de grupos se cierre primero
     setTimeout(() => {
       try {
         if (this.modalResultadosGrupoRef) {
@@ -2402,7 +2501,7 @@ export class VotacionComponent implements OnInit {
         console.error('Error al abrir modal de grupos:', e);
         this.toastr.error('Error al abrir el modal de resultados del grupo', 'Error');
       }
-    }, 50);
+    }, 150);
   }
 
   /** Cargar y componer los datos de ambas tablas en un solo método */
@@ -2732,28 +2831,31 @@ export class VotacionComponent implements OnInit {
         }
       }
 
-      // Solo remover modal-open del body si no hay otros modales abiertos
-      const modalesAbiertos = document.querySelectorAll('.modal.show');
-      if (modalesAbiertos.length <= 1) {
-        document.body.classList.remove('modal-open');
-        document.body.style.overflow = '';
-        document.body.style.paddingRight = '';
-      }
-
-      // Remover backdrops, pero solo si no hay otros modales abiertos
-      if (modalesAbiertos.length <= 1) {
-        const backdrops = document.getElementsByClassName('modal-backdrop');
-        while (backdrops[0]) {
-          backdrops[0].parentNode?.removeChild(backdrops[0]);
+      // Verificar si hay otros modales abiertos después de un breve delay
+      // para asegurar que el DOM se haya actualizado
+      setTimeout(() => {
+        const modalesAbiertos = document.querySelectorAll('.modal.show');
+        
+        // Si no hay modales abiertos, limpiar completamente el estado del body
+        if (modalesAbiertos.length === 0) {
+          document.body.classList.remove('modal-open');
+          document.body.style.overflow = '';
+          document.body.style.paddingRight = '';
+          
+          // Remover todos los backdrops
+          const backdrops = document.getElementsByClassName('modal-backdrop');
+          while (backdrops[0]) {
+            backdrops[0].parentNode?.removeChild(backdrops[0]);
+          }
+        } else {
+          // Si hay otros modales, solo remover el backdrop correspondiente
+          const backdrops = document.getElementsByClassName('modal-backdrop');
+          if (backdrops.length > modalesAbiertos.length) {
+            const ultimoBackdrop = backdrops[backdrops.length - 1];
+            ultimoBackdrop.parentNode?.removeChild(ultimoBackdrop);
+          }
         }
-      } else {
-        // Si hay otros modales, solo remover el último backdrop
-        const backdrops = document.getElementsByClassName('modal-backdrop');
-        if (backdrops.length > 0) {
-          const ultimoBackdrop = backdrops[backdrops.length - 1];
-          ultimoBackdrop.parentNode?.removeChild(ultimoBackdrop);
-        }
-      }
+      }, 100);
 
       if (form) form.reset();
       
@@ -2764,6 +2866,19 @@ export class VotacionComponent implements OnInit {
       }
     } catch (e) {
       console.warn(`Error al cerrar modal ${modalId}:`, e);
+      // Asegurar limpieza del body incluso si hay error
+      setTimeout(() => {
+        const modalesAbiertos = document.querySelectorAll('.modal.show');
+        if (modalesAbiertos.length === 0) {
+          document.body.classList.remove('modal-open');
+          document.body.style.overflow = '';
+          document.body.style.paddingRight = '';
+          const backdrops = document.getElementsByClassName('modal-backdrop');
+          while (backdrops[0]) {
+            backdrops[0].parentNode?.removeChild(backdrops[0]);
+          }
+        }
+      }, 100);
     }
   }
 
@@ -2810,7 +2925,21 @@ export class VotacionComponent implements OnInit {
     this.pasoModalResultados = 3;
   }
 
+  /**
+   * Valida si el resultado manual seleccionado es válido
+   */
+  esResultadoManualValido(): boolean {
+    return this.resultadoManualSeleccionado !== null && 
+           this.resultadoManualSeleccionado !== undefined &&
+           ['aprobada', 'rechazada', 'pendiente'].includes(this.resultadoManualSeleccionado);
+  }
+
   irAPasoConfirmacion() {
+    // Validar que se haya seleccionado una opción válida
+    if (!this.esResultadoManualValido()) {
+      this.toastr.warning('Debe seleccionar una opción válida antes de continuar', 'Validación requerida');
+      return;
+    }
     this.pasoModalResultados = 4;
   }
 
@@ -2847,6 +2976,11 @@ export class VotacionComponent implements OnInit {
   }
 
   irAPasoConfirmacionGrupo() {
+    // Validar que se haya seleccionado una opción válida
+    if (!this.esResultadoManualValido()) {
+      this.toastr.warning('Debe seleccionar una opción válida antes de continuar', 'Validación requerida');
+      return;
+    }
     this.pasoModalResultadosGrupo = 4;
   }
 

@@ -108,7 +108,8 @@
       *ngIf="
         punto.id_punto === puntoSeleccionado.id_punto &&
         sesion?.estado === true &&
-        sesion?.fase === 'activa'
+        sesion?.fase === 'activa' &&
+        !puntoPerteneceAGrupo(punto.id_punto)
       "
     >
       <ng-container *ngIf="!cambiandoEstadoPunto; else cargandoEstado">
@@ -1178,7 +1179,12 @@
           <!-- Paso 3: Selección manual -->
           <ng-container *ngSwitchCase="3">
             <button class="btn btn-secondary" (click)="volverAlPasoInicial()">Atrás</button>
-            <button class="btn btn-primary" (click)="irAPasoConfirmacion()">Continuar</button>
+            <button [ngClass]="{'btn-secondary': !esResultadoManualValido(), 'btn-primary': esResultadoManualValido()}" 
+                    class="btn"
+                    (click)="irAPasoConfirmacion()"
+                    [disabled]="!esResultadoManualValido()">
+              Continuar
+            </button>
           </ng-container>
 
           <!-- Paso 4: Confirmar manual -->
@@ -1505,7 +1511,7 @@
               <strong class="grupo-nombre-truncate" [attr.title]="grupo.nombre">{{ grupo.nombre }}</strong>
               <div class="d-flex align-items-center gap-2">
                 <button
-                  *ngIf="sesion?.estado === true && sesion?.fase === 'activa'"
+                  *ngIf="(sesion?.estado === true && sesion?.fase === 'activa') && (grupo.status===true)"
                   class="btn btn-sm btn-outline-primary d-flex align-items-center"
                   [disabled]="estadoCargaGrupo.get(grupo.id_grupo!)"
                   (click)="cambiarEstadoGrupo(grupo)"
@@ -1892,16 +1898,137 @@
             <p>Se calculará el resultado ponderado con los votos configurados. ¿Desea continuar?</p>
           </div>
 
-          <!-- Paso 7: Votos pendientes -->
+          <!-- Paso 7: Resolver votos pendientes -->
           <div *ngSwitchCase="7">
-            <p class="text-warning">
-              <strong>Hay votos pendientes</strong>
-            </p>
-            <p>Existen miembros habilitados sin voto registrado. Debe gestionar estos casos antes de continuar.</p>
-            <!-- Aquí puedes agregar la lista de pendientes si es necesario -->
+            <div class="alert alert-warning d-flex align-items-start gap-2 mb-3" role="alert">
+              <i class="bi bi-exclamation-triangle-fill mt-1"></i>
+              <div>
+                <strong>Hay votos pendientes por registrar.</strong>
+                <div>
+                  Atiende a los miembros listados antes de continuar con el cálculo automático.
+                </div>
+              </div>
+            </div>
+
+            <div class="d-flex flex-wrap gap-2 mb-3 align-items-center">
+              <button
+                class="btn btn-outline-secondary"
+                (click)="marcarTodosPendientesComo('ausente')"
+                [disabled]="!puntoUsuariosPendientes.length || aplicandoCambiosPendientes"
+              >
+                Marcar todos como ausentes
+              </button>
+              <button
+                class="btn btn-outline-secondary"
+                (click)="marcarTodosPendientesComo('presente')"
+                [disabled]="!puntoUsuariosPendientes.length || aplicandoCambiosPendientes"
+              >
+                Marcar todos como presentes
+              </button>
+
+              <span class="badge text-bg-info ms-auto" *ngIf="hayCambiosPendientes">
+                Cambios sin aplicar
+              </span>
+            </div>
+
+            <ng-container *ngIf="puntoUsuariosPendientes.length; else pendientesResueltos">
+              <div class="pendientes-lista">
+                <ng-container *ngFor="let grupo of agrupadosPendientes; trackBy: trackByGrupo">
+                  <div
+                    class="square d-flex align-items-center gap-3 pendiente-square"
+                    *ngFor="let puntoUsuario of grupo.usuarios"
+                    [ngClass]="getClassForPuntoUsuario(puntoUsuario, puntoSeleccionado)"
+                    [id]="'pendiente-' + puntoUsuario.id_punto_usuario"
+                  >
+                    <div class="d-flex align-items-center gap-3 flex-grow-1">
+                      <input
+                        type="checkbox"
+                        class="form-check-input"
+                        [checked]="puntoUsuario.estado === false"
+                        (change)="onPendienteCheckboxChange(puntoUsuario, $any($event.target).checked)"
+                        [disabled]="aplicandoCambiosPendientes"
+                      />
+                      <div class="d-flex flex-column">
+                        <span class="fw-semibold">{{ getNombreUsuario(puntoUsuario) }}</span>
+                        <small
+                          class="text-muted"
+                          *ngIf="puntoUsuario.usuario?.grupoUsuario?.nombre"
+                        >
+                          {{ puntoUsuario.usuario.grupoUsuario.nombre | titlecase }}
+                        </small>
+                        <span
+                          class="badge text-bg-secondary mt-1 align-self-start"
+                          *ngIf="!puntoUsuario.opcion"
+                        >
+                          Sin voto
+                        </span>
+                        <span
+                          class="badge text-bg-success mt-1 align-self-start"
+                          *ngIf="puntoUsuario.opcion === 'afavor'"
+                        >
+                          A favor
+                        </span>
+                        <span
+                          class="badge text-bg-danger mt-1 align-self-start"
+                          *ngIf="puntoUsuario.opcion === 'encontra'"
+                        >
+                          En contra
+                        </span>
+                        <span
+                          class="badge text-bg-warning text-dark mt-1 align-self-start"
+                          *ngIf="puntoUsuario.opcion === 'abstencion'"
+                        >
+                          Abstención
+                        </span>
+                      </div>
+                    </div>
+
+                    <button
+                      class="btn btn-outline-dark btn-sm ms-auto"
+                      (click)="abrirVotoManual(puntoUsuario.usuario.id_usuario)"
+                      [disabled]="aplicandoCambiosPendientes || puntoUsuario.estado === false"
+                    >
+                      &#x22EE;
+                    </button>
+                  </div>
+                </ng-container>
+              </div>
+            </ng-container>
+
+            <ng-template #pendientesResueltos>
+              <div
+                class="alert"
+                [ngClass]="hayCambiosPendientes ? 'alert-info' : 'alert-success'"
+                role="alert"
+              >
+                <ng-container *ngIf="hayCambiosPendientes; else sinCambiosPendientes">
+                  No quedan miembros pendientes; aplica los cambios para sincronizar la asistencia.
+                </ng-container>
+                <ng-template #sinCambiosPendientes>
+                  Todos los miembros están al día. Puedes volver al paso anterior para recalcular automáticamente.
+                </ng-template>
+              </div>
+            </ng-template>
           </div>
         </ng-container>
       </div>
+
+      <!-- Footer para paso 7 -->
+      <div class="modal-footer justify-content-between" *ngIf="pasoModalResultadosGrupo === 7">
+        <button class="btn btn-secondary" (click)="irAPasoConfirmarAutomaticoGrupo()">Atrás</button>
+        <button
+          class="btn btn-primary d-flex align-items-center"
+          (click)="aplicarCambiosPendientesGrupo()"
+          [disabled]="(puntoUsuariosPendientes.length === 0 && !hayCambiosPendientes) || aplicandoCambiosPendientes"
+        >
+          <ng-container *ngIf="!aplicandoCambiosPendientes && !confirmandoAsistencia; else guardandoPendientesFooterGrupo">
+            <i class="bi bi-save me-2"></i>Aplicar cambios
+          </ng-container>
+        </button>
+      </div>
+      <ng-template #guardandoPendientesFooterGrupo>
+        <span class="spinner-border spinner-border-sm me-2"></span>Guardando...
+      </ng-template>
 
       <!-- Footer -->
       <div class="modal-footer justify-content-between" *ngIf="pasoModalResultadosGrupo !== 1 && pasoModalResultadosGrupo !== 7">
@@ -1925,7 +2052,12 @@
           <!-- Paso 3: Selección manual -->
           <ng-container *ngSwitchCase="3">
             <button class="btn btn-secondary" (click)="volverAlPasoInicialGrupo()">Atrás</button>
-            <button class="btn btn-primary" (click)="irAPasoConfirmacionGrupo()">Continuar</button>
+            <button [ngClass]="{'btn-secondary': !esResultadoManualValido(), 'btn-primary': esResultadoManualValido()}" 
+                    class="btn"
+                    (click)="irAPasoConfirmacionGrupo()"
+                    [disabled]="!esResultadoManualValido()">
+              Continuar
+            </button>
           </ng-container>
 
           <!-- Paso 4: Confirmar manual -->
