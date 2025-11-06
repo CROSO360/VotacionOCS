@@ -222,9 +222,16 @@
                 "
               >
                 <button
-                  *ngIf="!puntoSeleccionado.resultado"
+                  *ngIf="!puntoSeleccionado.resultado && !puntoPerteneceAGrupo(puntoSeleccionado.id_punto)"
                   class="custom-dropdown-toggle btn btn-outline-dark btn-sm"
                   (click)="abrirVotoManual(puntoUsuario.usuario.id_usuario)"
+                >
+                  &#x22EE;
+                </button>
+                <button
+                  *ngIf="!puntoSeleccionado.resultado && puntoPerteneceAGrupo(puntoSeleccionado.id_punto)"
+                  class="custom-dropdown-toggle btn btn-outline-dark btn-sm"
+                  (click)="abrirVotoManual(puntoUsuario.usuario.id_usuario, grupoSeleccionadoParaResolver)"
                 >
                   &#x22EE;
                 </button>
@@ -538,7 +545,7 @@
 </div>
 
 <!-- =============================== -->
-<!-- Modal: Voto Manual -->
+<!-- Modal: Voto Manual individual -->
 <!-- =============================== -->
 <div
   #votoManualModal
@@ -568,6 +575,121 @@
         <form
           [formGroup]="votoManualForm"
           (ngSubmit)="votoManual(usuarioActual.id_usuario)"
+        >
+          <!-- Opciones de voto -->
+          <div class="form-group my-3">
+            <label class="form-label">Opción:</label>
+            <div class="form-check">
+              <input
+                class="form-check-input"
+                formControlName="opcion"
+                type="radio"
+                value="afavor"
+                id="afavor"
+              />
+              <label class="form-check-label" for="afavor">A Favor</label>
+            </div>
+            <div class="form-check">
+              <input
+                class="form-check-input"
+                formControlName="opcion"
+                type="radio"
+                value="encontra"
+                id="encontra"
+              />
+              <label class="form-check-label" for="encontra">En Contra</label>
+            </div>
+            <div class="form-check">
+              <input
+                class="form-check-input"
+                formControlName="opcion"
+                type="radio"
+                value="abstencion"
+                id="abstencion"
+              />
+              <label class="form-check-label" for="abstencion"
+                >Abstención</label
+              >
+            </div>
+          </div>
+
+          <!-- Checkbox razonado -->
+          <div class="mb-3 form-check">
+            <input
+              type="checkbox"
+              formControlName="razonado"
+              class="form-check-input"
+              id="votoRazonado"
+            />
+            <label class="form-check-label" for="votoRazonado"
+              >Voto Razonado</label
+            >
+          </div>
+
+          <!-- Footer -->
+          <div class="modal-footer px-0 mt-4">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              (click)="resetForm()"
+              data-bs-dismiss="modal"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              class="btn btn-primary d-flex align-items-center"
+              [disabled]="votoManualForm.invalid || guardandoVotoManual"
+            >
+              <ng-container
+                *ngIf="!guardandoVotoManual; else cargandoVotoManual"
+              >
+                <i class="bi bi-check-circle me-2"></i>
+                Guardar voto
+              </ng-container>
+              <ng-template #cargandoVotoManual>
+                <span class="spinner-border spinner-border-sm me-2"></span>
+                Guardando...
+              </ng-template>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- =============================== -->
+<!-- Modal: Voto Manual grupal -->
+<!-- =============================== -->
+<div
+  #votoManuaGrupallModal
+  class="modal fade"
+  id="votoManualGrupalModal"
+  tabindex="-1"
+  aria-labelledby="votoManualGrupalModalLabel"
+  aria-hidden="true"
+>
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <!-- Encabezado -->
+      <div class="modal-header">
+        <h1 class="modal-title fs-5" id="votoManualGrupalModalLabel">
+          Voto manual grupal para {{ usuarioActual?.nombre }}
+        </h1>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+          aria-label="Cerrar"
+        ></button>
+      </div>
+
+      <!-- Cuerpo -->
+      <div class="modal-body">
+        <form
+          [formGroup]="votoManualForm"
+          (ngSubmit)="votoManual(usuarioActual.id_usuario, grupoSeleccionadoParaResolver)"
         >
           <!-- Opciones de voto -->
           <div class="form-group my-3">
@@ -1127,7 +1249,10 @@
                       </div>
                     </div>
 
+                    
+                    
                     <button
+                    
                       class="btn btn-outline-dark btn-sm ms-auto"
                       (click)="abrirVotoManual(puntoUsuario.usuario.id_usuario)"
                       [disabled]="aplicandoCambiosPendientes || puntoUsuario.estado === false"
@@ -1985,9 +2110,10 @@
 
                     <button
                       class="btn btn-outline-dark btn-sm ms-auto"
-                      (click)="abrirVotoManual(puntoUsuario.usuario.id_usuario)"
+                      (click)="abrirVotoManual(puntoUsuario.usuario.id_usuario, grupoSeleccionadoParaResolver)"
                       [disabled]="aplicandoCambiosPendientes || puntoUsuario.estado === false"
                     >
+                    
                       &#x22EE;
                     </button>
                   </div>

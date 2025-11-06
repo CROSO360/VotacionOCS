@@ -76,4 +76,8 @@ export class GrupoService {
     return this.http.post<any>(`${this.baseURL}/grupo/calcular-resultados`, data);
   }
 
+  grupoHabilitado(id: number): Observable<any> {
+    return this.http.get<any>(`${this.baseURL}/grupo/habilitado/${id}`);
+  }
+
 }

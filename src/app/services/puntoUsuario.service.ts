@@ -166,8 +166,8 @@ export class PuntoUsuarioService {
     data: {
       codigo: string;
       idUsuario: number;
-      opcion: 'afavor' | 'encontra' | 'abstencion' | null;
-      es_razonado: boolean;
+      opcion: string
+      es_razonado: any;
       votante: number;
     }
   ): Observable<{

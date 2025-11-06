@@ -149,6 +149,7 @@ export class VotacionComponent implements OnInit {
   pantallaGrupo: number = 1; // 1 = gestión, 2 = crear grupo
 
   votoManualModalRef: any;
+  votoManualGrupalModalRef: any;
   modalResultadosRef: Modal | null = null;
   modalResultadosGrupoRef: Modal | null = null;
 
@@ -335,6 +336,11 @@ export class VotacionComponent implements OnInit {
       this.votoManualModalRef = new Modal(votoManualEl);
     }
 
+    const votoManualGrupalEl = document.getElementById('votoManualGrupalModal');
+    if (votoManualEl) {
+      this.votoManualGrupalModalRef = new Modal(votoManualGrupalEl);
+    }
+
     const modalResultadosEl = document.getElementById('modalResultados');
     if (modalResultadosEl) {
       this.modalResultadosRef = new Modal(modalResultadosEl);
@@ -512,6 +518,12 @@ export class VotacionComponent implements OnInit {
     if (!puntoId || !this.grupos || this.grupos.length === 0) {
       return false;
     }
+
+    this.grupoSeleccionadoParaResolver = this.grupos.some(grupo => 
+      grupo.puntoGrupos?.some(pg => pg.punto?.id_punto === puntoId)
+    ) ? this.grupos.find(grupo => 
+      grupo.puntoGrupos?.some(pg => pg.punto?.id_punto === puntoId)
+    ) : undefined;
     
     return this.grupos.some(grupo => 
       grupo.puntoGrupos?.some(pg => pg.punto?.id_punto === puntoId)
@@ -1141,13 +1153,101 @@ export class VotacionComponent implements OnInit {
     });
   }
 
-  abrirVotoManual(idUsuario: number) {
+  abrirVotoManual(idUsuario: number, grupoSeleccionadoParaResolver?: IGrupo) {
     if (this.guardandoVotoManual) return; // Evitar múltiples llamadas
     
     this.usuarioActual = undefined;
     const query = `id_usuario=${idUsuario}`;
 
-    this.usuarioService.getDataBy(query).subscribe({
+    if (grupoSeleccionadoParaResolver) {
+      
+      this.usuarioService.getDataBy(query).subscribe({
+      next: (data) => {
+        this.usuarioActual = data;
+        
+        // Usar setTimeout más largo para dar tiempo a que Angular procese los cambios
+        setTimeout(() => {
+          try {
+            const resultadosEl = document.getElementById('modalResultados');
+            const resultadosVisible = resultadosEl?.classList.contains('show') ?? false;
+            const pantallaCompletaEl = document.getElementById('modalVotacionPantallaCompleta');
+            const pantallaCompletaVisible = pantallaCompletaEl?.classList.contains('show') ?? false;
+
+            const mostrarVotoManual = () => {
+              const modalElement = document.getElementById('votoManualGrupalModal');
+              if (!modalElement) {
+                console.error('No se encontró el elemento del modal de voto manual grupal');
+                return;
+              }
+
+              // Configurar z-index alto para que aparezca sobre otros modales
+              (modalElement as HTMLElement).style.zIndex = '1090';
+              
+              // Asegurar que el backdrop también tenga z-index correcto
+              setTimeout(() => {
+                const backdrops = document.querySelectorAll('.modal-backdrop');
+                if (backdrops.length) {
+                  const backdrop = backdrops[backdrops.length - 1] as HTMLElement;
+                  if (backdrop) {
+                    backdrop.style.zIndex = '1085';
+                  }
+                }
+              }, 10);
+              
+              if (!this.votoManualGrupalModalRef) {
+                this.votoManualGrupalModalRef = new Modal(modalElement, {
+                  backdrop: true,
+                  keyboard: true,
+                  focus: false // Evitar problemas con el focus de Bootstrap
+                });
+              }
+              
+              try {
+                this.votoManualGrupalModalRef.show();
+              } catch (e) {
+                console.error('Error al mostrar modal de voto manual grupal:', e);
+                // Intentar mostrar el modal de forma manual como fallback
+                modalElement.classList.add('show');
+                modalElement.style.display = 'block';
+                modalElement.setAttribute('aria-hidden', 'false');
+                document.body.classList.add('modal-open');
+              }
+            };
+
+            // Si hay modal de resultados abierto, cerrarlo temporalmente
+            if (resultadosVisible && this.modalResultadosRef) {
+              this.reabrirResultadosTrasVotoManual = true;
+              this.modalResultadosRef.hide();
+              setTimeout(mostrarVotoManual, 200);
+            } 
+            // Si hay modal de pantalla completa, no cerrarlo, solo mostrar el voto manual encima
+            else if (pantallaCompletaVisible) {
+              this.reabrirResultadosTrasVotoManual = false;
+              // Dar un poco más de tiempo cuando viene de pantalla completa
+              setTimeout(mostrarVotoManual, 100);
+            } 
+            // Ningún modal especial abierto, mostrar directamente
+            else {
+              this.reabrirResultadosTrasVotoManual = false;
+              mostrarVotoManual();
+            }
+          } catch (e) {
+            console.error('Error al abrir modal de voto manual:', e);
+            this.toastr.error('Error al abrir el formulario de voto manual', 'Error');
+            this.guardandoVotoManual = false;
+          }
+        }, 100);
+      },
+      error: (error) => {
+        console.error('Error al cargar usuario para voto manual grupal', error);
+        this.toastr.error('Error al cargar usuario', 'Error');
+        this.guardandoVotoManual = false;
+      },
+      });
+
+    }else{
+
+      this.usuarioService.getDataBy(query).subscribe({
       next: (data) => {
         this.usuarioActual = data;
         
@@ -1229,7 +1329,10 @@ export class VotacionComponent implements OnInit {
         this.toastr.error('Error al cargar usuario', 'Error');
         this.guardandoVotoManual = false;
       },
-    });
+      });
+    }
+
+    
   }
 
   //abre el modal de voto manual
@@ -1252,7 +1355,7 @@ export class VotacionComponent implements OnInit {
   }
 
   // Registra el voto manual del usuario seleccionado
-  votoManual(idUsuario: number) {
+  votoManual(idUsuario?: number, grupoSeleccionadoParaResolver?: IGrupo) {
     if (!this.puntoSeleccionado || this.guardandoVotoManual) return;
 
     const votoData = {
@@ -1264,13 +1367,93 @@ export class VotacionComponent implements OnInit {
       votante: this.usuario.id_usuario,
     };
 
+    const votoDataGrupo = {
+      codigo: this.sesion?.codigo,
+      idUsuario: idUsuario,
+      opcion: this.votoManualForm.value.opcion,
+      es_razonado: this.votoManualForm.value.razonado,
+      votante: this.usuario.id_usuario,
+    };
+
     this.guardandoVotoManual = true;
 
     // Detectar si viene desde pantalla completa
     const pantallaCompletaEl = document.getElementById('modalVotacionPantallaCompleta');
     const desdePantallaCompleta = pantallaCompletaEl?.classList.contains('show') ?? false;
 
-    this.puntoUsuarioService.saveVote(votoData).subscribe({
+    if(grupoSeleccionadoParaResolver){
+      this.puntoUsuarioService.votarGrupo(grupoSeleccionadoParaResolver.id_grupo, votoDataGrupo).subscribe({
+        next: () => {
+          this.toastr.success('Voto manual grupal registrado correctamente', 'Éxito');
+          
+          // Cerrar modal primero para evitar conflictos
+          this.cerrarModal('votoManualGrupalModal', this.votoManualForm, this.votoManualGrupalModalRef);
+
+          // Si viene desde pantalla completa, actualizar solo los datos locales sin recargar todo
+        if (desdePantallaCompleta) {
+          // Actualización ligera sin recargar todo para evitar congelamiento
+          setTimeout(() => {
+            const puntoUsuarioActualizado = this.puntoUsuarios.find(
+              (pu: IPuntoUsuario) => pu.usuario?.id_usuario === idUsuario
+            );
+            if (puntoUsuarioActualizado?.id_punto_usuario) {
+              const actualizado: IPuntoUsuario = {
+                ...puntoUsuarioActualizado,
+                opcion: this.votoManualForm.value.opcion as string,
+                estado: true,
+              };
+              this.sincronizarPuntoUsuarioLocal(actualizado);
+              this.actualizarPendientesLocales();
+            }
+          }, 100);
+        } else {
+          // Para casos normales, hacer la actualización completa
+          const puntoUsuarioActualizado = this.puntoUsuarios.find(
+            (pu: IPuntoUsuario) => pu.usuario?.id_usuario === idUsuario
+          );
+          if (puntoUsuarioActualizado?.id_punto_usuario) {
+            const actualizado: IPuntoUsuario = {
+              ...puntoUsuarioActualizado,
+              opcion: this.votoManualForm.value.opcion as string,
+              estado: true,
+            };
+            this.sincronizarPuntoUsuarioLocal(actualizado);
+            this.actualizarPendientesLocales();
+          }
+        }
+        
+        // Si había un modal de resultados, reabrirlo (solo si no viene de pantalla completa)
+        if (!desdePantallaCompleta && this.reabrirResultadosTrasVotoManual && this.modalResultadosRef) {
+          setTimeout(() => {
+            try {
+              this.modalResultadosRef?.show();
+              this.reabrirResultadosTrasVotoManual = false;
+            } catch (e) {
+              console.warn('Error al reabrir modal de resultados:', e);
+            }
+          }, 200);
+        }
+        
+        this.guardandoVotoManual = false;
+
+        },
+        error: (err) => {
+        // Siempre resetear el flag primero
+        this.guardandoVotoManual = false;
+        
+        const mensajeError = err?.error?.message ?? 'Error al registrar el voto manual';
+        this.toastr.error(mensajeError, 'Error');
+      },
+      complete: () => {
+        // Asegurar que el flag esté en false
+        this.guardandoVotoManual = false;
+      },
+
+
+      });
+          
+    }else{
+      this.puntoUsuarioService.saveVote(votoData).subscribe({
       next: () => {
         this.toastr.success('Voto manual registrado correctamente', 'Éxito');
         
@@ -1336,6 +1519,9 @@ export class VotacionComponent implements OnInit {
         this.guardandoVotoManual = false;
       },
     });
+    }
+
+    
   }
 
   async actualizarPuntoUsuario(puntoUsuarioId: number) {
