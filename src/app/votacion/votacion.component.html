@@ -109,7 +109,8 @@
         punto.id_punto === puntoSeleccionado.id_punto &&
         sesion?.estado === true &&
         sesion?.fase === 'activa' &&
-        !puntoPerteneceAGrupo(punto.id_punto)
+        !puntoPerteneceAGrupo(punto.id_punto) &&
+        punto.resultado  === null 
       "
     >
       <ng-container *ngIf="!cambiandoEstadoPunto; else cargandoEstado">
@@ -165,7 +166,16 @@
   </div>
 
   <!-- Botón de pantalla completa para votación -->
-  <div class="d-flex justify-content-end mb-3">
+  <div class="d-flex justify-content-end mb-3 align-items-center gap-3">
+    <div class="flex-grow-1">
+      <span
+        *ngIf="puntoSeleccionado?.id_punto && puntoPerteneceAGrupo(puntoSeleccionado.id_punto)"
+        class="text-muted"
+      >
+        Grupo: {{ obtenerGrupoDePunto(puntoSeleccionado.id_punto)?.nombre }}
+      </span>
+    </div>
+
     <button
       class="btn btn-outline-primary d-flex align-items-center"
       data-bs-toggle="modal"
@@ -231,7 +241,7 @@
                 <button
                   *ngIf="!puntoSeleccionado.resultado && puntoPerteneceAGrupo(puntoSeleccionado.id_punto)"
                   class="custom-dropdown-toggle btn btn-outline-dark btn-sm"
-                  (click)="abrirVotoManual(puntoUsuario.usuario.id_usuario, grupoSeleccionadoParaResolver)"
+                  (click)="abrirVotoManual(puntoUsuario.usuario.id_usuario, obtenerGrupoDePunto(puntoSeleccionado.id_punto))"
                 >
                   &#x22EE;
                 </button>
@@ -585,9 +595,9 @@
                 formControlName="opcion"
                 type="radio"
                 value="afavor"
-                id="afavor"
+                id="afavorGrupal"
               />
-              <label class="form-check-label" for="afavor">A Favor</label>
+              <label class="form-check-label" for="afavorGrupal">A Favor</label>
             </div>
             <div class="form-check">
               <input
@@ -595,9 +605,9 @@
                 formControlName="opcion"
                 type="radio"
                 value="encontra"
-                id="encontra"
+                id="encontraGrupal"
               />
-              <label class="form-check-label" for="encontra">En Contra</label>
+              <label class="form-check-label" for="encontraGrupal">En Contra</label>
             </div>
             <div class="form-check">
               <input
@@ -605,9 +615,9 @@
                 formControlName="opcion"
                 type="radio"
                 value="abstencion"
-                id="abstencion"
+                id="abstencionGrupal"
               />
-              <label class="form-check-label" for="abstencion"
+              <label class="form-check-label" for="abstencionGrupal"
                 >Abstención</label
               >
             </div>
@@ -619,9 +629,9 @@
               type="checkbox"
               formControlName="razonado"
               class="form-check-input"
-              id="votoRazonado"
+              id="votoRazonadoGrupal"
             />
-            <label class="form-check-label" for="votoRazonado"
+            <label class="form-check-label" for="votoRazonadoGrupal"
               >Voto Razonado</label
             >
           </div>
@@ -2228,4 +2238,3 @@
 </div>
 
 <app-footer></app-footer>
-

@@ -152,6 +152,7 @@ export class VotacionComponent implements OnInit {
   votoManualGrupalModalRef: any;
   modalResultadosRef: Modal | null = null;
   modalResultadosGrupoRef: Modal | null = null;
+  grupoContextoVotoManual: IGrupo | null = null;
 
   // Estado de los resúmenes
   resultadoPunto: IResultado | null = null;
@@ -512,21 +513,22 @@ export class VotacionComponent implements OnInit {
   }
 
   /**
-   * Verifica si un punto pertenece a algún grupo
+   * Verifica si un punto pertenece a algún grupo (sin efectos secundarios)
    */
   puntoPerteneceAGrupo(puntoId: number): boolean {
-    if (!puntoId || !this.grupos || this.grupos.length === 0) {
-      return false;
+    return !!this.obtenerGrupoDePunto(puntoId);
+  }
+
+  /**
+   * Devuelve el grupo al que pertenece un punto o undefined si no aplica
+   */
+  obtenerGrupoDePunto(puntoId: number): IGrupo | undefined {
+    if (!puntoId || !this.grupos?.length) {
+      return undefined;
     }
 
-    this.grupoSeleccionadoParaResolver = this.grupos.some(grupo => 
-      grupo.puntoGrupos?.some(pg => pg.punto?.id_punto === puntoId)
-    ) ? this.grupos.find(grupo => 
-      grupo.puntoGrupos?.some(pg => pg.punto?.id_punto === puntoId)
-    ) : undefined;
-    
-    return this.grupos.some(grupo => 
-      grupo.puntoGrupos?.some(pg => pg.punto?.id_punto === puntoId)
+    return this.grupos.find((grupo) =>
+      grupo.puntoGrupos?.some((pg) => pg.punto?.id_punto === puntoId)
     );
   }
 
@@ -660,7 +662,7 @@ export class VotacionComponent implements OnInit {
         this.creandoGrupo = false;
       },
       error: (e) => {
-        this.toastr.error('Error al crear el grupo', `error: ${e?.message ?? 'desconocido'}`);
+        this.toastr.error(`${e?.error.message ?? 'desconocido'}`, 'Error al crear grupo');
         this.creandoGrupo = false;
       },
     });
@@ -1045,6 +1047,12 @@ export class VotacionComponent implements OnInit {
       }
 
       this.nomina = filtradas;
+      console.log('[Hibrido][Nomina] filtro aplicado', {
+        texto,
+        filtro: this.filtroAsistencia,
+        totalOriginal: this.asistenciasOriginales?.length ?? 0,
+        totalFiltradas: filtradas.length,
+      });
       this.agruparNominaPorGrupo();
       this.actualizarContadores();
     });
@@ -1155,6 +1163,7 @@ export class VotacionComponent implements OnInit {
 
   abrirVotoManual(idUsuario: number, grupoSeleccionadoParaResolver?: IGrupo) {
     if (this.guardandoVotoManual) return; // Evitar múltiples llamadas
+    this.grupoContextoVotoManual = grupoSeleccionadoParaResolver ?? null;
     
     this.usuarioActual = undefined;
     const query = `id_usuario=${idUsuario}`;
@@ -1357,6 +1366,8 @@ export class VotacionComponent implements OnInit {
   // Registra el voto manual del usuario seleccionado
   votoManual(idUsuario?: number, grupoSeleccionadoParaResolver?: IGrupo) {
     if (!this.puntoSeleccionado || this.guardandoVotoManual) return;
+    const grupoContexto =
+      grupoSeleccionadoParaResolver ?? this.grupoContextoVotoManual ?? undefined;
 
     const votoData = {
       idUsuario: idUsuario,
@@ -1381,8 +1392,9 @@ export class VotacionComponent implements OnInit {
     const pantallaCompletaEl = document.getElementById('modalVotacionPantallaCompleta');
     const desdePantallaCompleta = pantallaCompletaEl?.classList.contains('show') ?? false;
 
-    if(grupoSeleccionadoParaResolver){
-      this.puntoUsuarioService.votarGrupo(grupoSeleccionadoParaResolver.id_grupo, votoDataGrupo).subscribe({
+    if(grupoContexto){
+      console.log('Votando en grupo:', grupoContexto);
+      this.puntoUsuarioService.votarGrupo(grupoContexto.id_grupo, votoDataGrupo).subscribe({
         next: () => {
           this.toastr.success('Voto manual grupal registrado correctamente', 'Éxito');
           
@@ -1435,6 +1447,7 @@ export class VotacionComponent implements OnInit {
         }
         
         this.guardandoVotoManual = false;
+        this.grupoContextoVotoManual = null;
 
         },
         error: (err) => {
@@ -1453,9 +1466,10 @@ export class VotacionComponent implements OnInit {
       });
           
     }else{
+      console.log('Votando individualmente:', votoData);
       this.puntoUsuarioService.saveVote(votoData).subscribe({
       next: () => {
-        this.toastr.success('Voto manual registrado correctamente', 'Éxito');
+        this.toastr.success('Voto manual individual registrado correctamente', 'Éxito');
         
         // Cerrar modal primero para evitar conflictos
         this.cerrarModal('votoManualModal', this.votoManualForm, this.votoManualModalRef);
@@ -1506,6 +1520,7 @@ export class VotacionComponent implements OnInit {
         }
         
         this.guardandoVotoManual = false;
+        this.grupoContextoVotoManual = null;
       },
       error: (err) => {
         // Siempre resetear el flag primero
@@ -2800,6 +2815,11 @@ export class VotacionComponent implements OnInit {
         else if (v.opcion === 'abstencion') c.abstencion++;
       }
       this.contadoresHibrido = c;
+      console.log('[Hibrido] contadores calculados', {
+        busqueda: texto,
+        filtro: this.filtroVotoHibrido,
+        contadores: c,
+      });
 
       // 3) Filtro activo
       const filtradas = listaConBusqueda
@@ -2839,6 +2859,10 @@ export class VotacionComponent implements OnInit {
       ).sort(
         (a, b) => ordenGrupos.indexOf(a.grupo) - ordenGrupos.indexOf(b.grupo)
       );
+      console.log('[Hibrido] agrupacion final', {
+        grupos: this.agrupadosVotosHibridos.length,
+        totalFiltradas: filtradas.length,
+      });
     });
   }
 
@@ -2950,6 +2974,7 @@ export class VotacionComponent implements OnInit {
     this.usuarioActual = undefined;
     this.puntosSeleccionados = [];
     this.allPuntosSelected = false;
+    this.grupoContextoVotoManual = null;
   }
 
   toggleOption(option: IPunto) {
@@ -3227,16 +3252,38 @@ export class VotacionComponent implements OnInit {
             (a.tipo_asistencia ?? 'ausente').toString().trim().toLowerCase(),
           ])
         );
+        //log
+        console.log('[Hibrido][Grupo] asistencia map', {
+          punto: primerPuntoId,
+          nominaVisible: this.nomina?.length ?? 0,
+          asistenciasOriginales: this.asistenciasOriginales?.length ?? 0,
+          totalMap: asistenciaMap.size,
+        });
 
         this.votosHibridos = puntoUsuariosGrupo.map((pu) => {
           const u = pu.usuario;
           const grupoUsuario = (u?.grupoUsuario?.nombre || '').toLowerCase();
 
-          const esPresente = asistenciaMap.get(u.id_usuario) === 'presente';
+          const asistenciaEstado = asistenciaMap.get(u.id_usuario);
+          const enMapa = asistenciaMap.has(u.id_usuario);
+          const esPresente = asistenciaEstado === 'presente';
           const esRector = grupoUsuario === 'rector';
           const esTrabajador = grupoUsuario === 'trabajador';
 
           const habilitado = esPresente && !esRector && !(esAdmin && esTrabajador);
+          if (!enMapa || (esPresente && !habilitado)) {
+            //log
+            console.log('[Hibrido][Grupo] habilitacion usuario', {
+              idUsuario: u?.id_usuario,
+              nombre: u?.nombre,
+              asistenciaEstado,
+              enMapa,
+              esRector,
+              esTrabajador,
+              esAdmin,
+              habilitado,
+            });
+          }
 
           return {
             idUsuario: u.id_usuario,
@@ -3338,6 +3385,13 @@ export class VotacionComponent implements OnInit {
         (a.tipo_asistencia ?? 'ausente').toString().trim().toLowerCase(),
       ])
     );
+    //log
+    console.log('[Hibrido][Individual] asistencia map', {
+      punto: this.puntoSeleccionado?.id_punto,
+      nominaVisible: this.nomina?.length ?? 0,
+      asistenciasOriginales: this.asistenciasOriginales?.length ?? 0,
+      totalMap: asistenciaMap.size,
+    });
 
     const esAdmin = !!this.puntoSeleccionado?.es_administrativa;
 
@@ -3345,12 +3399,27 @@ export class VotacionComponent implements OnInit {
       const u = pu.usuario;
       const grupo = (u?.grupoUsuario?.nombre || '').toLowerCase();
 
-      const esPresente = asistenciaMap.get(u.id_usuario) === 'presente';
+      const asistenciaEstado = asistenciaMap.get(u.id_usuario);
+      const enMapa = asistenciaMap.has(u.id_usuario);
+      const esPresente = asistenciaEstado === 'presente';
       const esRector = grupo === 'rector';
       const esTrabajador = grupo === 'trabajador';
 
       // regla: presente ∧ !rector ∧ !(administrativa ∧ trabajador)
       const habilitado = esPresente && !esRector && !(esAdmin && esTrabajador);
+      if (!enMapa || (esPresente && !habilitado)) {
+        //log
+        console.log('[Hibrido][Individual] habilitacion usuario', {
+          idUsuario: u?.id_usuario,
+          nombre: u?.nombre,
+          asistenciaEstado,
+          enMapa,
+          esRector,
+          esTrabajador,
+          esAdmin,
+          habilitado,
+        });
+      }
 
       return {
         idUsuario: u.id_usuario,
