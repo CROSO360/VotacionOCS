@@ -32,6 +32,34 @@
   max-height: none;
 }
 
+/* Contenedor con scroll para la lista de grupos */
+.grupos-lista-container {
+  max-height: 60vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 0.5rem;
+  margin-right: -0.5rem;
+}
+
+/* Estilos para el scrollbar personalizado */
+.grupos-lista-container::-webkit-scrollbar {
+  width: 8px;
+}
+
+.grupos-lista-container::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.grupos-lista-container::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 4px;
+}
+
+.grupos-lista-container::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
 /* Botón cancelar un poco más abajo */
 .btn-cancel-grupo {
   margin-top: 3%;
@@ -68,6 +96,41 @@
 
 .punto-grupo-item.punto-resuelto .form-check-input:disabled + .punto-nombre-truncate {
   color: #6c757d; /* texto atenuado para resueltos */
+}
+
+/* =======================
+   Lista de puntos en grupos: truncamiento de nombres largos
+   ======================= */
+#modalGrupos .mb-3.border.rounded.p-3 {
+  overflow: hidden; /* Evitar desbordamiento del contenedor */
+  min-width: 0; /* Permitir que los elementos flex se reduzcan */
+}
+
+#modalGrupos .mb-3.border.rounded.p-3 > div:first-child {
+  min-width: 0; /* Permitir truncamiento en elementos flex */
+}
+
+#modalGrupos .mb-3.border.rounded.p-3 > div:first-child > strong {
+  min-width: 0; /* Permitir truncamiento en el nombre del grupo */
+  flex: 1 1 auto; /* Permitir que se reduzca */
+}
+
+#modalGrupos ul {
+  max-width: 100%;
+  overflow: hidden;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  min-width: 0; /* Necesario para truncamiento en flex */
+}
+
+#modalGrupos ul li {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  display: block; /* Asegurar que sea un elemento de bloque */
 }
 .grid-container {
   display: grid;

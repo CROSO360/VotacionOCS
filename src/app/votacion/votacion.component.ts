@@ -1621,6 +1621,23 @@ export class VotacionComponent implements OnInit {
         (id): id is number => typeof id === 'number' && Number.isFinite(id)
       )
     );
+    
+    // Si estamos trabajando con un grupo y no tenemos los puntoUsuarios cargados,
+    // cargarlos antes de actualizar los pendientes
+    if (this.grupoSeleccionadoParaResolver && (!this.puntoUsuarios || this.puntoUsuarios.length === 0)) {
+      const puntosDelGrupo = this.grupoSeleccionadoParaResolver.puntoGrupos
+        ?.map(pg => pg.punto)
+        .filter(p => p) || [];
+      
+      if (puntosDelGrupo.length > 0 && puntosDelGrupo[0]?.id_punto) {
+        const primerPuntoId = puntosDelGrupo[0].id_punto;
+        // Cargar los puntoUsuarios del grupo primero
+        this.getPuntoUsuarios(primerPuntoId);
+        // actualizarPendientesLocales se llamará desde getPuntoUsuarios
+        return;
+      }
+    }
+    
     this.actualizarPendientesLocales();
   }
 
@@ -1633,13 +1650,106 @@ export class VotacionComponent implements OnInit {
     }
 
     const ids = this.puntoUsuariosPendientesIds;
-    const pendientes = (this.puntoUsuarios ?? []).filter((pu: IPuntoUsuario) => {
+    let pendientes = (this.puntoUsuarios ?? []).filter((pu: IPuntoUsuario) => {
       const id = pu?.id_punto_usuario;
       return id != null && ids.has(id);
     });
 
-    if (!pendientes.length) {
-      this.puntoUsuariosPendientesIds.clear();
+    // Si no se encontraron pendientes localmente y estamos trabajando con un grupo,
+    // intentar cargar los puntoUsuarios del grupo
+    if (!pendientes.length && this.grupoSeleccionadoParaResolver) {
+      const puntosDelGrupo = this.grupoSeleccionadoParaResolver.puntoGrupos
+        ?.map(pg => pg.punto)
+        .filter(p => p) || [];
+      
+      if (puntosDelGrupo.length > 0 && puntosDelGrupo[0]?.id_punto) {
+        const primerPuntoId = puntosDelGrupo[0].id_punto;
+        // Cargar los puntoUsuarios del grupo de forma asíncrona
+        const query = `punto.id_punto=${primerPuntoId}`;
+        const relations = [
+          `usuario`,
+          `usuario.usuarioReemplazo`,
+          `usuario.grupoUsuario`,
+        ];
+        
+        this.puntoUsuarioService
+          .getAllDataBy(query, relations)
+          .subscribe((data) => {
+            // Actualizar puntoUsuarios temporalmente para buscar pendientes
+            const puntoUsuariosTemporales = data.sort((a, b) => {
+              return a.estado === b.estado ? 0 : a.estado ? -1 : 1;
+            });
+            
+            // Buscar pendientes en los datos cargados
+            const pendientesEncontrados = puntoUsuariosTemporales.filter((pu: IPuntoUsuario) => {
+              const id = pu?.id_punto_usuario;
+              return id != null && ids.has(id);
+            });
+            
+            if (pendientesEncontrados.length > 0) {
+              this.puntoUsuariosPendientes = pendientesEncontrados;
+              this.agrupadosPendientes = this.agruparPorGrupo(pendientesEncontrados);
+              // Actualizar también puntoUsuarios para futuras referencias
+              this.puntoUsuarios = puntoUsuariosTemporales;
+              this.agrupadosPorGrupo = this.agruparPorGrupo(this.puntoUsuarios);
+            } else {
+              // Si aún no se encuentran, limpiar los IDs pendientes
+              this.puntoUsuariosPendientesIds.clear();
+              this.puntoUsuariosPendientes = [];
+              this.agrupadosPendientes = [];
+            }
+            
+            this.actualizarEstadoBloqueoPendientes();
+          });
+        
+        // Retornar temprano ya que la actualización se hará en el subscribe
+        return;
+      }
+    }
+
+    if (!pendientes.length && this.puntoUsuariosPendientesIds.size > 0) {
+      // Si hay IDs pendientes pero no se encontraron en puntoUsuarios,
+      // intentar cargarlos desde el backend si tenemos un punto seleccionado
+      if (this.puntoSeleccionado?.id_punto) {
+        const query = `punto.id_punto=${this.puntoSeleccionado.id_punto}`;
+        const relations = [
+          `usuario`,
+          `usuario.usuarioReemplazo`,
+          `usuario.grupoUsuario`,
+        ];
+        
+        this.puntoUsuarioService
+          .getAllDataBy(query, relations)
+          .subscribe((data) => {
+            const puntoUsuariosCargados = data.sort((a, b) => {
+              return a.estado === b.estado ? 0 : a.estado ? -1 : 1;
+            });
+            
+            const pendientesEncontrados = puntoUsuariosCargados.filter((pu: IPuntoUsuario) => {
+              const id = pu?.id_punto_usuario;
+              return id != null && ids.has(id);
+            });
+            
+            if (pendientesEncontrados.length > 0) {
+              this.puntoUsuariosPendientes = pendientesEncontrados;
+              this.agrupadosPendientes = this.agruparPorGrupo(pendientesEncontrados);
+              // Actualizar también puntoUsuarios
+              this.puntoUsuarios = puntoUsuariosCargados;
+              this.agrupadosPorGrupo = this.agruparPorGrupo(this.puntoUsuarios);
+            } else {
+              this.puntoUsuariosPendientesIds.clear();
+              this.puntoUsuariosPendientes = [];
+              this.agrupadosPendientes = [];
+            }
+            
+            this.actualizarEstadoBloqueoPendientes();
+          });
+        
+        return;
+      } else {
+        // Si no hay punto seleccionado y no se encontraron pendientes, limpiar
+        this.puntoUsuariosPendientesIds.clear();
+      }
     }
 
     this.puntoUsuariosPendientes = pendientes;
@@ -2679,6 +2789,19 @@ export class VotacionComponent implements OnInit {
     this.resultadoManualSeleccionado = null;
     this.busquedaVotoHibrido = '';
     this.filtroVotoHibrido = 'todos';
+    
+    // Cargar los puntoUsuarios del grupo para que los pendientes funcionen correctamente
+    // Los puntos del grupo tienen los mismos votos, usamos el primer punto como referencia
+    const puntosDelGrupo = grupo.puntoGrupos
+      ?.map(pg => pg.punto)
+      .filter(p => p) || [];
+    
+    if (puntosDelGrupo.length > 0 && puntosDelGrupo[0]?.id_punto) {
+      const primerPuntoId = puntosDelGrupo[0].id_punto;
+      // Cargar los puntoUsuarios del primer punto del grupo
+      this.getPuntoUsuarios(primerPuntoId);
+    }
+    
     this.agruparYFiltrarVotosHibridos();
 
     // Usar el modal separado para grupos con manejo seguro de Bootstrap

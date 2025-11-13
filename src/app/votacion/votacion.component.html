@@ -1641,7 +1641,8 @@
             No hay grupos creados aún.
           </div>
 
-          <div *ngFor="let grupo of grupos" class="mb-3 border rounded p-3">
+          <div class="grupos-lista-container" *ngIf="grupos.length > 0">
+            <div *ngFor="let grupo of grupos" class="mb-3 border rounded p-3">
             <div class="d-flex justify-content-between align-items-center">
               <strong class="grupo-nombre-truncate" [attr.title]="grupo.nombre">{{ grupo.nombre }}</strong>
               <div class="d-flex align-items-center gap-2">
@@ -1709,10 +1710,11 @@
             <div class="mt-2">
               <span class="text-muted small">Puntos del grupo:</span>
               <ul class="mb-0">
-                <li *ngFor="let pg of grupo.puntoGrupos">
+                <li *ngFor="let pg of grupo.puntoGrupos" [attr.title]="pg.punto?.nombre">
                   {{ pg.punto?.nombre }}
                 </li>
               </ul>
+            </div>
             </div>
           </div>
         </div>

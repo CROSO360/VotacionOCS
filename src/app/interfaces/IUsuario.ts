@@ -28,6 +28,11 @@ export interface IUsuario {
   cedula?: string;
 
   /**
+   * celular del usuario
+   */
+  celular?: string;
+
+  /**
    * Contraseña del usuario (encriptada)
    */
   contrasena?: string;
